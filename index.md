@@ -16,9 +16,9 @@ All this ties into my desire to get better at Vulnerability Research (VR). I oft
 ## Blogs
 
 - [Pragyan CTF 2023 — The Kingpin Write-up](./blogs/pragyan/kingpin.html)
-- [Spooky License — Reversing Challenge — HackTheBox Writeup](./blogs/spookylicense/spookylicense.html)
+- [Spooky License — Reversing Challenge — HackTheBox Writeup](./blogs/htb/spookylicense/spookylicense.html)
 - Bombs Landed — Reversing Challenge — HackTheBox Write-up
-- BroScience (Medium)— HackTheBox Write-up
+- [BroScience (Medium)— HackTheBox Write-up](./blogs/htb/broscience/broscience.html)
 - [IrisCTF 2023 — Name that song && Name that song 2 Write-up](./blogs/irisctf/namethatsong/namethatsong.html)
 - IrisCTF 2023 — ret2libm Write-up
 - [IrisCTF 2023 — babyseek Write-up](./blogs/irisctf/babyseek/babyseek.html)
