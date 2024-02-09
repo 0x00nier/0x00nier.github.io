@@ -1,7 +1,6 @@
 ---
 layout: default
 ---
-
 ## About Me
 
 I discovered my passion for cybersecurity and ethical hacking while watching the show Mr. Robot, which sparked my curiosity to experiment with tools like Metasploit, Bettercap, BurpSuite, Nikto, and the Airo-ng suite on Kali Linux. This initial foray into hacking led to further exploration and learning, including internships at Google, Neubrain, COSGrid Networks, and Cryptus Cyber Security, as well as projects that combined machine learning and defensive security during my undergraduate studies at Bennett University.
@@ -18,10 +17,10 @@ All this ties into my desire to get better at Vulnerability Research (VR). I oft
 
 - [Pragyan CTF 2023 — The Kingpin Write-up](./blogs/pragyan/kingpin.html)
 - [Spooky License — Reversing Challenge — HackTheBox Writeup](./blogs/spookylicense/spookylicense.html)
-- Bombs Landed — Reversing Challenge — HackTheBox Writeup
+- Bombs Landed — Reversing Challenge — HackTheBox Write-up
 - BroScience (Medium)— HackTheBox Write-up
-- IrisCTF 2023 — Name that song && Name that song 2 Write-up
+- [IrisCTF 2023 — Name that song && Name that song 2 Write-up](./blogs/irisctf/namethatsong/namethatsong.html)
 - IrisCTF 2023 — ret2libm Write-up
 - [IrisCTF 2023 — babyseek Write-up](./blogs/irisctf/babyseek/babyseek.html)
-- re3 Challenge Write-Up [CCT2019]
+- [re3 Challenge Write-Up [CCT2019]](./blogs/re3/re3.html)
 - PersistenceisFutile — Forensic Challenge — HackTheBox Write-up
