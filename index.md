@@ -10,11 +10,12 @@ I have received both the Offensive Security Certified Practitioner (OSCP) and Ce
 
 Currently, I am focused on Offensive Security and strive to stay current with security research and practice Penetration Testing/Red Teaming. Additionally, I am looking to upskill myself in Web Security to increase my probability of getting footholds and in Heap/Kernel Exploitation (P.S I love pwntools).
 
-I am also interested in Digital Forensics and Incident Response, and have begun learning about Reverse Engineering and Malware Analysis using resources such as TCM Security's course and utilising FLARE's VM. I have also been using Cheat Engine for basic game pwning on HTB, dnSpy/ilSpy for .NET debugging and decompiling, JD-GUI and ApkTool for Java-related Reverse Engineering and Ghidra/Binary Ninja for general RE. 
+I am also interested in Digital Forensics and Incident Response, and have begun learning about Reverse Engineering and Malware Analysis using resources such as TCM Security's course and utilising FLARE's VM. I have also been using Cheat Engine for basic game pwning on HTB, dnSpy/ilSpy for .NET debugging and decompiling, JD-GUI and ApkTool for Java-related Reverse Engineering and Ghidra/Binary Ninja for general RE.
 
 All this ties into my desire to get better at Vulnerability Research (VR). I often create write-ups for the CTF challenges/machines I work on and welcome you to check them out.
 
 # Blogs
+
 - Pragyan CTF 2023 — The Kingpin Write-up
 - Navigating the OSCP Minefield in 2023: A Guide to Passing the Exam
 - Spooky License — Reversing Challenge — HackTheBox Writeup
@@ -22,7 +23,7 @@ All this ties into my desire to get better at Vulnerability Research (VR). I oft
 - BroScience (Medium)— HTB Write-up
 - IrisCTF 2023 — Name that song && Name that song 2 Write-up
 - IrisCTF 2023 — ret2libm Write-up
-- [IrisCTF 2023 — babyseek Write-up](blogs/babyseek.md)
+- [IrisCTF 2023 — babyseek Write-up](/blogs/babyseek.md)
 - re3 Challenge Write-Up [CCT2019]
 - PersistenceisFutile — Forensic Challenge — HackTheBox Write-up
 - Amalgamating Cybersecurity and Artificial Intelligence
