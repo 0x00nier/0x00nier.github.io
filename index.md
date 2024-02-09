@@ -1,8 +1,7 @@
 ---
 layout: default
 ---
-
-# About Me
+## About Me
 
 I discovered my passion for cybersecurity and ethical hacking while watching the show Mr. Robot, which sparked my curiosity to experiment with tools like Metasploit, Bettercap, BurpSuite, Nikto, and the Airo-ng suite on Kali Linux. This initial foray into hacking led to further exploration and learning, including internships at Google, Neubrain, COSGrid Networks, and Cryptus Cyber Security, as well as projects that combined machine learning and defensive security during my undergraduate studies at Bennett University.
 
@@ -14,20 +13,14 @@ I am also interested in Digital Forensics and Incident Response, and have begun 
 
 All this ties into my desire to get better at Vulnerability Research (VR). I often create write-ups for the CTF challenges/machines I work on and welcome you to check them out.
 
-# Blogs
+## Blogs
 
-- Pragyan CTF 2023 — The Kingpin Write-up
-- Navigating the OSCP Minefield in 2023: A Guide to Passing the Exam
+- [Pragyan CTF 2023 — The Kingpin Write-up](/blogs/pragyan/kingpin.html)
 - Spooky License — Reversing Challenge — HackTheBox Writeup
 - Bombs Landed — Reversing Challenge — HackTheBox Writeup
 - BroScience (Medium)— HTB Write-up
 - IrisCTF 2023 — Name that song && Name that song 2 Write-up
 - IrisCTF 2023 — ret2libm Write-up
-- [IrisCTF 2023 — babyseek Write-up](/blogs/babyseek.md)
+- [IrisCTF 2023 — babyseek Write-up](/blogs/irisctf/babyseek/babyseek.html)
 - re3 Challenge Write-Up [CCT2019]
 - PersistenceisFutile — Forensic Challenge — HackTheBox Write-up
-- Amalgamating Cybersecurity and Artificial Intelligence
-- Using Burpsuite to Get Credentials
-- Phishing using Kali Linux
-- Armitage — A Tutorial
-- Quantum Machine Learning for Beginners
