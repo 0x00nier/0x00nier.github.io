@@ -22,7 +22,7 @@ All this ties into my desire to get better at Vulnerability Research (VR). I oft
 - BroScience (Medium)— HTB Write-up
 - IrisCTF 2023 — Name that song && Name that song 2 Write-up
 - IrisCTF 2023 — ret2libm Write-up
-- IrisCTF 2023 — babyseek Write-up
+- [IrisCTF 2023 — babyseek Write-up](blogs/babyseek.md)
 - re3 Challenge Write-Up [CCT2019]
 - PersistenceisFutile — Forensic Challenge — HackTheBox Write-up
 - Amalgamating Cybersecurity and Artificial Intelligence
