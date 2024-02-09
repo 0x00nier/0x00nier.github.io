@@ -1,6 +1,7 @@
 ---
 layout: default
 ---
+
 ## About Me
 
 I discovered my passion for cybersecurity and ethical hacking while watching the show Mr. Robot, which sparked my curiosity to experiment with tools like Metasploit, Bettercap, BurpSuite, Nikto, and the Airo-ng suite on Kali Linux. This initial foray into hacking led to further exploration and learning, including internships at Google, Neubrain, COSGrid Networks, and Cryptus Cyber Security, as well as projects that combined machine learning and defensive security during my undergraduate studies at Bennett University.

@@ -1,6 +1,7 @@
 ---
 layout: default
 ---
+
 # IrisCTF 2023 - babyseek Write-up
 
 ## Preliminary Analysis
@@ -75,6 +76,8 @@ Based on this information, we can construct a formula that will always allow us 
 The input we provide to the program will simply be `[(win-curr)+8767] (or 0x223f)`, and this will allow us to overwrite the address of the `exit` function with the address of the `win` function.
 
 With that said, let’s move on to constructing our `pwntools` script. I will also explain how I dealt with the Proof of Work (PoW) solver within the same script.
+
+&nbsp;
 
 ## Step-by-Step Construction
 

@@ -1,6 +1,7 @@
 ---
 layout: default
 ---
+
 # Spooky License — Reversing Challenge — HackTheBox Writeup
 
 Greetings everyone. In this write-up, I’ll be tackling the “Spooky License” challenge — an easy-level (20 points) reversing challenge. I am covering this challenge to give some exposure to the capabilities of `angr`, a tool which can do concolic analysis of binaries (don't worry relevant links will be put under).
@@ -14,6 +15,8 @@ It seemed that a lot of the CTF community also uses `angr` for the same annoyanc
 ![](./img/chal.webp)
 
 There’s no description given, but from the title of the challenge, we can infer some kind of license check. We are given a single Linux binary on extracting the contents of the provided zip file. Let’s take a look at it.
+
+&nbsp;
 
 ## Analysis
 
@@ -105,6 +108,8 @@ One way of doing this would be to debug every step of comparison with specific i
 If you don’t know what `angr` does, check out the above link and all the subsequent sequels.
 
 I shall be explaining my solution line-by-line so that it makes sense.
+
+&nbsp;
 
 ## Approach
 
