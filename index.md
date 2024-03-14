@@ -1,10 +1,6 @@
 ---
 layout: default
 ---
-## Table of Contents
-
-1. [About Me](#about-me)
-2. [Blogs](#blogs)
 
 ## About Me
 
@@ -18,16 +14,16 @@ I am also interested in Digital Forensics and Incident Response, and have begun 
 
 All this ties into my desire to get better at Vulnerability Research (VR). I often create write-ups for the CTF challenges/machines I work on and welcome you to check them out.
 
-&nbsp;
+&#160;
 
 ## Blogs
 
 - [Pragyan CTF 2023 — The Kingpin Write-up](./blogs/pragyan/kingpin.html)
 - [Spooky License — Reversing Challenge — HackTheBox Writeup](./blogs/htb/spookylicense/spookylicense.html)
-- Bombs Landed — Reversing Challenge — HackTheBox Write-up]
+- Bombs Landed — Reversing Challenge — HackTheBox Write-up
 - [BroScience (Medium)— HackTheBox Write-up](./blogs/htb/broscience/broscience.html)
 - [IrisCTF 2023 — Name that song && Name that song 2 Write-up](./blogs/irisctf/namethatsong/namethatsong.html)
-- IrisCTF 2023 — ret2libm Write-up
+- [IrisCTF 2023 — ret2libm Write-up](./blogs/irisctf/ret2libm/ret2libm.html)
 - [IrisCTF 2023 — babyseek Write-up](./blogs/irisctf/babyseek/babyseek.html)
-- [re3 Challenge Write-Up [CCT2019]](./blogs/re3/re3.html)
-- PersistenceisFutile — Forensic Challenge — HackTheBox Write-up
+- [re3 Challenge Write-Up \[CCT2019\]](./blogs/re3/re3.html)
+- [PersistenceisFutile — Forensic Challenge — HackTheBox Write-up](./blogs/htb/persistenceisfutile/persistenceisfutile.html)
