@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
   {% include head-custom.html %}
-  <title>{{ site.title }}</title>
+  <title>{{ site.description }}</title>
 
   {% seo %}
 </head>
@@ -19,14 +19,14 @@
       <a id="a-title" href="{{ '/' | relative_url }}">
         <h1>{{ site.title | default: site.github.repository_name }}</h1>
       </a>
-      <h2>{{ site.description | default: site.github.project_tagline }}</h2>
 
-      <section id="downloads">
-        {% if site.show_downloads %}
-        <a href="{{ site.github.zip_url }}" class="btn">Download as .zip</a>
-        <a href="{{ site.github.tar_url }}" class="btn">Download as .tar.gz</a>
-        {% endif %}
-      </section>
+      <a id="blogs" href="../blogs.html" style="text-decoration:none">
+        <h2>./blogs</h2>
+      </a>
+
+      <a href="../aboutme.html" style="text-decoration:none">
+        <h2>./whoami</h2>
+      </a>
     </div>
   </header>
 
