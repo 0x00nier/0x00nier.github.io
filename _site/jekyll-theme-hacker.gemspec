@@ -21,4 +21,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency "html-proofer", "~> 3.0"
   s.add_development_dependency "rubocop-github", "~> 0.16"
   s.add_development_dependency "w3c_validators", "~> 1.3"
+  s.add_development_dependency "jekyll-linkpreview", "> 0.0"
+  s.add_development_dependency "metainspector", "> 0.0"
+  s.add_development_dependency "faraday-cookie_jar", "> 0.0"
+  s.add_development_dependency "http-cookie", "> 0.0"
 end

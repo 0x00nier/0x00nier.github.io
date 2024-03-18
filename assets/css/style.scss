@@ -26,7 +26,7 @@ header h2 {
   font-size: 20px;
   line-height: 1.5;
   float: right;
-  margin: 0px 40px 40px 0px;
+  margin: 10px 40px 40px 0px;
   font-weight: bold;
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
   color: #b5e853;
@@ -53,6 +53,7 @@ iframe {
 }
 a{
   font-size:20px;
+  text-decoration:none;
 }
 img {
   margin-top: 40px;
