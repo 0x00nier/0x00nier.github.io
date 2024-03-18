@@ -21,7 +21,5 @@ layout: default
 
 [re3 Challenge Write-Up \[CCT2019\]](./blogs/re3/re3.html)
 
-{% linkpreview "https://google.com" %}
-
 [PersistenceisFutile — Forensic Challenge — HackTheBox Write-up](./blogs/htb/persistenceisfutile/persistenceisfutile.html)
 

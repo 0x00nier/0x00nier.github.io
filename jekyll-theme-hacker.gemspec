@@ -25,4 +25,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency "metainspector", "> 0.0"
   s.add_development_dependency "faraday-cookie_jar", "> 0.0"
   s.add_development_dependency "http-cookie", "> 0.0"
+  s.add_development_dependency "github-pages", "> 0.0"
+  s.add_development_dependency "github-pages-health-check", "> 0.0"
+  s.add_development_dependency "dnsruby", "> 0.0"
+  s.add_development_dependency "simpleidn", "> 0.0"
+  s.add_development_dependency "unf", "> 0.0"
 end

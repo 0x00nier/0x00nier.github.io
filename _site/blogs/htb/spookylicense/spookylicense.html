@@ -28,7 +28,7 @@
 
   <!-- Begin Jekyll SEO tag v2.8.0 -->
 <title>0x00nier | Rokos Replicant</title>
-<meta name="generator" content="Jekyll v4.3.3" />
+<meta name="generator" content="Jekyll v3.9.5" />
 <meta property="og:title" content="0x00nier" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Rokos Replicant" />
@@ -53,12 +53,12 @@
         <h1>0x00nier</h1>
       </a>
 
-      <a id="blogs" href="../blogs.html" style="text-decoration:none">
-        <h2>./blogs</h2>
+      <a id="a-title" href="../../../../../../../../../blogs.html" style="text-decoration:none">
+        <h1 style="font-size: 20px;float:right;margin-top: -40px; margin-right: 5px;">blogs</h1>
       </a>
 
-      <a href="../aboutme.html" style="text-decoration:none">
-        <h2>./whoami</h2>
+      <a id="a-title" href="../../../../../../../../../aboutme.html" style="text-decoration:none">
+        <h1 style="font-size: 20px; float:right;margin-top: -40px;margin-right: 85px;">whoami</h1>
       </a>
     </div>
   </header>
@@ -175,28 +175,28 @@
 
 <h2 id="approach">Approach</h2>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="n">angr</span>
-<span class="kn">import</span> <span class="n">claripy</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">angr</span>
+<span class="kn">import</span> <span class="nn">claripy</span>
 </code></pre></div></div>
 
 <p>We import the necessary libraries. <code class="language-plaintext highlighter-rouge">angr</code> is for concolic execution (hybrid model of symbolic and concrete execution), and <code class="language-plaintext highlighter-rouge">claripy</code> is for instantiating a variable to be injected as a symbol.</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">path_to_binary</span> <span class="o">=</span> <span class="sh">"</span><span class="s">&lt;path to binary&gt;</span><span class="sh">"</span>
-<span class="n">proj</span> <span class="o">=</span> <span class="n">angr</span><span class="p">.</span><span class="nc">Project</span><span class="p">(</span><span class="n">path_to_binary</span><span class="p">,</span> <span class="n">load_options</span><span class="o">=</span><span class="p">{</span><span class="sh">'</span><span class="s">auto_load_libs</span><span class="sh">'</span><span class="p">:</span><span class="bp">False</span><span class="p">})</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">path_to_binary</span> <span class="o">=</span> <span class="s">"&lt;path to binary&gt;"</span>
+<span class="n">proj</span> <span class="o">=</span> <span class="n">angr</span><span class="p">.</span><span class="n">Project</span><span class="p">(</span><span class="n">path_to_binary</span><span class="p">,</span> <span class="n">load_options</span><span class="o">=</span><span class="p">{</span><span class="s">'auto_load_libs'</span><span class="p">:</span><span class="bp">False</span><span class="p">})</span>
 </code></pre></div></div>
 
 <p>We define the path to our binary using the <code class="language-plaintext highlighter-rouge">path_to_binary variable</code>. We create a new angr project using <code class="language-plaintext highlighter-rouge">angr.Project</code> using the path to our binary. We also disable the auto-loading of libraries to prevent any possible code-path explosions using <code class="language-plaintext highlighter-rouge">load_options={‘auto_load_libs’:False}</code></p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="n">proj</span><span class="p">.</span><span class="n">filename</span><span class="p">]</span>
 <span class="n">sym_arg_size</span> <span class="o">=</span> <span class="mi">32</span>
-<span class="n">sym_arg</span><span class="o">=</span><span class="n">claripy</span><span class="p">.</span><span class="nc">BVS</span><span class="p">(</span><span class="sh">'</span><span class="s">sym_arg</span><span class="sh">'</span><span class="p">,</span> <span class="mi">8</span><span class="o">*</span><span class="n">sym_arg_size</span><span class="p">)</span>
-<span class="n">argv</span><span class="p">.</span><span class="nf">append</span><span class="p">(</span><span class="n">sym_arg</span><span class="p">)</span>
+<span class="n">sym_arg</span><span class="o">=</span><span class="n">claripy</span><span class="p">.</span><span class="n">BVS</span><span class="p">(</span><span class="s">'sym_arg'</span><span class="p">,</span> <span class="mi">8</span><span class="o">*</span><span class="n">sym_arg_size</span><span class="p">)</span>
+<span class="n">argv</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">sym_arg</span><span class="p">)</span>
 </code></pre></div></div>
 
 <p>Since we are working with arguments, we define a list of arguments that starts with the filename of the binary itself and then we append a bitvector symbol (BVS) of size <code class="language-plaintext highlighter-rouge">8*32 bits</code> (32 because the length of 0x20 is checked as seen before).</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">entry_state</span> <span class="o">=</span> <span class="n">proj</span><span class="p">.</span><span class="n">factory</span><span class="p">.</span><span class="nf">entry_state</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span><span class="n">add_options</span><span class="o">=</span><span class="p">{</span><span class="n">angr</span><span class="p">.</span><span class="n">sim_options</span><span class="p">.</span><span class="n">ZERO_FILL_UNCONSTRAINED_REGISTERS</span><span class="p">,</span><span class="n">angr</span><span class="p">.</span><span class="n">sim_options</span><span class="p">.</span><span class="n">ZERO_FILL_UNCONSTRAINED_MEMORY</span><span class="p">})</span>
-<span class="n">sim</span> <span class="o">=</span> <span class="n">proj</span><span class="p">.</span><span class="n">factory</span><span class="p">.</span><span class="nf">simulation_manager</span><span class="p">(</span><span class="n">entry_state</span><span class="p">)</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">entry_state</span> <span class="o">=</span> <span class="n">proj</span><span class="p">.</span><span class="n">factory</span><span class="p">.</span><span class="n">entry_state</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span><span class="n">add_options</span><span class="o">=</span><span class="p">{</span><span class="n">angr</span><span class="p">.</span><span class="n">sim_options</span><span class="p">.</span><span class="n">ZERO_FILL_UNCONSTRAINED_REGISTERS</span><span class="p">,</span><span class="n">angr</span><span class="p">.</span><span class="n">sim_options</span><span class="p">.</span><span class="n">ZERO_FILL_UNCONSTRAINED_MEMORY</span><span class="p">})</span>
+<span class="n">sim</span> <span class="o">=</span> <span class="n">proj</span><span class="p">.</span><span class="n">factory</span><span class="p">.</span><span class="n">simulation_manager</span><span class="p">(</span><span class="n">entry_state</span><span class="p">)</span>
 </code></pre></div></div>
 
 <p>Here we define <code class="language-plaintext highlighter-rouge">entry_state</code> for the <code class="language-plaintext highlighter-rouge">angr</code> project with the arguments we made earlier. We also add options to zero-fill any unconstrained registers or memory <code class="language-plaintext highlighter-rouge">angr</code> finds. We do this in order to handle unknown regions without unwanted behaviour.</p>
@@ -211,13 +211,13 @@
 
 <p>Meanwhile, the <code class="language-plaintext highlighter-rouge">avoid_point</code> is the address at which the <code class="language-plaintext highlighter-rouge">puts</code> function on <code class="language-plaintext highlighter-rouge">License Invalid</code> is called.</p>
 
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sim</span><span class="p">.</span><span class="nf">explore</span><span class="p">(</span><span class="n">find</span><span class="o">=</span><span class="n">exit_point</span><span class="p">,</span> <span class="n">avoid</span><span class="o">=</span><span class="n">avoid_point</span><span class="p">)</span>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">sim</span><span class="p">.</span><span class="n">explore</span><span class="p">(</span><span class="n">find</span><span class="o">=</span><span class="n">exit_point</span><span class="p">,</span> <span class="n">avoid</span><span class="o">=</span><span class="n">avoid_point</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">sim</span><span class="p">.</span><span class="n">found</span><span class="p">:</span>
-    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">gottem</span><span class="sh">"</span><span class="p">)</span>
-    <span class="n">solution</span> <span class="o">=</span> <span class="n">sim</span><span class="p">.</span><span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">solver</span><span class="p">.</span><span class="nf">eval</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cast_to</span><span class="o">=</span><span class="nb">bytes</span><span class="p">)</span>
-    <span class="nf">print</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"gottem"</span><span class="p">)</span>
+    <span class="n">solution</span> <span class="o">=</span> <span class="n">sim</span><span class="p">.</span><span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">solver</span><span class="p">.</span><span class="nb">eval</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">cast_to</span><span class="o">=</span><span class="nb">bytes</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="nf">print</span><span class="p">(</span><span class="sh">"</span><span class="s">failed</span><span class="sh">"</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">"failed"</span><span class="p">)</span>
 </code></pre></div></div>
 
 <p>Finally on the defined <code class="language-plaintext highlighter-rouge">entry_state</code> in <code class="language-plaintext highlighter-rouge">sim</code>, we run the <code class="language-plaintext highlighter-rouge">explore</code> function to start brute-forcing the BVS that leads us to a specific code path that prints out <code class="language-plaintext highlighter-rouge">License Correct</code>.</p>
