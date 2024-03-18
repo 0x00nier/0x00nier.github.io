@@ -2,7 +2,7 @@
 layout: default
 ---
 
-# Blogs
+# Write-ups
 
 
 [Pragyan CTF 2023 — The Kingpin Write-up](./blogs/pragyan/kingpin.html)
