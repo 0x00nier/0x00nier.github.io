@@ -1,3 +1,4 @@
+```
          user deposits DAI
 receives Fractionalized Vault shares              vault deposits DAI,
        .─────.                                      receives yvDAI
@@ -21,3 +22,4 @@ receives Fractionalized Vault shares              vault deposits DAI,
        │     │                                                                     V
        │     │
        ▼     ▼
+```
