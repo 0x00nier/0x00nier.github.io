@@ -22,6 +22,10 @@ var c = setTimeout(function() {
   var unmuted = document.getElementById('unmute');
   unmuted.innerHTML="<pre>"+"I see myself as the engineer above in 5 years.\n Till the end of time."+"</pre>"
 }, 13000);
+var d = setTimeout(function() {
+  var unmuted = document.getElementById('unmute');
+  unmuted.innerHTML="";
+}, 20000);
 </script>
 
 
