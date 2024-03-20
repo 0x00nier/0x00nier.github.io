@@ -6,15 +6,18 @@ layout: default
   <source src="./assets/images/53N1oR_3Ng1N33R.mp4" type="video/mp4">
 </video>
 
-<script>
-const delay = (delayInms) => {
-  return new Promise(resolve => setTimeout(resolve, delayInms));
-};
+<h1 id="unmute" align="center" style="font-size:18px;margin-top:20px"> Sorry it doesn't automatically unmute :'(</h1>
 
-var video = document.getElementById('vid');
-setTimeout(function(){
-        console.log("hi");
-   },1000);
+<script>
+var a = setTimeout(function() {
+  var unmuted = document.getElementById('unmute');
+  unmuted.innerHTML="Welcome to my page :)";
+}, 3000);
+
+var b = setTimeout(function() {
+  var unmuted = document.getElementById('unmute');
+  unmuted.innerHTML="I see myself as the engineer above in 5 years.";
+}, 7000);
 </script>
 
 
