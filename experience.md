@@ -4,10 +4,22 @@ layout: default
 
 
 
+# Certifications
+
+<img src="https://api.accredible.com/v1/frontend/credential_website_embed_image/badge/64442278" style="max-height:10%;max-width:10%;margin:0;float:left" />
+<img src="https://api.accredible.com/v1/frontend/credential_website_embed_image/badge/81524262" style="max-height:12%;max-width:12%;margin:0;float:left" />
+<img src="./imgs/ceh.png" style="max-height:10%;max-width:10%;margin:0;float:left;margin-right:15px" />
+<img src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*Rpuuol3RK6Tdyv4DN10UWw.png" style="max-height:10%;max-width:10%;margin:0;float:left;margin-right:15px;background-color:white" />
+<img src="https://secops.group/wp-content/uploads/2023/02/Certified-Network-Security-Practitioner-whbg.png" style="max-height:10%;max-width:10%;margin:0;float:left;margin-right:9px;background-color:white" />
+
+<img src="https://images.credly.com/size/340x340/images/00634f82-b07f-4bbd-a6bb-53de397fc3a6/image.png" style="max-height:10%;max-width:10%;margin:0" />
+
+
+&#160;
+
 # Experience
 
-<img src="./imgs/Google_2015_logo.svg.webp" style="background-color:white;;max-height:50%;max-width:80%;margin:0;"/>
-
+<img src="./imgs/Google_2015_logo.svg.webp" style="background-color:white;max-height:50%;max-width:50%;margin:0;"/>
 
 ###  Security Engineering Intern |  May 2023 - Aug 2023
 
@@ -19,7 +31,7 @@ layout: default
 
 &#160;
 
-<img src="./imgs/juppiter.png" style="; max-width: 100%;height:auto; margin:0;"/>
+<img src="./imgs/juppiter.png" style="; max-width: 50%;max-height:50%; margin:0;"/>
 
 ### ML Engineer Intern | Nov 2021 – May 2022
 - Successfully implemented a data pipeline and API interface for the Taxonomy Recommendation and Classification Engine, utilizing APA's Azure SQL database.
@@ -29,16 +41,16 @@ layout: default
 
 &#160;
 
-<img src="./imgs/cisco.jpg" style="; max-width: 100%;height:auto; margin:0;"/>
+<img src="./imgs/cisco.jpg" style="; max-width: 50%;max-height:50%; margin:0;"/>
 
 ### Cyber Security Virtual Intern | Apr 2021 - Jul 2021
 
-- Completed three NetAcad courses (Introduction to Cyber Security, Cybersecurity Essentials and Introduction to Packet Tracer) and achieved 100% in the final assessment.
+- Completed three NetAcad courses (Introduction to Cyber Security, Cybersecurity Essentials and Introduction to Packet Tracer) and achieved 50% in the final assessment.
 - Implemented a network simulation of Bennett University on Packet Tracer divided into several departments with DHCP, NAT, ARP, HTTP, FTP, SMTP and other protocols employed.
 
 &#160;
 
-<img src="./imgs/neubrain.png" style="background-color:white;; max-width: 100%;height:auto; margin:0;"/>
+<img src="./imgs/neubrain.png" style="background-color:white;; max-width: 50%;max-height:50%; margin:0;"/>
 
 ### Data Security Intern | Apr 2021 - Jul 2021
 
@@ -49,7 +61,7 @@ layout: default
 
 &#160;
 
-<img src="./imgs/cosgrid.jpg" style="background-color:white;; max-width: 100%;height:auto; margin:0;"/>
+<img src="./imgs/cosgrid.jpg" style="background-color:white;; max-width: 50%;max-height:50%; margin:0;"/>
 
 ### Cybersecurity Research Intern | Jan 2021 - Aug 2021
 
@@ -58,7 +70,7 @@ layout: default
 
 &#160;
 
-<img src="./imgs/cryptus.png" style="background-color:white;; max-width: 100%;height:auto; margin:0;"/>
+<img src="./imgs/cryptus.png" style="background-color:white;; max-width: 50%;max-height:50%; margin:0;"/>
 
 ### Ethical Hacking Student Intern | May 2020 - Oct 2020
 

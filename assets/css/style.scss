@@ -34,6 +34,11 @@ img {
 // body header a[href*="blogs.html"] h1 {
 // }
 
+.container {
+  width:100%;
+  max-width: 60%;
+}
+
 header {
   background: rgba(0, 0, 0, 0.1);
   width: 100%;

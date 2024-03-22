@@ -275,6 +275,10 @@ img {
   margin-right: auto;
   width: 70%; }
 
+.container {
+  width: 100%;
+  max-width: 60%; }
+
 header {
   background: rgba(0, 0, 0, 0.1);
   width: 100%;
