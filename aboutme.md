@@ -17,7 +17,7 @@ $('body > div > section').terminal({
         this.echo("[[!g;#35fc03;<BACKGROUND>]Type more to get more information. You can tabcomplete as usual.");
     },
     more: function(what) {
-        this.echo("[[!g;#35fc03;<BACKGROUND>]I am a Cybersecurity Student @ UMD focused on skilling up in Offensive Security as a discipline, Binary Exploitation and Offensive Security as a discipline, Binary Exploitation and Reverse Engineering as a technique, and finally, breaking things to understand them as a mindset.");
+        this.echo("[[!g;#35fc03;<BACKGROUND>]I am a Cybersecurity Student @ UMD focused on skilling up in Offensive Security as a discipline, Binary Exploitation and OffensiveSecurity as a discipline, Binary Exploitation and Reverse Engineering as a technique, and finally, breaking things to understand them as a mindset.");
         this.echo("[[!g;#35fc03;<BACKGROUND>]Type whatelse to get more information.");
     },
     whatelse: function(what) {
