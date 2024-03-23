@@ -26,6 +26,21 @@ var d = setTimeout(function() {
   var unmuted = document.getElementById('unmute');
   unmuted.innerHTML="";
 }, 20000);
+var e = setTimeout(function() {
+  var link = document.createElement("a");
+  link.setAttribute("id", "a-title");
+  link.setAttribute("href", "../../../../../../../../dealloc.html");
+  link.setAttribute("style", "text-decoration:none");
+
+  var dealloc = document.createElement("h1");
+  dealloc.textContent = "d34lL0c4710N/";
+  dealloc.setAttribute("style", "font-size: 100px;");
+  dealloc.setAttribute("align", "center");
+
+  link.appendChild(dealloc);
+  document.body.appendChild(link);
+
+}, 1000);
 </script>
 
 
