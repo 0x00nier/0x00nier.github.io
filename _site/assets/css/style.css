@@ -275,6 +275,12 @@ img {
   margin-right: auto;
   width: 70%; }
 
+body header a[href*="aboutme.html"] h1,
+body header a[href*="experience.html"] h1,
+body header a[href*="blogs.html"] h1 {
+  font-weight: normal;
+  letter-spacing: 0px; }
+
 .container {
   width: 100%;
   max-width: 70%; }

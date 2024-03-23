@@ -3,6 +3,40 @@ layout: default
 ---
 
 
+# CTFs
+## Fetch the Flag CTF 2023 
+- Earned a rank of 39 out of 1287 teams as a member of Space.Cows.
+
+## National Cyber League Fall 2023
+- Earned a rank of 106 out of 580 participants in the Individual Game within the Experienced Students Bracket.
+- Earned a rank of 63 out of 457 teams in the Team Game within the Experienced Student Division.
+
+## CSAW 2023 
+- Our team “UMDCSEC” earned a rank of 1 in the qualifiers.
+
+## HackTheBox's Cyber Apocalypse CTF 2023 
+- Earned a rank of 502 solving 27 challenges across categories such as Pwn, Forensics, Misc, Rev, Hardware, Crypto, and ML as the Team Captain of 0d4yR007 (2 members).
+
+## LA CTF 2023 
+- Earned a rank of 186 out of 980 solving 9 challenges in the categories of Reversing, Miscellaneous, and Web. 
+
+## IrisCTF 2023 
+- Earned a rank of 39 as a sole competitor solving 8 challenges in the categories of Reverse Engineering, Binary Exploitation, Networks and Miscellaneous.
+
+## DownUnderCTF 2022 
+- Achieved 544h place as a sole competitor (nier0x00) in the team “UMDCSEC-B”.
+
+## Pragyan CTF 2023 
+- Earned a rank of 69 out of 400 participants solving one reversing and one forensics challenge.
+
+## National Cyber League Fall 2022 
+- Earned a rank of 397 out of 6675 participants in the Individual Game.
+
+## Flare-On CTF 2022
+- Earned a rank of 2475 in the competition.
+
+&#160;
+
 # Certifications
 
 <img src="https://api.accredible.com/v1/frontend/credential_website_embed_image/badge/64442278" style="max-height:10%;max-width:10%;margin:0;float:left" />
@@ -32,7 +66,7 @@ layout: default
 
 <img src="./imgs/juppiter.png" style="; max-width: 50%;max-height:50%; margin:0;"/>
 
-### ML Engineer Intern | Nov 2021 – May 2022
+### ML Engineer Intern | Nov 2021 - May 2022
 - Successfully implemented a data pipeline and API interface for the Taxonomy Recommendation and Classification Engine, utilizing APA's Azure SQL database.
 - Developed a Ticket Priority Scheduler that utilizes a blend of classification and regression algorithms to accurately prioritize tickets with a fresh data accuracy rate of 94%.
 - Conducted a comprehensive analysis of MMYT and EMT stocks, incorporating historical data from Yahoo Finance and existing quarterly financial statements to predict future stock values.
