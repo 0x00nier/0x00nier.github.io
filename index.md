@@ -18,14 +18,10 @@ var b = setTimeout(function() {
   var unmuted = document.getElementById('unmute');
   unmuted.innerHTML="I see myself as the engineer above in 5 years.";
 }, 8000);
-var c = setTimeout(function() {
-  var unmuted = document.getElementById('unmute');
-  unmuted.innerHTML="<pre>"+"I see myself as the engineer above in 5 years.\n Till the end of time."+"</pre>"
-}, 13000);
 var d = setTimeout(function() {
   var unmuted = document.getElementById('unmute');
   unmuted.innerHTML="";
-}, 20000);
+}, 140000);
 var e = setTimeout(function() {
   var link = document.createElement("a");
   link.setAttribute("id", "a-title");
@@ -33,14 +29,14 @@ var e = setTimeout(function() {
   link.setAttribute("style", "text-decoration:none");
 
   var dealloc = document.createElement("h1");
-  dealloc.textContent = "d34lL0c4710N/";
-  dealloc.setAttribute("style", "font-size: 100px;");
+  dealloc.textContent = "d34lL0c4710N";
+  dealloc.setAttribute("style", "font-size: 70px;");
   dealloc.setAttribute("align", "center");
 
   link.appendChild(dealloc);
   document.body.appendChild(link);
 
-}, 1000);
+}, 14000);
 </script>
 
 
