@@ -39,4 +39,3 @@ var e = setTimeout(function() {
 }, 14000);
 </script>
 
-
