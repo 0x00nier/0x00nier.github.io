@@ -4,7 +4,6 @@ image:
   path: './favicon.ico'
 show_downloads: false
 theme: jekyll-theme-hacker
-google-analytics: 'G-4BJGEL04W9'
 plugins:
   - github-pages
   - jekyll-seo-tag
