@@ -3,6 +3,13 @@ layout: default
 ---
 
 
+<style>
+h2{
+  border-bottom: 1px dashed #b5e853;
+  height: 40px;
+}
+</style>
+
 # CTFs
 ## Fetch the Flag CTF 2023 
 - Earned a rank of 39 out of 1287 teams as a member of Space.Cows.

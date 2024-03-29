@@ -2,6 +2,15 @@
 layout: default
 ---
 
+
+
+<style>
+h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019{
+  border-bottom: 1px dashed #b5e853;
+  height: 40px;
+}
+</style>
+
 ## Pragyan CTF 2023
 
 
