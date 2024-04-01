@@ -9,7 +9,7 @@ Hello everyone, welcome to this write-up where we will delve into the details of
 
 As we can see from the logo, this machine will be a Linux-based Box. With that said, let’s begin with recon.
 
-_Note — Code snippets shall be limited to necessary parts and not be fully copied_
+> Note — Code snippets shall be limited to necessary parts and not be fully copied
 
 ## Reconnaissance
 

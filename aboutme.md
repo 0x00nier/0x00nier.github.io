@@ -38,4 +38,3 @@ $('body > div > section').terminal({
     greetings: 'Linux 0x00nier 6.6.9-amd64 #1 SMP PREEMPT_DYNAMIC Rokosreplicant 6.6.9-1nier1 (2024-01-08) x86_64 GNU/Linux \nType whoami'
 });
 </script>
-
