@@ -6,7 +6,7 @@ layout: default
   <source src="./assets/images/53N1oR_3Ng1N33R.mp4" type="video/mp4">
 </video>
 
-<h1 id="unmute" align="center" style="font-size:18px;margin-top:20px"> Sorry it doesn't automatically unmute :'(</h1>
+<h1 id="unmute" align="center" style="font-size:18px;margin-top:20px"> Sorry it doesn't automatically unmute.</h1>
 
 <script>
 var a = setTimeout(function() {
