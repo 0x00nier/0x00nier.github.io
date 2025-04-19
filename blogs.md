@@ -5,7 +5,7 @@ layout: default
 
 
 <style>
-h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019{
+h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019, h2#navigating-the-oscp-minefield{
   border-bottom: 1px dashed #b5e853;
   height: 40px;
 }
@@ -62,6 +62,6 @@ h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019{
 
 &#160;
 
-## Navigating the OSCP Minefield (Updated til 2023)
+## Navigating the OSCP Minefield 
 [My Medium](https://nier0x00.medium.com/navigating-the-oscp-minefield-in-2023-a-guide-to-passing-the-exam-b4cce117c704)
 
