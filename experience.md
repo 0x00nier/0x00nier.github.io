@@ -54,7 +54,7 @@ h2{
 
 &#160;
 
-# Certifications
+# Certifications (some are expired but who cares)
 
 <img src="https://api.accredible.com/v1/frontend/credential_website_embed_image/badge/64442278" style="max-height:10%;max-width:10%;margin:0;float:left" />
 <img src="https://api.accredible.com/v1/frontend/credential_website_embed_image/badge/81524262" style="max-height:12%;max-width:12%;margin:0;float:left" />
