@@ -23,11 +23,11 @@ h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019{
 
 
 
-[Spooky License — Reversing Challenge](./blogs/htb/spookylicense/spookylicense.html)
+[Spooky License — Reversing Challenge](./blogs/htb/spookylicense/spookylicense.html)
 
 
 
-[Bombs Landed — Reversing Challenge](./blogs/htb/bombslanded/bombslanded.html)
+[Bombs Landed — Reversing Challenge](./blogs/htb/bombslanded/bombslanded.html)
 
 
 
@@ -35,7 +35,7 @@ h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019{
 
 
 
-[PersistenceisFutile — Forensic Challenge ](./blogs/htb/persistenceisfutile/persistenceisfutile.html)
+[PersistenceisFutile — Forensic Challenge ](./blogs/htb/persistenceisfutile/persistenceisfutile.html)
 
 &#160;
 
@@ -59,4 +59,9 @@ h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019{
 
 [re3 Challenge](./blogs/re3/re3.html)
 
+
+&#160;
+
+## Navigating the OSCP Minefield (Updated til 2023)
+[My Medium](https://nier0x00.medium.com/navigating-the-oscp-minefield-in-2023-a-guide-to-passing-the-exam-b4cce117c704)
 
