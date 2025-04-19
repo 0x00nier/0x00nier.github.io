@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang=" en-US">
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=0.5"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5">
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+  <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+<html>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4BJGEL04W9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4BJGEL04W9');
+</script>
+
+</html>
+
+
+<!-- You can set your favicon here -->
+
+<!-- end custom head snippets -->
+
+  <title>Rokos Replicant</title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>0x00nier | Rokos Replicant</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="0x00nier" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Rokos Replicant" />
+<meta property="og:description" content="Rokos Replicant" />
+<link rel="canonical" href="http://localhost:4000/blogs/re3/re3.html" />
+<meta property="og:url" content="http://localhost:4000/blogs/re3/re3.html" />
+<meta property="og:site_name" content="0x00nier" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="0x00nier" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Rokos Replicant","headline":"0x00nier","url":"http://localhost:4000/blogs/re3/re3.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+
+<body>
+
+  <header>
+    <div class="container">
+      <a id="a-title" href="/">
+        <h1>0x00nier</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../blogs.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 5px;">writeups/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../experience.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 120px;">XP/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../aboutme.html" style="text-decoration:none">
+        <h1 style="font-size: 18px; float:right;margin-top: -40px;margin-right: 175px;">whoami/</h1>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <section id="main_content">
+      <h1 id="re3-challenge-write-up-cct2019">re3 Challenge Write-Up [CCT2019]</h1>
+
+<p>Greetings Everyone. This is a write-up on a Reversing Challenge called re3 which was made in the US Navy Cyber Competition 2019 sponsored by US TENTH Fleet. Below is the challenge prompt -</p>
+
+<p><img src="./img/chal.webp" alt="" /></p>
+
+<p>As we can see, the answer to be given here is a 32-character hex blob and not a typical flag with <code class="language-plaintext highlighter-rouge">CCT{*}</code> in it. With that said, let’s take a look at the files attached.</p>
+
+<p><img src="./img/file.webp" alt="" /></p>
+
+<p>We get the above executable in our Task Files. Let’s try to run it.</p>
+
+<p><img src="./img/exec.webp" alt="" /></p>
+
+<p>So it seems that we get four sliders where the minimum value is 0 and the maximum value is 1024 (according to the GUI). If we enter the wrong combination of values, we get a Message Box as seen above.</p>
+
+<p>Let’s run <code class="language-plaintext highlighter-rouge">file</code> on this to see what kind of PE executable it is.</p>
+
+<p><img src="./img/file_run.webp" alt="" /></p>
+
+<p>So, it seems that this executable is a .NET application. For that reason, I will be using one of my favourite .NET Debugger/Assembly Editors called <code class="language-plaintext highlighter-rouge">dnSpy</code>. Let’s load this up directly in the 32-bit version of it.</p>
+
+<p><img src="./img/dnspy.webp" alt="" /></p>
+
+<p>After opening the executable in <code class="language-plaintext highlighter-rouge">dnSpy</code>, let’s focus on the Module named <code class="language-plaintext highlighter-rouge">a</code>. This seems to contain all the relevant classes and methods within. We can ignore most of this and focus on this particular method.</p>
+
+<p><img src="./img/eventhandler.webp" alt="" /></p>
+
+<p>So, what’s going on here? So the sliders we saw earlier are set in <code class="language-plaintext highlighter-rouge">this.bar1</code>, <code class="language-plaintext highlighter-rouge">this.bar2</code>, <code class="language-plaintext highlighter-rouge">this.bar3</code>, and <code class="language-plaintext highlighter-rouge">this.bar4</code>. These values are stored in <code class="language-plaintext highlighter-rouge">value</code>, <code class="language-plaintext highlighter-rouge">value2</code>, <code class="language-plaintext highlighter-rouge">value3</code>, <code class="language-plaintext highlighter-rouge">value4</code> respectively. An if condition is then run and an appropriate Message box is shown. If we are successful, the output of <code class="language-plaintext highlighter-rouge">goodBoy</code> would be printed. If not, <code class="language-plaintext highlighter-rouge">badBoy</code>’s output is printed (which is the error message we saw earlier).</p>
+
+<p>Now taking a look at the condition, we are checking if the sum of the 4 values is 711 and their product is 711000000. Furthermore, we are also checking if the values entered respectively are in descending orderor not.</p>
+
+<p>So my first approach to this was to get the factors of 711000000. I used CalculatorSoup’s Prime Factorization Calculator and got the following result.</p>
+
+<p><img src="./img/calcsoup.webp" alt="" /></p>
+
+<p>Now, we know that the sum cannot be more than 711. Thus, we only take the factors that are below 711 into consideration. Finally, we construct the following Python program to solve our problem.</p>
+
+<p><img src="./img/solve.webp" alt="" /></p>
+
+<p>We use the same variable names used in the decompiler’s output. Here we create a list of factors of 711000000 which are below 711. Then we run through all the possible combinations of the list in the list and see for which values the condition holds true. Therefore, we get the following output.</p>
+
+<p><img src="./img/runsolve.webp" alt="" /></p>
+
+<p>And thus, we set our sliders to these values in descending order and get our key.</p>
+
+<p><img src="./img/flag.webp" alt="" /></p>
+
+<p>I hope this write-up was easy to understand. Thank you for reading.</p>
+
+    </section>
+  </div>
+</body>
+
+</html>

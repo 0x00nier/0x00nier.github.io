@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang=" en-US">
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=0.5"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5">
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+  <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+<html>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4BJGEL04W9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4BJGEL04W9');
+</script>
+
+</html>
+
+
+<!-- You can set your favicon here -->
+
+<!-- end custom head snippets -->
+
+  <title>Rokos Replicant</title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>0x00nier | Rokos Replicant</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="0x00nier" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Rokos Replicant" />
+<meta property="og:description" content="Rokos Replicant" />
+<link rel="canonical" href="http://localhost:4000/blogs/irisctf/babyseek/babyseek.html" />
+<meta property="og:url" content="http://localhost:4000/blogs/irisctf/babyseek/babyseek.html" />
+<meta property="og:site_name" content="0x00nier" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="0x00nier" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Rokos Replicant","headline":"0x00nier","url":"http://localhost:4000/blogs/irisctf/babyseek/babyseek.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+
+<body>
+
+  <header>
+    <div class="container">
+      <a id="a-title" href="/">
+        <h1>0x00nier</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../blogs.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 5px;">writeups/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../experience.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 120px;">XP/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../aboutme.html" style="text-decoration:none">
+        <h1 style="font-size: 18px; float:right;margin-top: -40px;margin-right: 175px;">whoami/</h1>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <section id="main_content">
+      <h1 id="irisctf-2023---babyseek-write-up">IrisCTF 2023 - babyseek Write-up</h1>
+
+<h2 id="preliminary-analysis">Preliminary Analysis</h2>
+
+<p>Greetings everyone. I recently had the opportunity to participate in IrisCTF 2023 and was able to complete a total of 7 challenges. One of these challenges was called “babyseek,” and the prompt for it read as follows:
+<br /></p>
+
+<p><img src="img/1_7b8Fcp2SyCGPuEWzFxOLMw.webp" alt="" /></p>
+
+<p>According to the prompt for the “babyseek” challenge, we are able to “seek around” a specific file. However, when we try to access this file, it allegedly leads to nowhere since we are at /dev/null. To complete the challenge, we were provided with both a remote endpoint and a zip file to work with. Upon unzipping the zip file, we discovered the following:</p>
+
+<p><img src="img/1_qNKIFyK0saAuQd2Sjd5gPA.webp" alt="" /></p>
+
+<p>The “babyseek” challenge provided us with a binary file called “chal” as well as its accompanying source code. A Dockerfile was also included, which allowed us to test any exploits we developed. While working on this challenge, I found that I didn’t actually need to use the Dockerfile. However, it did come in handy later on when I was working on the “ret2libm” challenge, which I plan to write about in a separate post.</p>
+
+<p>Now, let’s take a closer look at the source code itself.</p>
+
+<p><img src="img/source_code.webp" alt="" /></p>
+
+<p>According to the source code, this program first prints out the memory address of the <code class="language-plaintext highlighter-rouge">win</code> function. It then prompts the user for an integer input, which is used as a positional offset from the start of the <code class="language-plaintext highlighter-rouge">/dev/null</code> file. The program also prints out the current position of the null character. After that, it uses the <code class="language-plaintext highlighter-rouge">fwrite</code> function to write the value of the <code class="language-plaintext highlighter-rouge">super_special</code> pointer (which points to the address of the <code class="language-plaintext highlighter-rouge">win</code> function) to the <code class="language-plaintext highlighter-rouge">/dev/null</code> stream at the specified position.</p>
+
+<p><img src="img/running.webp" alt="" /></p>
+
+<p>We run the binary and the output is as expected.</p>
+
+<p><img src="img/checksec.webp" alt="" /></p>
+
+<p>On running checksec on the binary, we see that NX and PIE is enabled. There’s no RELRO either, so that means we can overwrite GOT entries very easily.</p>
+
+<h2 id="my-approach">My Approach</h2>
+
+<p>To exploit this, I decided to input an offset that would overwrite the call to the exit function in the main function with the address of the <code class="language-plaintext highlighter-rouge">win</code> function. This would cause the program to execute the win function and print the contents of the <code class="language-plaintext highlighter-rouge">/flag</code> file when it finishes running, instead of exiting as intended.</p>
+
+<p>To do this, we were given the addresses of both the <code class="language-plaintext highlighter-rouge">win</code> and <code class="language-plaintext highlighter-rouge">null</code> functions at their respective starting file offsets. Our goal was to use these addresses to somehow reach the address of the <code class="language-plaintext highlighter-rouge">exit</code> function.</p>
+
+<p>To assist with this process, I used the <code class="language-plaintext highlighter-rouge">pwntools</code> library to attach <code class="language-plaintext highlighter-rouge">gdb-pwndbg</code> to a process running the <code class="language-plaintext highlighter-rouge">chal</code> binary. I will explain in more detail how I did this after I describe the steps I took to locate the address of the <code class="language-plaintext highlighter-rouge">exit</code> function.</p>
+
+<p><img src="img/split.webp" alt="" /></p>
+
+<p>As demonstrated in the attached screenshot, by using the flag <code class="language-plaintext highlighter-rouge">GDB</code>, it is possible to launch a debugging session with <code class="language-plaintext highlighter-rouge">pwndbg</code> that breaks at the <code class="language-plaintext highlighter-rouge">scanf</code> function (I will provide instructions on how to do this later).</p>
+
+<p>For now, let’s turn our attention to the new terminal window that has been opened with <code class="language-plaintext highlighter-rouge">GDB</code>.</p>
+
+<p><img src="img/gdb.webp" alt="" /></p>
+
+<p>If you take a close look at the value stored in the <code class="language-plaintext highlighter-rouge">RDX</code> register (I stepped 3 instructions after the <code class="language-plaintext highlighter-rouge">scanf</code> function), you will notice that it represents our current position in the file stream of the <code class="language-plaintext highlighter-rouge">null</code> function. It’s important to keep this in mind as we continue.</p>
+
+<p><img src="img/got.webp" alt="" /></p>
+
+<p>By running the <code class="language-plaintext highlighter-rouge">got</code> command in <code class="language-plaintext highlighter-rouge">pwndbg</code>, it is possible to view all of the <code class="language-plaintext highlighter-rouge">libc</code> functions along with their corresponding addresses. The addresses that are colored white are of particular interest to us, as they are located in the <code class="language-plaintext highlighter-rouge">got.plt</code> section of the binary.</p>
+
+<p>One way I attempted to reach the address of the exit function was to simply subtract its address from the value stored in the <code class="language-plaintext highlighter-rouge">RDX</code> register (which holds the address of the current file pointer). This would give me the offset to subtract from the current file pointer in order to reach the desired address. In other words:</p>
+
+<p><code class="language-plaintext highlighter-rouge">curr + (curr-exit())</code></p>
+
+<p>I initially tried hardcoding this offset, but it turns out that it changes with every run of the program.</p>
+
+<p><img src="img/calc.webp" alt="" /></p>
+
+<p>As you can see, the distance between the current file pointer and the win function also changes with every runtime of the program.</p>
+
+<p>However, this occurrence gave me an idea. If we subtract the address of the current file pointer from the address of the <code class="language-plaintext highlighter-rouge">win</code> function, we can calculate an offset that leads us from the <code class="language-plaintext highlighter-rouge">null</code> function to the <code class="language-plaintext highlighter-rouge">win</code> function.</p>
+
+<p><img src="img/calc2.webp" alt="" /></p>
+
+<p>As demonstrated above, by calculating the offset that leads us to the <code class="language-plaintext highlighter-rouge">win</code> function, we are able to reach it consistently in both runs of the program. And when we subtract the address of the <code class="language-plaintext highlighter-rouge">win</code> function from the address of the <code class="language-plaintext highlighter-rouge">exit</code> function in the <code class="language-plaintext highlighter-rouge">GOT</code> section, the resulting offset remains unchanged (8767 in this case).</p>
+
+<p>Based on this information, we can construct a formula that will always allow us to reach the <code class="language-plaintext highlighter-rouge">exit</code> function. It is as follows:</p>
+
+<p><code class="language-plaintext highlighter-rouge">exit = curr + [(win-curr)+8767] (or 0x223f)</code></p>
+
+<p>The input we provide to the program will simply be <code class="language-plaintext highlighter-rouge">[(win-curr)+8767] (or 0x223f)</code>, and this will allow us to overwrite the address of the <code class="language-plaintext highlighter-rouge">exit</code> function with the address of the <code class="language-plaintext highlighter-rouge">win</code> function.</p>
+
+<p>With that said, let’s move on to constructing our <code class="language-plaintext highlighter-rouge">pwntools</code> script. I will also explain how I dealt with the Proof of Work (PoW) solver within the same script.</p>
+
+<p> </p>
+
+<h2 id="step-by-step-construction">Step-by-Step Construction</h2>
+
+<p><em>This script is able to run the “chal” binary locally, with GDB enabled, and it is also able to execute the exploit remotely. However, the PoW solver isn’t required when running the program locally, so I had to create a separate Python file that excludes that code in order to test the exploit more efficiently.</em></p>
+
+<p><img src="img/pwntools_beg.webp" alt="" /></p>
+
+<p>In this section of the script, we import several basic libraries. The most important of these is <code class="language-plaintext highlighter-rouge">pwn</code>. If you are using a different terminal emulator (such as <code class="language-plaintext highlighter-rouge">alacrity</code> or <code class="language-plaintext highlighter-rouge">terminator</code>), you may also need to include the <code class="language-plaintext highlighter-rouge">pwn.context.terminal</code> line to ensure compatibility. Since <code class="language-plaintext highlighter-rouge">terminator</code> runs using Python 3, I had to hardcode this value. For more information, you can refer to the pwn library documentation.</p>
+
+<p>We also define the <code class="language-plaintext highlighter-rouge">start</code> function, which is capable of taking various arguments such as <code class="language-plaintext highlighter-rouge">GDB</code> and <code class="language-plaintext highlighter-rouge">REMOTE</code>. When called without any arguments, the <code class="language-plaintext highlighter-rouge">start</code> function launches a local process. In this function, the <code class="language-plaintext highlighter-rouge">gdbscript</code> variable needs to be formatted in a specific way, as we will see below.</p>
+
+<p><img src="img/gdbscript.webp" alt="" /></p>
+
+<p>As you can see in the code snippet above, the <code class="language-plaintext highlighter-rouge">gdbscript</code> variable should be defined in this specific format in order to use the desired script. In this case, the <code class="language-plaintext highlighter-rouge">init-pwndbg</code> command enables the use of the <code class="language-plaintext highlighter-rouge">pwndbg</code> debugger instead of the default <code class="language-plaintext highlighter-rouge">gdb</code> debugger. This command was made possible through an installation of the necessary tools from <a href="https://github.com/apogiatzis/gdb-peda-pwndbg-gef">this GitHub repository</a>.</p>
+
+<p><img src="img/context.webp" alt="" /></p>
+
+<p>In this section of the script, we set the log level to debug, which is the highest possible level. This provides us with a significant amount of output on the terminal that can be helpful in identifying and troubleshooting issues with I/O. If you prefer to turn off this level of logging, you can use the “critical” log level instead.</p>
+
+<p>The next line sets the current context’s binary to the <code class="language-plaintext highlighter-rouge">chal</code> file using the <code class="language-plaintext highlighter-rouge">pwn.ELF</code> function and saves the resulting ELF object into the <code class="language-plaintext highlighter-rouge">elf</code> variable. This can be useful in a variety of situations. For example, if the binary had <code class="language-plaintext highlighter-rouge">PIE</code> disabled, we could use the convenient functions provided by <code class="language-plaintext highlighter-rouge">pwntools</code> to directly retrieve the addresses of functions and linked libraries. However, in this case, the binary has <code class="language-plaintext highlighter-rouge">PIE</code> enabled, so this approach is not possible.</p>
+
+<p><img src="img/solve.webp" alt="" /></p>
+
+<p>This code snippet automates the PoW solving here. We receive 3 lines of input using <code class="language-plaintext highlighter-rouge">io.recvline()</code>.</p>
+
+<p>We get a solver prompt in the next line that we need to execute. See below -</p>
+
+<p><img src="img/terminal.webp" alt="" /></p>
+
+<p>We make a script called <code class="language-plaintext highlighter-rouge">solver.sh</code> that runs <code class="language-plaintext highlighter-rouge">solversc.sh</code>.</p>
+
+<p><img src="img/solversh.webp" alt="" /></p>
+
+<p>The <code class="language-plaintext highlighter-rouge">solver.sh</code> script saves the output of <code class="language-plaintext highlighter-rouge">solversc.sh</code> into the solved file. In the pwntools script, we open this file and use the <code class="language-plaintext highlighter-rouge">io.sendline()</code> function to send the solution to the “Solution?” prompt.</p>
+
+<p>After sending the solution, we receive output indicating whether the input is correct or not. To handle this output, we use another <code class="language-plaintext highlighter-rouge">io.recvline()</code> function. Once this step is complete, the actual program begins.</p>
+
+<p><img src="img/solve2.webp" alt="" /></p>
+
+<p>If you recall, when we ran the <code class="language-plaintext highlighter-rouge">chal</code> binary locally, the first two lines of output contained the addresses of the win function and the current file pointer.</p>
+
+<p>To retrieve this information in the <code class="language-plaintext highlighter-rouge">pwntools</code> script, we use the <code class="language-plaintext highlighter-rouge">io.recvline()</code> function to receive the output from the program. We then decode the binary output using the <code class="language-plaintext highlighter-rouge">decode()</code> function and split the resulting string into separate pieces using the <code class="language-plaintext highlighter-rouge">split()</code> function. To obtain the exact address we need, we select the last element of the split string using the index [-1].</p>
+
+<p>We repeat these steps to obtain both the address of the <code class="language-plaintext highlighter-rouge">win</code> function and the address of the current file pointer.</p>
+
+<p>Once we have these values, we use the formula we constructed earlier to calculate the address we need to seek to in order to overwrite the <code class="language-plaintext highlighter-rouge">exit</code> function with the <code class="language-plaintext highlighter-rouge">win</code> function. We then use <code class="language-plaintext highlighter-rouge">io.recvline()</code> to receive the flag (since the <code class="language-plaintext highlighter-rouge">win()</code> function runs <code class="language-plaintext highlighter-rouge">cat /flag</code>).</p>
+
+<p>Finally, we use the <code class="language-plaintext highlighter-rouge">io.interactive()</code> function to establish an interactive session with remote input/output (this function is particularly useful if we had run the <code class="language-plaintext highlighter-rouge">/bin/sh</code> command).</p>
+
+<p>To use this script, we save it as a Python file and run it to obtain the flag, as shown in the example below.</p>
+
+<p><img src="img/flag.webp" alt="" /></p>
+
+<p>That’s all for this writeup. I might release another writeup for the ret2libm challenge as well and others that I completed.</p>
+
+<p>Thank you for reading :)))</p>
+
+    </section>
+  </div>
+</body>
+
+</html>

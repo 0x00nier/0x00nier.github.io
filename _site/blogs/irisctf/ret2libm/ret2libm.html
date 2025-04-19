@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang=" en-US">
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=0.5"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5">
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+  <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+<html>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4BJGEL04W9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4BJGEL04W9');
+</script>
+
+</html>
+
+
+<!-- You can set your favicon here -->
+
+<!-- end custom head snippets -->
+
+  <title>Rokos Replicant</title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>0x00nier | Rokos Replicant</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="0x00nier" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Rokos Replicant" />
+<meta property="og:description" content="Rokos Replicant" />
+<link rel="canonical" href="http://localhost:4000/blogs/irisctf/ret2libm/ret2libm.html" />
+<meta property="og:url" content="http://localhost:4000/blogs/irisctf/ret2libm/ret2libm.html" />
+<meta property="og:site_name" content="0x00nier" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="0x00nier" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Rokos Replicant","headline":"0x00nier","url":"http://localhost:4000/blogs/irisctf/ret2libm/ret2libm.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+
+<body>
+
+  <header>
+    <div class="container">
+      <a id="a-title" href="/">
+        <h1>0x00nier</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../blogs.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 5px;">writeups/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../experience.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 120px;">XP/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../aboutme.html" style="text-decoration:none">
+        <h1 style="font-size: 18px; float:right;margin-top: -40px;margin-right: 175px;">whoami/</h1>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <section id="main_content">
+      <h1 id="irisctf-2023---ret2libm-write-up">IrisCTF 2023 - ret2libm Write-up</h1>
+
+<h2 id="preliminary-analysis">Preliminary Analysis</h2>
+
+<p>Greetings everyone. Welcome to another write-up in our series covering the challenges from the Iris CTF 2023 event. Today, we will be discussing the ret2libm challenge, a unique challenge that involves using a buffer overflow attack to execute arbitrary code. The challenge prompt reads —</p>
+
+<p><img src="./img/1_Gd_H-Lwqk0qD_hmurrz9jQ.webp" alt="" /></p>
+
+<p>Unlike the first challenge we covered, I had to use Docker to make my exploit work remotely for this challenge. As the hint suggests, the server may have been acting up, but using Docker allowed me to test and debug my exploit in a matching environment. Credit goes to @playoff-rondo for reminding me to check the <code class="language-plaintext highlighter-rouge">Dockerfile</code> for clues on how to solve the challenge.</p>
+
+<p>With that said, let’s take a look at what we get when we unpack the provided zip file —</p>
+
+<p><img src="./img/unzip.webp" alt="" /></p>
+
+<p>Upon unpacking the provided zip file, we find the source code for the challenge and the compiled binary file <code class="language-plaintext highlighter-rouge">chal</code>. We are also given the <code class="language-plaintext highlighter-rouge">libc</code> and <code class="language-plaintext highlighter-rouge">libm</code> shared object files, which we can use to test our exploit against. In order to use these shared object files with the “chal” binary, we will need to do a couple of things. But before we get into that, let’s first take a look at the source code and run the binary to see how it behaves:</p>
+
+<p><img src="./img/chalc.webp" alt="" /></p>
+
+<p>You might be wondering what the <code class="language-plaintext highlighter-rouge">setvbuf</code> function does in this code. The calls to <code class="language-plaintext highlighter-rouge">setvbuf</code> here turn off buffering for the standard input and output streams. This means that data is not stored and is sent directly to I/O. In some cases, this can help avoid implementation errors when doing socket I/O, but I am not completely sure.</p>
+
+<p>In the next few lines, we see a classic buffer overflow vulnerability in the yours variable. We know that the <code class="language-plaintext highlighter-rouge">gets</code> function is vulnerable to this type of attack, and we can exploit that here. Additionally, we see that the address of the <code class="language-plaintext highlighter-rouge">fabs</code> function is printed out. This will be important to our approach, as we will see.</p>
+
+<p>Let’s run the binary to see what happens:</p>
+
+<p><img src="./img/binaryrun.webp" alt="" /></p>
+
+<p>The binary works as expected. It prints out an address as well and takes input for the <code class="language-plaintext highlighter-rouge">yours</code> variable.</p>
+
+<p>Let’s run <code class="language-plaintext highlighter-rouge">checksec</code> on this.</p>
+
+<p><img src="./img/checksec.webp" alt="" /></p>
+
+<p>When we run the binary, we see that several security features are enabled. Specifically, the binary has <code class="language-plaintext highlighter-rouge">Full RELRO,</code> which means that we cannot write to the Global Offset Table (GOT) or the Procedure Linkage Table (PLT) or any relocation sections. Additionally, the <code class="language-plaintext highlighter-rouge">NX</code> flag is enabled, which means that we cannot execute any code on the stack. This makes it difficult to use a traditional buffer overflow attack. The binary also has <code class="language-plaintext highlighter-rouge">PIE</code> enabled, which makes it even harder to exploit.</p>
+
+<p>Despite these challenges, our goal is to try to overflow the buffer and gain control of the Instruction Pointer (<code class="language-plaintext highlighter-rouge">RIP</code>). Let’s see how we can do this.</p>
+
+<p><img src="./img/bp.webp" alt="" /></p>
+
+<p>In this step, we are setting a breakpoint at the <code class="language-plaintext highlighter-rouge">gets</code> function call in order to examine the state of the stack right after we fill it up with input.</p>
+
+<p><img src="./img/runpayload.webp" alt="" /></p>
+
+<p>To test our buffer overflow exploit, we are using a small Python 2 one-liner to send 16 <code class="language-plaintext highlighter-rouge">'A'</code> characters followed by a 64-bit representation of the value <code class="language-plaintext highlighter-rouge">0xdeadbeef</code> (which is just <code class="language-plaintext highlighter-rouge">'\xde\xad\xbe\xef'</code> repeated twice). This input is intended to overflow the buffer and overwrite the return address of the function with the value <code class="language-plaintext highlighter-rouge">0xdeadbeef</code>.</p>
+
+<p><img src="./img/stack.webp" alt="" /></p>
+
+<p>From the debugger output, we can see that the value of <code class="language-plaintext highlighter-rouge">RBP+8</code> has been overwritten with our 64-bit representation of <code class="language-plaintext highlighter-rouge">0xdeadbeef</code>. In a typical function call, this location in the stack is reserved for the return pointer after the function has finished executing and the stack frame has been destroyed. This means that our buffer overflow exploit was successful and we have control over the return address of the function.</p>
+
+<p><img src="./img/retbeef.webp" alt="" /></p>
+
+<p>As a result of our buffer overflow exploit, we have gained control of <code class="language-plaintext highlighter-rouge">RIP</code>. However, this is only the first step in our journey. In order to fully exploit the vulnerability, we still need to link the provided <code class="language-plaintext highlighter-rouge">libc</code> and <code class="language-plaintext highlighter-rouge">libm</code> shared object files to the binary itself. This will allow us to execute arbitrary code using functions from those libraries.</p>
+
+<p><img src="./img/ldd.webp" alt="" /></p>
+
+<p>From the output, we can see that the <code class="language-plaintext highlighter-rouge">chal</code> binary is currently using the <code class="language-plaintext highlighter-rouge">libc</code> and <code class="language-plaintext highlighter-rouge">libm</code> shared object files from my Kali system. The linker is also using these system libraries. In order to link the binary to the <code class="language-plaintext highlighter-rouge">libc</code> and <code class="language-plaintext highlighter-rouge">libm</code> shared object files provided in the challenge, we will use the <code class="language-plaintext highlighter-rouge">pwninit</code> and <code class="language-plaintext highlighter-rouge">patchelf</code> tools. This will allow us to test our exploit against the correct versions of the libraries.</p>
+
+<p><img src="./img/symlink.webp" alt="" /></p>
+
+<p>The first step is to create a symbolic link from <code class="language-plaintext highlighter-rouge">libm.so.6</code> to the provided <code class="language-plaintext highlighter-rouge">libm</code> shared object file using the command shown above. The <code class="language-plaintext highlighter-rouge">pwninit</code> tool appears to handle the linking of libm automatically when you do this.</p>
+
+<p>Once the symbolic link is created, we can simply run pwninit on the <code class="language-plaintext highlighter-rouge">chal</code> binary as usual to link it to the correct version of <code class="language-plaintext highlighter-rouge">libc</code> and <code class="language-plaintext highlighter-rouge">libm</code>.</p>
+
+<p><img src="./img/pwninit.webp" alt="" /></p>
+
+<p>Now that we’ve linked the <code class="language-plaintext highlighter-rouge">chal</code> binary to the correct shared object files, we can start working on the exploit. It’s possible that <code class="language-plaintext highlighter-rouge">pwninit</code> also handles the linking of any other shared libraries in the same directory when it creates the loader (<code class="language-plaintext highlighter-rouge">ld-2.27.so</code>). But I can’t say for sure.</p>
+
+<p>Now that we have successfully linked the <code class="language-plaintext highlighter-rouge">chal</code> binary to the correct shared object files, we can begin working on the exploit.</p>
+
+<h2 id="approach">Approach</h2>
+
+<p>Since we have control over <code class="language-plaintext highlighter-rouge">RIP</code>, we can execute a <code class="language-plaintext highlighter-rouge">ret2libm</code> attack (which is the name of this challenge). In case you’re not familiar with it, this is similar to a <code class="language-plaintext highlighter-rouge">ret2libc</code> attack, but with an extra step involved (technically we don’t return to <code class="language-plaintext highlighter-rouge">libm</code>). Essentially, we will use a <code class="language-plaintext highlighter-rouge">libm</code> function to jump to the base address of <code class="language-plaintext highlighter-rouge">libc</code>. From there, we can use a traditional <code class="language-plaintext highlighter-rouge">ret2libc</code> attack to execute arbitrary code.</p>
+
+<p>To achieve this, we will use the Pwntools script provided in the previous message. If you want to learn more about the boilerplate script I used for this CTF, including the part that handles the proof-of-work requirement, check out my first writeup (linked below).</p>
+
+<p><a href="../babyseek/babyseek.md">IrisCTF-2023 Babyseek</a></p>
+
+<p>I shall only focus on the relevant details here.</p>
+
+<p>The good news is that the binary itself gives us the address of the fabs function, which is located in the libm shared object file. We can use this address to calculate the base address of libm, and then jump to the base of libc from there.</p>
+
+<p>We will use GDB and Pwntools to assist us in these steps. Let’s start by using GDB to see how we can reach the base of <code class="language-plaintext highlighter-rouge">libm</code> using the <code class="language-plaintext highlighter-rouge">fabs</code> address.</p>
+
+<h2 id="steps-to-exploit">Steps to Exploit</h2>
+
+<p>As we step through the program in <code class="language-plaintext highlighter-rouge">gdb-pwndbg</code>, we see the following —</p>
+
+<p><img src="./img/printf.webp" alt="" /></p>
+
+<p>We can see that the address printed is that of the function <code class="language-plaintext highlighter-rouge">fabsf64</code> in <code class="language-plaintext highlighter-rouge">libm</code>. We can retrieve this address at runtime using the pwntools function <code class="language-plaintext highlighter-rouge">io.recvline()</code> and process it accordingly.</p>
+
+<p><img src="./img/fabsf64.webp" alt="" /></p>
+
+<p>To find the base address of <code class="language-plaintext highlighter-rouge">libm</code>, we can subtract the offset of <code class="language-plaintext highlighter-rouge">fabsf64</code> from the address of <code class="language-plaintext highlighter-rouge">fabsf64</code> that we retrieved at runtime. In this case, we would subtract <code class="language-plaintext highlighter-rouge">0x31cf0</code> to get the base address of libm.</p>
+
+<p>How do we get to <code class="language-plaintext highlighter-rouge">libc</code> from the base of <code class="language-plaintext highlighter-rouge">libm</code>?</p>
+
+<p><img src="./img/lddpatched.webp" alt="" /></p>
+
+<p>To get to <code class="language-plaintext highlighter-rouge">libc</code> from the base of <code class="language-plaintext highlighter-rouge">libm</code>, we can use the <code class="language-plaintext highlighter-rouge">ldd</code> command on <code class="language-plaintext highlighter-rouge">chal_patched</code> to see the difference between the addresses. This difference is always <code class="language-plaintext highlighter-rouge">0x400000</code>. By subtracting <code class="language-plaintext highlighter-rouge">0x400000</code> from the base of <code class="language-plaintext highlighter-rouge">libm</code>, we can get the base of <code class="language-plaintext highlighter-rouge">libc</code>. From there, we can perform a classic ret2libc exploitation and call <code class="language-plaintext highlighter-rouge">system</code> on a pointer to the string <code class="language-plaintext highlighter-rouge">/bin/sh</code>. To get the necessary offsets, we can use the <code class="language-plaintext highlighter-rouge">readelf</code> command as shown below.</p>
+
+<p><img src="./img/readelfsystem.webp" alt="" /></p>
+
+<p>As the typical ROP chain for ret2libc for 64-bit binaries go, we overflow the buffer, do a <code class="language-plaintext highlighter-rouge">nop;ret</code> to avoid the <code class="language-plaintext highlighter-rouge">movaps</code> crash, pop the pointer to <code class="language-plaintext highlighter-rouge">/bin/sh</code> into <code class="language-plaintext highlighter-rouge">RDI</code> and call <code class="language-plaintext highlighter-rouge">system</code> and exit successively.</p>
+
+<p><img src="./img/exploit.webp" alt="" /></p>
+
+<p>Our exploit works locally but not remotely. To find out why, we check the difference between <code class="language-plaintext highlighter-rouge">libm</code> and <code class="language-plaintext highlighter-rouge">libc</code> addresses on the remote endpoint using a docker container. We find that the difference is not <code class="language-plaintext highlighter-rouge">0x400000</code>, as we expected, but rather <code class="language-plaintext highlighter-rouge">0x3f1000</code>. In our exploit, we must adjust our calculations accordingly to account for this difference.</p>
+
+<p><img src="./img/docker.webp" alt="" /></p>
+
+<p>First, we build an image from the Docker file.</p>
+
+<p><img src="./img/docker.webp" alt="" /></p>
+
+<p>We run a container using the ret2libm image and mount the directory where our files are located. Then, we use the <code class="language-plaintext highlighter-rouge">ldd</code> command on the binary to see the difference in addresses between <code class="language-plaintext highlighter-rouge">libm</code> and <code class="language-plaintext highlighter-rouge">libc</code>. Using python, we can see that the difference is not <code class="language-plaintext highlighter-rouge">0x400000</code>, but rather <code class="language-plaintext highlighter-rouge">0x3f1000</code>. This means that in our exploit, we will have to adjust our calculations accordingly.</p>
+
+<p><img src="./img/ropchain.webp" alt="" /></p>
+
+<p>In this code snippet, we save the address of <code class="language-plaintext highlighter-rouge">fabsf6r</code> into a variable called <code class="language-plaintext highlighter-rouge">ret</code>. We subtract the offset of <code class="language-plaintext highlighter-rouge">fabsf64</code> from <code class="language-plaintext highlighter-rouge">libm</code> and the offset of <code class="language-plaintext highlighter-rouge">libc</code> from <code class="language-plaintext highlighter-rouge">libm</code> and store the result in the same variable <code class="language-plaintext highlighter-rouge">ret</code>. Then we calculate the offsets for <code class="language-plaintext highlighter-rouge">system</code>, the pointer to <code class="language-plaintext highlighter-rouge">/bin/sh</code>, the <code class="language-plaintext highlighter-rouge">POP RDI; RET</code> gadget, the <code class="language-plaintext highlighter-rouge">NOP; RET</code> gadget, and exit. To get the address of <code class="language-plaintext highlighter-rouge">/bin/sh</code>, use the below command —</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>strings <span class="nt">-a</span> <span class="nt">-t</span> x libc.so.6 | <span class="nb">grep</span> <span class="s2">"/bin/sh"</span>
+</code></pre></div></div>
+
+<p>For the <code class="language-plaintext highlighter-rouge">libc</code> functions, you use <code class="language-plaintext highlighter-rouge">readelf</code> as usual. For the gadgets used, use the below commands.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ropper <span class="nt">-f</span> libc.so.6 <span class="nt">--search</span> <span class="s2">"nop; ret"</span>
+ropper <span class="nt">-f</span> libc.so.6 <span class="nt">--search</span> <span class="s2">"pop rdi"</span>
+</code></pre></div></div>
+
+<p>With all the offsets found, we just pack it all in <code class="language-plaintext highlighter-rouge">pwn.flat</code> and use <code class="language-plaintext highlighter-rouge">io.sendline()</code> to send it to the remote endpoint.</p>
+
+<p><img src="./img/finalexp.webp" alt="" /></p>
+
+<p>As we can see, our exploit works well and we are able to get a working shell.</p>
+
+<p>Thanks for reading :)))</p>
+
+    </section>
+  </div>
+</body>
+
+</html>

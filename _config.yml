@@ -1,0 +1,9 @@
+title: 0x00nier
+description: Rokos Replicant
+image:
+  path: './favicon.ico'
+show_downloads: false
+theme: jekyll-theme-hacker
+plugins:
+  - github-pages
+  - jekyll-seo-tag

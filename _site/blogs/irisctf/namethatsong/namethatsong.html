@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang=" en-US">
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=0.5"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5">
+  <link rel="stylesheet" href="/assets/css/style.css?v=">
+  <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
+
+<!-- Setup theme-color -->
+<!-- start theme color meta headers -->
+<meta name="theme-color" content="#151515">
+<meta name="msapplication-navbutton-color" content="#151515">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- end theme color meta headers -->
+
+
+<!-- Setup Google Analytics -->
+<html>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4BJGEL04W9"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4BJGEL04W9');
+</script>
+
+</html>
+
+
+<!-- You can set your favicon here -->
+
+<!-- end custom head snippets -->
+
+  <title>Rokos Replicant</title>
+
+  <!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>0x00nier | Rokos Replicant</title>
+<meta name="generator" content="Jekyll v3.9.5" />
+<meta property="og:title" content="0x00nier" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Rokos Replicant" />
+<meta property="og:description" content="Rokos Replicant" />
+<link rel="canonical" href="http://localhost:4000/blogs/irisctf/namethatsong/namethatsong.html" />
+<meta property="og:url" content="http://localhost:4000/blogs/irisctf/namethatsong/namethatsong.html" />
+<meta property="og:site_name" content="0x00nier" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="0x00nier" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebPage","description":"Rokos Replicant","headline":"0x00nier","url":"http://localhost:4000/blogs/irisctf/namethatsong/namethatsong.html"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+
+<body>
+
+  <header>
+    <div class="container">
+      <a id="a-title" href="/">
+        <h1>0x00nier</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../blogs.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 5px;">writeups/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../experience.html" style="text-decoration:none">
+        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 120px;">XP/</h1>
+      </a>
+
+      <a id="a-title" href="../../../../../../../../../aboutme.html" style="text-decoration:none">
+        <h1 style="font-size: 18px; float:right;margin-top: -40px;margin-right: 175px;">whoami/</h1>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <section id="main_content">
+      <h1 id="irisctf-2023--name-that-song--name-that-song-2-write-up">IrisCTF 2023 — Name that song &amp;&amp; Name that song 2 Write-up</h1>
+
+<p>Greetings everyone. Welcome to another write-up in our series covering the challenges from the Iris CTF 2023 event. Today, we’ll be discussing two interesting OSINT-like challenges from the Miscellaneous category: <code class="language-plaintext highlighter-rouge">Name that Song</code> and <code class="language-plaintext highlighter-rouge">Name that Song 2.</code> The challenge prompt for the first challenge reads:</p>
+
+<h2 id="name-that-song">Name that song</h2>
+
+<p><img src="./img/chal.webp" alt="" /></p>
+
+<p>So, we’re given a file called <code class="language-plaintext highlighter-rouge">song_1.it</code>. It’s an <code class="language-plaintext highlighter-rouge">Impulse Tracker</code> file that can be played on various software, like <code class="language-plaintext highlighter-rouge">Schism Tracker</code>, <code class="language-plaintext highlighter-rouge">OpenMPT</code>, and <code class="language-plaintext highlighter-rouge">Impulse Tracker</code> itself. We’ll be using <code class="language-plaintext highlighter-rouge">OpenMPT</code> to analyze this file, as compared to the other software we tried, there’s more information to work with.</p>
+
+<p>Let’s open it up in <code class="language-plaintext highlighter-rouge">OpenMPT</code>.</p>
+
+<p><img src="./img/openmpt.webp" alt="" /></p>
+
+<p>So, when we open the file in <code class="language-plaintext highlighter-rouge">OpenMPT</code>, we see a bunch of folders on the left margin. From what I understand, these files are patterns of instruments used as samples compiled into one single file. It’s a sort of MIDI-like format, but instead of a bland piano tune, you have 8-bit/16-bit instruments to supplement the resulting sound.</p>
+
+<p>With that said, let’s check the <code class="language-plaintext highlighter-rouge">Comments</code> section. We see a couple of file names, including a couple of <code class="language-plaintext highlighter-rouge">.it</code> files and some <code class="language-plaintext highlighter-rouge">.wav</code> files as well. When we try to Google one of these <code class="language-plaintext highlighter-rouge">.wav</code> files, we find the following:</p>
+
+<p><img src="./img/google.webp" alt="" /></p>
+
+<p>We find this particular <code class="language-plaintext highlighter-rouge">.it</code> file called <code class="language-plaintext highlighter-rouge">moon_cities.it</code> on modarchive.org. When we try to play it, it sounds VERY similar to the file we were provided with, but unfortunately my initial answer was incorrect.</p>
+
+<p>As it turns out, modarchive.org has a search API endpoint with filters that can be very useful for our purposes.</p>
+
+<p><img src="./img/api.webp" alt="" /></p>
+
+<p>Since we know that we found <code class="language-plaintext highlighter-rouge">ROM5.WAV</code> in the instruments used in the file, we should be able to find more files like <code class="language-plaintext highlighter-rouge">moon_cities.it</code> by using the <code class="language-plaintext highlighter-rouge">ROM5.WAV</code> as a search keyword in modarchive.org’s API endpoint with filters.</p>
+
+<p><img src="./img/search.webp" alt="" /></p>
+
+<p>And we do find another file other than <code class="language-plaintext highlighter-rouge">moon_cities.it</code>. Thus, the answer to the challenge was <code class="language-plaintext highlighter-rouge">irisctf{moon_guns}</code>. This was simple enough.</p>
+
+<h2 id="name-that-song-2">Name that song 2</h2>
+
+<p>The next stage of this challenge of finding songs becomes a little more harder. Let’s see the prompt for <code class="language-plaintext highlighter-rouge">Name that Song 2</code>:</p>
+
+<p><img src="./img/chal2.webp" alt="" /></p>
+
+<p>Now this time we are given a <code class="language-plaintext highlighter-rouge">.mod</code> file instead of an <code class="language-plaintext highlighter-rouge">.it</code> file. I decided to use the search API again for this, but focused on more granular details. In the <code class="language-plaintext highlighter-rouge">Comments</code> section of the file, we see no names on <code class="language-plaintext highlighter-rouge">OpenMPT</code>. So, I decided to use the filters in the <code class="language-plaintext highlighter-rouge">Browse by Filename</code> part of the site to find the file by size.</p>
+
+<p><img src="./img/properties.webp" alt="" /></p>
+
+<p>The size of this file is 636 KB. Furthermore, this file uses 4 channels as well.</p>
+
+<p><img src="./img/channels.webp" alt="" /></p>
+
+<p>We use these facts as filters and look up each song in the results. As you can see below, we set the filters accordingly.</p>
+
+<p><img src="./img/browse.webp" alt="" /></p>
+
+<p>The site uses <code class="language-plaintext highlighter-rouge">https://modarchive.org/index.php?request=view_by_list&amp;query=A</code> to search for files. Using the applied filters, I simply change the <code class="language-plaintext highlighter-rouge">query=A</code> part to B or C or D and so on. I basically bruteforced every song given their extended details on file size and hit upon the exact song eventually. Which was this:</p>
+
+<p><img src="./img/carlos.webp" alt="" /></p>
+
+<p>Thus, the flag was <code class="language-plaintext highlighter-rouge">irisctf{hit_and_run}</code>.</p>
+
+    </section>
+  </div>
+</body>
+
+</html>
