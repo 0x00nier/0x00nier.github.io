@@ -22,7 +22,7 @@ $('body > div > section').terminal({
     },
     whatelse: function(what) {
         this.echo("[[!g;#35fc03;<BACKGROUND>]I have worked at various companies as an intern and currently hold the OSCP, eJPT, CAP, CNSP, CEH and many others (that are as useless as CEH).");
-        this.echo("[[!g;#35fc03;<BACKGROUND>]For more deets on my experience, please click on 'XP' in the header.");
+        this.echo("[[!g;#35fc03;<BACKGROUND>]For more deets on my experience, please click on 'xp' in the header.");
         this.echo("[[!g;#35fc03;<BACKGROUND>]Type theresmorelol to get more information (Yes there is more information sorry).");
     },
     theresmorelol: function(what) {
