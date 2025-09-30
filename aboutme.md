@@ -7,7 +7,7 @@ layout: default
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css"/>
 <style>
 .terminal {
-  --size: 1.3;
+  --size: 1.5;
 }
 </style>
 <script>

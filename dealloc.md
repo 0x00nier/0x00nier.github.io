@@ -285,7 +285,7 @@ function animateText() {
       clearInterval(intervalId);
       return;
     }
-  }, 0.5);
+  }, 0.3);
 }
 
 animateText();
