@@ -1,0 +1,18 @@
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/racc-1.7.3/ext/racc/cparse
+/usr/bin/ruby3.3 -I/usr/lib/ruby/vendor_ruby extconf.rb
+creating Makefile
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/racc-1.7.3/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-g5o34a sitelibdir\=./.gem.20250930-95471-g5o34a clean
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/racc-1.7.3/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-g5o34a sitelibdir\=./.gem.20250930-95471-g5o34a
+compiling cparse.c
+linking shared-object racc/cparse.so
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/racc-1.7.3/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-g5o34a sitelibdir\=./.gem.20250930-95471-g5o34a install
+/usr/bin/install -c -m 0755 cparse.so ./.gem.20250930-95471-g5o34a/racc
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/racc-1.7.3/ext/racc/cparse
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-g5o34a sitelibdir\=./.gem.20250930-95471-g5o34a clean

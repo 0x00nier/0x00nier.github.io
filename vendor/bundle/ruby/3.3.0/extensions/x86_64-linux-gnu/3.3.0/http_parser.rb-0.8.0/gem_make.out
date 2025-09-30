@@ -1,0 +1,19 @@
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/http_parser.rb-0.8.0/ext/ruby_http_parser
+/usr/bin/ruby3.3 -I/usr/lib/ruby/vendor_ruby extconf.rb
+creating Makefile
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/http_parser.rb-0.8.0/ext/ruby_http_parser
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-og7q5n sitelibdir\=./.gem.20250930-95471-og7q5n clean
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/http_parser.rb-0.8.0/ext/ruby_http_parser
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-og7q5n sitelibdir\=./.gem.20250930-95471-og7q5n
+compiling ruby_http_parser.c
+compiling ryah_http_parser.c
+linking shared-object ruby_http_parser.so
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/http_parser.rb-0.8.0/ext/ruby_http_parser
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-og7q5n sitelibdir\=./.gem.20250930-95471-og7q5n install
+/usr/bin/install -c -m 0755 ruby_http_parser.so ./.gem.20250930-95471-og7q5n
+
+current directory: /usr/local/google/home/raghavverma/Tmp/Playground/0x00nier.github.io/vendor/bundle/ruby/3.3.0/gems/http_parser.rb-0.8.0/ext/ruby_http_parser
+make DESTDIR\= sitearchdir\=./.gem.20250930-95471-og7q5n sitelibdir\=./.gem.20250930-95471-og7q5n clean
