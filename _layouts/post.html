@@ -156,6 +156,49 @@ layout: default
   opacity: 0;
   margin-bottom: 0;
 }
+
+/* Copy button for code blocks */
+.code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 70px;
+  padding: 4px 10px;
+  font-family: Monaco, monospace;
+  font-size: 11px;
+  color: rgba(181, 232, 83, 0.6);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(181, 232, 83, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 15;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+div.highlighter-rouge:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.code-copy-btn:hover {
+  color: #b5e853;
+  background: rgba(181, 232, 83, 0.15);
+  border-color: rgba(181, 232, 83, 0.4);
+}
+
+.code-copy-btn.copied {
+  color: #27ca40;
+  border-color: rgba(39, 202, 64, 0.4);
+}
+
+@media (max-width: 768px) {
+  .code-copy-btn {
+    opacity: 1;
+    top: 4px;
+    right: 4px;
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+}
 </style>
 
 <div class="post-wrapper">
@@ -231,6 +274,45 @@ layout: default
     } else {
       block.setAttribute('data-lang', 'Code');
     }
+
+    // Add copy button
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'code-copy-btn';
+    copyBtn.textContent = 'Copy';
+    copyBtn.type = 'button';
+
+    copyBtn.addEventListener('click', async () => {
+      const code = block.querySelector('code');
+      if (code) {
+        try {
+          await navigator.clipboard.writeText(code.textContent);
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = code.textContent;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          copyBtn.textContent = 'Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        }
+      }
+    });
+
+    block.appendChild(copyBtn);
   });
 
   // ========================================
