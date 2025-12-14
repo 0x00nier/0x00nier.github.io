@@ -148,6 +148,50 @@ layout: default
 
 <script>
 (function() {
+  // ========================================
+  // ADD LANGUAGE LABELS TO CODE BLOCKS
+  // ========================================
+  const langMap = {
+    'php': 'PHP', 'python': 'Python', 'py': 'Python',
+    'javascript': 'JavaScript', 'js': 'JavaScript',
+    'typescript': 'TypeScript', 'ts': 'TypeScript',
+    'bash': 'Bash', 'shell': 'Shell', 'sh': 'Shell', 'zsh': 'Zsh',
+    'sql': 'SQL', 'html': 'HTML', 'css': 'CSS', 'scss': 'SCSS',
+    'json': 'JSON', 'yaml': 'YAML', 'yml': 'YAML', 'xml': 'XML',
+    'c': 'C', 'cpp': 'C++', 'csharp': 'C#', 'cs': 'C#',
+    'java': 'Java', 'go': 'Go', 'rust': 'Rust',
+    'ruby': 'Ruby', 'rb': 'Ruby', 'perl': 'Perl', 'lua': 'Lua',
+    'markdown': 'Markdown', 'md': 'Markdown',
+    'plaintext': 'Text', 'text': 'Text', 'console': 'Terminal',
+    'powershell': 'PowerShell', 'ps1': 'PowerShell',
+    'dockerfile': 'Dockerfile', 'nginx': 'Nginx',
+    'ini': 'INI', 'toml': 'TOML', 'diff': 'Diff',
+    'asm': 'Assembly', 'nasm': 'Assembly', 'x86asm': 'x86 ASM'
+  };
+
+  document.querySelectorAll('div.highlighter-rouge').forEach(block => {
+    const classes = block.className.split(' ');
+    let lang = '';
+
+    for (const cls of classes) {
+      if (cls.startsWith('language-')) {
+        lang = cls.replace('language-', '');
+        break;
+      }
+    }
+
+    if (lang && langMap[lang.toLowerCase()]) {
+      block.setAttribute('data-lang', langMap[lang.toLowerCase()]);
+    } else if (lang) {
+      block.setAttribute('data-lang', lang.toUpperCase());
+    } else {
+      block.setAttribute('data-lang', 'Code');
+    }
+  });
+
+  // ========================================
+  // TABLE OF CONTENTS
+  // ========================================
   const content = document.getElementById('post-content');
   const tocList = document.getElementById('toc-list');
   const toc = document.getElementById('post-toc');

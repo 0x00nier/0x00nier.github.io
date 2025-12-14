@@ -558,3 +558,452 @@ footer {
   background: rgba(181, 232, 83, 0.3);
   color: #fff;
 }
+
+// ============================================
+// MOONFLY SYNTAX HIGHLIGHTING
+// ============================================
+// Moonfly color palette
+$mf-bg: #080808;
+$mf-white: #c6c6c6;
+$mf-grey: #9e9e9e;
+$mf-red: #ff5d5d;
+$mf-crimson: #ff5189;
+$mf-orange: #de935f;
+$mf-yellow: #e3c78a;
+$mf-lime: #85dc85;
+$mf-green: #8cc85f;
+$mf-emerald: #36c692;
+$mf-turquoise: #79dac8;
+$mf-sky: #74b2ff;
+$mf-blue: #80a0ff;
+$mf-lavender: #adadf3;
+$mf-violet: #cf87e8;
+$mf-purple: #ae81ff;
+$mf-coral: #f09479;
+$mf-khaki: #c6c684;
+
+// Rouge/Jekyll syntax highlighting with moonfly colors
+.highlight {
+  background: $mf-bg;
+  border: 1px solid rgba(181, 232, 83, 0.15);
+  border-radius: 8px;
+  margin: 1.5em 0;
+  position: relative;
+  overflow: hidden;
+
+  pre {
+    margin: 0;
+    padding: 20px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+
+  // Comments
+  .c, .c1, .cm, .cs, .cp { color: $mf-grey; font-style: italic; }
+
+  // Strings
+  .s, .s1, .s2, .sb, .sc, .sd, .se, .sh, .si, .sx, .sr { color: $mf-khaki; }
+
+  // Keywords
+  .k, .kc, .kd, .kn, .kp, .kr, .kt, .kv { color: $mf-violet; }
+
+  // Functions and methods
+  .nf, .fm, .nx { color: $mf-sky; }
+
+  // Classes and types
+  .nc, .nn, .no { color: $mf-emerald; }
+
+  // Variables
+  .n, .na, .nb, .nv, .vc, .vg, .vi, .vm { color: $mf-turquoise; }
+
+  // Numbers
+  .m, .mf, .mh, .mi, .mo, .il { color: $mf-purple; }
+
+  // Operators
+  .o, .ow { color: $mf-crimson; }
+
+  // Punctuation
+  .p { color: $mf-white; }
+
+  // Built-ins
+  .bp { color: $mf-turquoise; }
+
+  // Errors
+  .err { color: $mf-red; background: transparent; }
+
+  // Generic
+  .gd { color: $mf-red; }
+  .gi { color: $mf-lime; }
+  .ge { font-style: italic; }
+  .gs { font-weight: bold; }
+  .gh, .gu { color: $mf-blue; font-weight: bold; }
+  .gp { color: $mf-grey; }
+
+  // Shell/Bash specific
+  .nb { color: $mf-turquoise; }
+  .nt { color: $mf-crimson; }
+
+  // HTML/XML
+  .nt { color: $mf-crimson; }
+  .na { color: $mf-orange; }
+
+  // CSS
+  .nc { color: $mf-yellow; }
+  .nn { color: $mf-blue; }
+
+  // Python
+  .nd { color: $mf-violet; }
+  .ni { color: $mf-coral; }
+
+  // SQL
+  .k { color: $mf-violet; }
+  .nf { color: $mf-sky; }
+}
+
+// ============================================
+// ENHANCED CODE BLOCKS
+// ============================================
+div.highlighter-rouge, figure.highlight {
+  position: relative;
+  margin: 1.75em 0;
+
+  // Language label
+  &::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 4px 12px;
+    font-family: Monaco, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(181, 232, 83, 0.6);
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom-left-radius: 6px;
+    border-top-right-radius: 8px;
+    z-index: 10;
+  }
+
+  // Terminal header dots
+  &::after {
+    content: '● ● ●';
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: rgba(181, 232, 83, 0.3);
+    z-index: 10;
+  }
+
+  .highlight {
+    margin: 0;
+
+    pre {
+      padding: 32px 20px 20px 20px;
+    }
+  }
+}
+
+// Line numbers (if enabled)
+.highlight .lineno {
+  color: rgba(181, 232, 83, 0.25);
+  padding-right: 16px;
+  border-right: 1px solid rgba(181, 232, 83, 0.1);
+  margin-right: 16px;
+  user-select: none;
+}
+
+// Inline code improvements
+code.highlighter-rouge {
+  background: rgba(8, 8, 8, 0.8);
+  border: 1px solid rgba(181, 232, 83, 0.15);
+  padding: 3px 8px;
+  margin: 0 3px;
+  color: $mf-coral;
+  border-radius: 4px;
+  font-size: 0.88em;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgba(181, 232, 83, 0.3);
+    box-shadow: 0 0 8px rgba(181, 232, 83, 0.1);
+  }
+}
+
+// ============================================
+// ENHANCED BLOG POST STYLES
+// ============================================
+.post-content {
+  // Better paragraph spacing
+  p {
+    margin-bottom: 1.4em;
+    line-height: 1.75;
+  }
+
+  // Enhanced headers with animation
+  h2, h3, h4 {
+    position: relative;
+    padding-left: 0;
+    transition: all 0.3s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 0;
+      background: linear-gradient(180deg, $accent-green, $accent-cyan);
+      border-radius: 2px;
+      transition: height 0.3s ease;
+      opacity: 0;
+    }
+
+    &:hover::before {
+      height: 100%;
+      opacity: 1;
+    }
+  }
+
+  h2 {
+    margin-top: 2.5em;
+    padding-bottom: 0.4em;
+    border-bottom: 1px solid rgba(181, 232, 83, 0.15);
+  }
+
+  h3 {
+    margin-top: 2em;
+  }
+
+  // Enhanced images
+  img {
+    border: 1px solid rgba(181, 232, 83, 0.15);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      border-color: rgba(181, 232, 83, 0.35);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4),
+                  0 0 20px rgba(181, 232, 83, 0.1);
+      transform: translateY(-2px);
+    }
+  }
+
+  // Enhanced blockquotes
+  blockquote {
+    position: relative;
+    margin: 2em 0;
+    padding: 20px 24px 20px 28px;
+    border-left: 3px solid $accent-green;
+    background: linear-gradient(90deg, rgba(181, 232, 83, 0.05) 0%, transparent 100%);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+
+    &::before {
+      content: '"';
+      position: absolute;
+      top: -10px;
+      left: 12px;
+      font-size: 48px;
+      font-family: Georgia, serif;
+      color: rgba(181, 232, 83, 0.15);
+      line-height: 1;
+    }
+
+    p {
+      margin-bottom: 0.5em;
+      &:last-child { margin-bottom: 0; }
+    }
+  }
+
+  // Enhanced lists
+  ul, ol {
+    margin: 1.5em 0;
+
+    li {
+      margin-bottom: 0.6em;
+      position: relative;
+      padding-left: 0.5em;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+
+  ul li {
+    list-style: none;
+
+    &::before {
+      content: '▸';
+      position: absolute;
+      left: -1.2em;
+      color: $accent-green;
+      transition: transform 0.2s ease;
+    }
+
+    &:hover::before {
+      transform: translateX(3px);
+    }
+  }
+
+  // Enhanced tables
+  table {
+    border: 1px solid rgba(181, 232, 83, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 2em 0;
+  }
+
+  th {
+    background: rgba(181, 232, 83, 0.08);
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    transition: background 0.2s ease;
+  }
+
+  tr:hover td {
+    background: rgba(181, 232, 83, 0.05);
+  }
+
+  // Strong and emphasis
+  strong {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  em {
+    color: $mf-lavender;
+    font-style: italic;
+  }
+
+  // Links in content
+  a {
+    position: relative;
+    color: $accent-cyan;
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(99, 192, 245, 0.4);
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: lighten($accent-cyan, 10%);
+      border-bottom-style: solid;
+      text-shadow: 0 0 10px rgba(99, 192, 245, 0.4);
+    }
+  }
+}
+
+// ============================================
+// SUBTLE ANIMATIONS (RICER STYLE)
+// ============================================
+
+// Fade in animation for post content
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Scanline effect for code blocks
+@keyframes codeScanline {
+  0% { top: 0; opacity: 0.5; }
+  50% { opacity: 0.8; }
+  100% { top: 100%; opacity: 0.5; }
+}
+
+// Terminal cursor blink
+@keyframes terminalBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+// Glow pulse for headers
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 5px rgba(181, 232, 83, 0.15); }
+  50% { text-shadow: 0 0 15px rgba(181, 232, 83, 0.25); }
+}
+
+// Apply animations
+.post-content {
+  // Headers animate on scroll into view
+  h2, h3, h4 {
+    animation: fadeSlideIn 0.5s ease-out;
+  }
+
+  // Code block scanline effect
+  div.highlighter-rouge .highlight::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(181, 232, 83, 0.15),
+      rgba(181, 232, 83, 0.25),
+      rgba(181, 232, 83, 0.15),
+      transparent
+    );
+    animation: codeScanline 4s linear infinite;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  // Images fade in
+  img {
+    animation: fadeSlideIn 0.6s ease-out;
+  }
+
+  // Blockquote subtle glow
+  blockquote {
+    animation: fadeSlideIn 0.5s ease-out;
+  }
+}
+
+// Header glow on hover
+.post-content h2:hover,
+.post-content h3:hover,
+.post-content h4:hover {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+// ============================================
+// RESPONSIVE ADJUSTMENTS FOR BLOG
+// ============================================
+@media (max-width: 768px) {
+  .post-content {
+    h2::before, h3::before, h4::before {
+      display: none;
+    }
+
+    blockquote::before {
+      font-size: 32px;
+      top: -5px;
+      left: 8px;
+    }
+  }
+
+  div.highlighter-rouge::before {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+
+  div.highlighter-rouge::after {
+    display: none;
+  }
+}
