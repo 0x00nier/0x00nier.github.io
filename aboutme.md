@@ -119,7 +119,7 @@ title: whoami
     <div class="terminal-line" style="margin-top: 16px;"></div>
     <div id="terminal-output"></div>
     <div class="terminal-input-line">
-      <span class="prompt"><span class="prompt-user">guest</span>@<span class="prompt-path">0x00nier</span>:~$ </span>
+      <span class="prompt"><span class="prompt-user">guest</span>@<span class="prompt-path">0x00nier</span>:~$&nbsp;</span>
       <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false">
     </div>
   </div>
@@ -184,7 +184,7 @@ const terminal = document.getElementById('terminal');
 function addOutput(cmd, output) {
   const cmdLine = document.createElement('div');
   cmdLine.className = 'terminal-line';
-  cmdLine.innerHTML = `<span class="prompt"><span class="prompt-user">guest</span>@<span class="prompt-path">0x00nier</span>:~$ </span><span class="command">${cmd}</span>`;
+  cmdLine.innerHTML = `<span class="prompt"><span class="prompt-user">guest</span>@<span class="prompt-path">0x00nier</span>:~$&nbsp;</span><span class="command">${cmd}</span>`;
   terminalOutput.appendChild(cmdLine);
 
   if (output !== 'CLEAR') {

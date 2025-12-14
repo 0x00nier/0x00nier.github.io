@@ -2,8 +2,6 @@
 layout: default
 ---
 
-
-
 <style>
 h2#hackthebox, h2#pragyan-ctf-2023, h2#irisctf-2023, h2#cct-2019, h2#navigating-the-oscp-minefield{
   border-bottom: 1px dashed #b5e853;

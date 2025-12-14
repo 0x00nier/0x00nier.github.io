@@ -38,3 +38,7 @@ mkmf.log
 
 # Claude
 .claude
+
+# Images
+*.png
+*.jpg
