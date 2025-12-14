@@ -113,6 +113,49 @@ layout: default
     display: none;
   }
 }
+
+/* Collapsible sections */
+.collapsible-heading {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collapsible-heading::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(181, 232, 83, 0.5);
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.collapsible-heading.collapsed::after {
+  transform: rotate(-90deg);
+}
+
+.collapsible-heading:hover::after {
+  border-top-color: #b5e853;
+}
+
+.collapsible-section {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  max-height: 10000px;
+  opacity: 1;
+}
+
+.collapsible-section.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+  margin-bottom: 0;
+}
 </style>
 
 <div class="post-wrapper">
@@ -255,11 +298,74 @@ layout: default
       const targetId = link.getAttribute('href').slice(1);
       const target = document.getElementById(targetId);
       if (target) {
+        // Expand section if collapsed
+        const section = document.querySelector(`.collapsible-section[data-heading="${targetId}"]`);
+        if (section && section.classList.contains('collapsed')) {
+          section.classList.remove('collapsed');
+          target.classList.remove('collapsed');
+        }
         const offset = 100;
         const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
         window.scrollTo({ top, behavior: 'smooth' });
       }
     });
   });
+
+  // ========================================
+  // COLLAPSIBLE SECTIONS
+  // ========================================
+  function setupCollapsibleSections() {
+    const contentEl = document.getElementById('post-content');
+    const allHeadings = contentEl.querySelectorAll('h2, h3, h4');
+
+    allHeadings.forEach((heading, index) => {
+      // Make heading collapsible
+      heading.classList.add('collapsible-heading');
+
+      // Get heading level (2, 3, or 4)
+      const level = parseInt(heading.tagName.charAt(1));
+
+      // Collect all content until the next heading of same or higher level
+      const sectionContent = [];
+      let sibling = heading.nextElementSibling;
+
+      while (sibling) {
+        // Check if it's a heading
+        if (sibling.matches('h2, h3, h4')) {
+          const siblingLevel = parseInt(sibling.tagName.charAt(1));
+          // Stop if we hit a heading of same or higher level
+          if (siblingLevel <= level) break;
+        }
+        sectionContent.push(sibling);
+        sibling = sibling.nextElementSibling;
+      }
+
+      // Only create wrapper if there's content to collapse
+      if (sectionContent.length > 0) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'collapsible-section';
+        wrapper.setAttribute('data-heading', heading.id);
+
+        // Move content into wrapper
+        sectionContent.forEach(el => {
+          wrapper.appendChild(el);
+        });
+
+        // Insert wrapper after heading
+        heading.after(wrapper);
+
+        // Add click handler to toggle
+        heading.addEventListener('click', (e) => {
+          // Don't toggle if clicking a link inside heading
+          if (e.target.tagName === 'A') return;
+
+          heading.classList.toggle('collapsed');
+          wrapper.classList.toggle('collapsed');
+        });
+      }
+    });
+  }
+
+  setupCollapsibleSections();
 })();
 </script>
