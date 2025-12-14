@@ -21,10 +21,10 @@
       </a>
 
       <nav class="main-nav">
-        <a href="{{ '/aboutme.html' | relative_url }}" class="nav-link">whoami/</a>
-        <a href="{{ '/experience.html' | relative_url }}" class="nav-link">xp/</a>
-        <a href="{{ '/blogs.html' | relative_url }}" class="nav-link">writeups/</a>
-        <a href="{{ '/game.html' | relative_url }}" class="nav-link">???</a>
+        <a href="{{ '/aboutme.html' | relative_url }}" class="nav-link{% if page.url == '/aboutme.html' %} active{% endif %}">whoami/</a>
+        <a href="{{ '/experience.html' | relative_url }}" class="nav-link{% if page.url == '/experience.html' %} active{% endif %}">xp/</a>
+        <a href="{{ '/blogs.html' | relative_url }}" class="nav-link{% if page.url == '/blogs.html' or page.url contains '/blogs/' %} active{% endif %}">writeups/</a>
+        <a href="{{ '/game.html' | relative_url }}" class="nav-link{% if page.url == '/game.html' %} active{% endif %}">???</a>
       </nav>
     </div>
   </header>

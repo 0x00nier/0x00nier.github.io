@@ -10,7 +10,7 @@
 $accent-green: #b5e853;
 $accent-cyan: #63c0f5;
 $bg-dark: #0a0a0a;
-$bg-darker: #000000;
+$bg-darker: #0a0a0a;
 $text-primary: #eaeaea;
 $text-secondary: #aaaaaa;
 $code-purple: #aa759f;
@@ -117,6 +117,12 @@ header {
 
   &:active {
     transform: translateY(1px);
+  }
+
+  &.active {
+    background: rgba(181, 232, 83, 0.15);
+    border-color: rgba(181, 232, 83, 0.4);
+    border-bottom: 2px solid $accent-green;
   }
 }
 
@@ -401,6 +407,17 @@ footer {
 
   time {
     color: $accent-green;
+  }
+
+  .post-reading-time {
+    margin-left: 1em;
+    color: $text-secondary;
+
+    &::before {
+      content: "•";
+      margin-right: 1em;
+      color: rgba(181, 232, 83, 0.4);
+    }
   }
 
   .post-author {

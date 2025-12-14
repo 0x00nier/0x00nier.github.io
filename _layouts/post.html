@@ -121,6 +121,7 @@ layout: default
       <h1 class="post-title">{{ page.title }}</h1>
       <div class="post-meta">
         <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%-d %B %Y" }}</time>
+        <span class="post-reading-time">{% assign words = content | number_of_words %}{% if words < 200 %}~1 min read{% else %}~{{ words | divided_by: 200 }} min read{% endif %}</span>
         {% if page.author %}<span class="post-author">by {{ page.author }}</span>{% endif %}
       </div>
     </header>
