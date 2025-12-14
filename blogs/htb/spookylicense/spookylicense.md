@@ -1,8 +1,7 @@
 ---
-layout: default
+layout: post
+title: "Spooky License — Reversing Challenge"
 ---
-
-# Spooky License — Reversing Challenge — HackTheBox Writeup
 
 Greetings everyone. In this write-up, I’ll be tackling the “Spooky License” challenge — an easy-level (20 points) reversing challenge. I am covering this challenge to give some exposure to the capabilities of `angr`, a tool which can do concolic analysis of binaries (don't worry relevant links will be put under).
 

@@ -1,8 +1,7 @@
 ---
-layout: default
+layout: post
+title: "Bombs Landed — Reversing Challenge"
 ---
-
-# Bombs Landed — Reversing Challenge — HackTheBox Writeup
 
 Greetings everyone. In this write-up, I’ll be tackling the `Bombs Landed` challenge — my first time dealing with a medium-level (50 points) reversing challenge. I’m excited to share what I’ve learned and fill in the gaps since there are no detailed write-ups available. However, I won’t be giving away the flag directly. Instead, I’ll do my best to provide a comprehensive understanding of the challenge while still keeping things engaging.
 

@@ -39,6 +39,24 @@
       <span class="footer-text">&copy; {{ 'now' | date: "%Y" }} {{ site.title }}</span>
     </div>
   </footer>
+
+  <script>
+  // Lazy load images with blur placeholder
+  document.addEventListener('DOMContentLoaded', () => {
+    const images = document.querySelectorAll('#main_content img:not(.no-lazy)');
+
+    images.forEach(img => {
+      if (img.complete) {
+        img.classList.add('loaded');
+      } else {
+        img.classList.add('lazy');
+        img.addEventListener('load', () => {
+          img.classList.add('loaded');
+        });
+      }
+    });
+  });
+  </script>
 </body>
 
 </html>

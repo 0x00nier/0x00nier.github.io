@@ -1,8 +1,7 @@
 ---
-layout: default
+layout: post
+title: "ret2libm — IrisCTF 2023"
 ---
-
-# IrisCTF 2023 - ret2libm Write-up
 
 ## Preliminary Analysis
 

@@ -2,26 +2,219 @@
 layout: default
 ---
 
-<article class="post">
-  <header class="post-header">
-    <h1 class="post-title">{{ page.title }}</h1>
-    <div class="post-meta">
-      <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%-d %B %Y" }}</time>
-      {% if page.author %}<span class="post-author">by {{ page.author }}</span>{% endif %}
-    </div>
-  </header>
+<style>
+.post-wrapper {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
 
-  <div class="post-content">
-    {{ content }}
-  </div>
+.post {
+  flex: 1;
+  min-width: 0;
+}
 
-  {% if page.tags %}
-  <footer class="post-footer">
-    <div class="post-tags">
-      {% for tag in page.tags %}
-      <span class="tag">{{ tag }}</span>
-      {% endfor %}
+/* Override base theme styling */
+.post-header {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
+
+.post-title {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 0 0.5em 0 !important;
+  display: block !important;
+  border: none !important;
+}
+
+.post-toc {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+.post-toc::-webkit-scrollbar {
+  width: 4px;
+}
+
+.post-toc::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.post-toc::-webkit-scrollbar-thumb {
+  background: rgba(181, 232, 83, 0.2);
+  border-radius: 2px;
+}
+
+.post-toc-title {
+  font-family: Monaco, monospace;
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(181, 232, 83, 0.2);
+}
+
+.post-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.post-toc-item {
+  margin-bottom: 0;
+}
+
+.post-toc-link {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  text-decoration: none;
+  padding: 6px 0 6px 12px;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  line-height: 1.4;
+}
+
+.post-toc-link:hover {
+  color: #999;
+  border-left-color: rgba(181, 232, 83, 0.3);
+}
+
+.post-toc-link.active {
+  color: #b5e853;
+  border-left-color: #b5e853;
+}
+
+.post-toc-link.toc-h3 {
+  padding-left: 24px;
+  font-size: 12px;
+}
+
+.post-toc-link.toc-h4 {
+  padding-left: 36px;
+  font-size: 11px;
+}
+
+/* Hide TOC on mobile */
+@media (max-width: 1024px) {
+  .post-wrapper {
+    flex-direction: column;
+  }
+
+  .post-toc {
+    display: none;
+  }
+}
+</style>
+
+<div class="post-wrapper">
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">{{ page.title }}</h1>
+      <div class="post-meta">
+        <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%-d %B %Y" }}</time>
+        {% if page.author %}<span class="post-author">by {{ page.author }}</span>{% endif %}
+      </div>
+    </header>
+
+    <div class="post-content" id="post-content">
+      {{ content }}
     </div>
-  </footer>
-  {% endif %}
-</article>
+
+    {% if page.tags %}
+    <footer class="post-footer">
+      <div class="post-tags">
+        {% for tag in page.tags %}
+        <span class="tag">{{ tag }}</span>
+        {% endfor %}
+      </div>
+    </footer>
+    {% endif %}
+  </article>
+
+  <nav class="post-toc" id="post-toc">
+    <div class="post-toc-title">On this page</div>
+    <ul class="post-toc-list" id="toc-list"></ul>
+  </nav>
+</div>
+
+<script>
+(function() {
+  const content = document.getElementById('post-content');
+  const tocList = document.getElementById('toc-list');
+  const toc = document.getElementById('post-toc');
+
+  // Get all headings (h2, h3, h4)
+  const headings = content.querySelectorAll('h2, h3, h4');
+
+  if (headings.length === 0) {
+    toc.style.display = 'none';
+    return;
+  }
+
+  // Build TOC
+  headings.forEach((heading, index) => {
+    // Ensure heading has an id
+    if (!heading.id) {
+      heading.id = 'heading-' + index;
+    }
+
+    const li = document.createElement('li');
+    li.className = 'post-toc-item';
+
+    const a = document.createElement('a');
+    a.href = '#' + heading.id;
+    a.className = 'post-toc-link toc-' + heading.tagName.toLowerCase();
+    a.textContent = heading.textContent;
+
+    li.appendChild(a);
+    tocList.appendChild(li);
+  });
+
+  // Highlight active section on scroll
+  const tocLinks = tocList.querySelectorAll('.post-toc-link');
+
+  function updateActiveLink() {
+    let current = '';
+
+    headings.forEach(heading => {
+      const rect = heading.getBoundingClientRect();
+      if (rect.top <= 120) {
+        current = heading.id;
+      }
+    });
+
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  }
+
+  window.addEventListener('scroll', updateActiveLink);
+  updateActiveLink();
+
+  // Smooth scroll on click
+  tocLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = link.getAttribute('href').slice(1);
+      const target = document.getElementById(targetId);
+      if (target) {
+        const offset = 100;
+        const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top, behavior: 'smooth' });
+      }
+    });
+  });
+})();
+</script>

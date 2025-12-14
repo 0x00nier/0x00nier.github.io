@@ -1,8 +1,7 @@
 ---
-layout: default
+layout: post
+title: "babyseek — IrisCTF 2023"
 ---
-
-# IrisCTF 2023 - babyseek Write-up
 
 ## Preliminary Analysis
 

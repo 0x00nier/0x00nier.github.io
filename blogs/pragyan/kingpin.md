@@ -1,13 +1,15 @@
 ---
-layout: default
+layout: post
+title: "The Kingpin — Pragyan CTF 2023"
 ---
-# Pragyan CTF 2023 — The Kingpin Write-up
 
-Greetings everyone. Welcome to a very short write-up covering the Forensics challenge from Pragyan CTF 2023. Today, we will be discussing the “The Kingpin” challenge, an exciting challenge that involves some packet analysis, Image-Magick and some Photoshop (that’s how I did it at least). The challenge prompt reads —
+Greetings everyone. Welcome to a very short write-up covering the Forensics challenge from Pragyan CTF 2023. Today, we will be discussing the "The Kingpin" challenge, an exciting challenge that involves some packet analysis, Image-Magick and some Photoshop (that's how I did it at least). The challenge prompt reads —
 
 ![](img/chal.webp)
 
-So, we seem to have a packet capture file that we are supposed to take a look at. Let’s do exactly that.
+## Packet Analysis
+
+So, we seem to have a packet capture file that we are supposed to take a look at. Let's do exactly that.
 
 ![](img/wireshark.webp)
 
@@ -28,6 +30,8 @@ There are two zip files here and they contain folders of images.
 ![](img/all_listings.webp)
 
 As you can see each folder contains a couple of images.
+
+## Image Reconstruction
 
 ![](img/thunar.webp)
 

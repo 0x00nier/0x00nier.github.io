@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: post
+title: "Name that song 1 & 2 — IrisCTF 2023"
 ---
-# IrisCTF 2023 — Name that song && Name that song 2 Write-up
 
 Greetings everyone. Welcome to another write-up in our series covering the challenges from the Iris CTF 2023 event. Today, we’ll be discussing two interesting OSINT-like challenges from the Miscellaneous category: `Name that Song` and `Name that Song 2.` The challenge prompt for the first challenge reads:
 

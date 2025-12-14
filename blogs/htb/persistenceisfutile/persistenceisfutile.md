@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: post
+title: "PersistenceisFutile — Forensic Challenge"
 ---
-# PersistenceisFutile — Forensic Challenge — HackTheBox Write-up
 
 In this article, we will explore how to solve the Forensic Challenge called PersistenceisFutile present within HackTheBox. Credits to @0xdf for making this. This was rated “Medium” on the platform, but personally, I think some sub-sections of this challenge were not so medium. After solving this challenge, I saw that there was no proper write-up for this challenge and thus, for that reason I am writing this. I think this challenge is a great example of Incident Response.
 

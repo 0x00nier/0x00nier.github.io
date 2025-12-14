@@ -2,15 +2,94 @@
 layout: default
 ---
 
-
 <style>
-  #mytext {
-    word-wrap: break-word;
-  }
+#code-container {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(181, 232, 83, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+#code-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(181, 232, 83, 0.2);
+}
+
+.header-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot-red { background: #ff5f56; }
+.dot-yellow { background: #ffbd2e; }
+.dot-green { background: #27ca40; }
+
+#code-title {
+  font-family: Monaco, monospace;
+  font-size: 12px;
+  color: #666;
+  margin-left: auto;
+}
+
+#mytext {
+  font-family: Monaco, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #b5e853;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  margin: 0;
+  text-shadow: 0 0 2px rgba(181, 232, 83, 0.3);
+}
+
+#cursor {
+  display: inline-block;
+  width: 8px;
+  height: 16px;
+  background: #b5e853;
+  animation: blink 0.7s infinite;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(181, 232, 83, 0.1);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scanline {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
 </style>
 
-<pre><h3 id="mytext"></h3></pre>
-<!-- <h3 id="mytext"></h3> -->
+<div id="code-container">
+  <div id="code-header">
+    <span class="header-dot dot-red"></span>
+    <span class="header-dot dot-yellow"></span>
+    <span class="header-dot dot-green"></span>
+    <span id="code-title">dealloc.js</span>
+  </div>
+  <pre id="mytext"></pre><span id="cursor"></span>
+  <div class="scanline"></div>
+</div>
 
 
 <script>
@@ -273,19 +352,31 @@ console[_0x47f7d4(0x4d6, 0x4e5, 0x4d0, 0x4ea)](_0x47f7d4(0x4da, 0x4e8, 0x4c7, 0x
 `;
 const text = dealloc;
 const textContainer = document.getElementById("mytext");
+const cursor = document.getElementById("cursor");
 
 function animateText() {
-  const textArray = text.split("");
+  const chunkSize = 5; // Characters per frame
   let index = 0;
-  let intervalId = setInterval(() => {
-    textContainer.innerHTML += textArray[index];
-    index++;
 
-    if (index === textArray.length) {
-      clearInterval(intervalId);
+  function renderChunk() {
+    if (index >= text.length) {
+      cursor.style.display = 'none';
       return;
     }
-  }, 0.3);
+
+    // Add chunk of characters
+    const chunk = text.slice(index, index + chunkSize);
+    textContainer.textContent += chunk;
+    index += chunkSize;
+
+    // Auto-scroll to bottom
+    textContainer.scrollTop = textContainer.scrollHeight;
+
+    // Continue animation
+    requestAnimationFrame(renderChunk);
+  }
+
+  renderChunk();
 }
 
 animateText();

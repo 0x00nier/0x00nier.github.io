@@ -1,7 +1,7 @@
 ---
-layout: default
+layout: post
+title: "BroScience — HackTheBox (Medium)"
 ---
-# BroScience (Medium)— HackTheBox Write-up
 
 Hello everyone, welcome to this write-up where we will delve into the details of BroScience, a moderate-difficulty challenge on HackTheBox. I found this machine particularly intriguing as it required the use of techniques that were new to me, both in terms of gaining initial access and escalating privileges.
 
@@ -42,6 +42,8 @@ Upon examining the `includes` directory, I discovered several intriguing PHP fil
 And luckily, I quickly stumbled upon a good lead.
 
 ![](./img/path.webp)
+
+## Exploiting LFI
 
 My initial guess was that the page loads image files stored on the server using the `path` parameter, indicating the possibility of a local file inclusion (LFI) vulnerability. I attempted to access `/etc/passwd` using the traditional LFI method, but it was unsuccessful. I then tried URL-encoding the string passed in the path parameter, but this also did not yield any results. From my experience, however, I know that sometimes double URL-encoding can work when single encoding does not.
 
@@ -245,6 +247,8 @@ After running this, we should be able to log in (this is a hit-and-miss method, 
 
 ![](./img/gottem.webp)
 
+## Deserialization Attack
+
 And I was able to log in. I discovered a new feature on the site, the ability to switch between light and dark themes. It appeared that the `swap_theme.php` file was responsible for this functionality. Since there were no other notable features, I decided to examine the source code of `swap_theme.php` to see if there were any vulnerabilities or useful information.
 
 ```php
@@ -372,7 +376,9 @@ We should be able to run `rev.php` directly and get a working shell.
 
 Very cool.
 
-I tried looking for `user.txt` in one of the user directories in `/home` and it seems that I couldn’t access it as `www-data`.
+I tried looking for `user.txt` in one of the user directories in `/home` and it seems that I couldn't access it as `www-data`.
+
+## User Access
 
 I know that `bill` is a user on the site and must have a password. We can check the PostgreSQL server for password hashes and crack them.
 
@@ -449,6 +455,8 @@ bill@broscience:~$ cat user.txt
 4c1XXXXXXXXXXXXXXXXXXXXXXXX11671
 bill@broscience:~$
 ```
+
+## Privilege Escalation
 
 Time for root. Root is also pretty interesting. After running l and finding nothing much, my next step is usually to just run `PsPy` and see if I missed out on some regularly running processes.
 
