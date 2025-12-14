@@ -1,1 +1,40 @@
+# Jekyll build output
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# Sass cache
+.sass-cache/
+
+# Ruby/Bundler dependencies
+vendor/
+.bundle/
+*.gem
+
+# IDE and editor files
+.dccache
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-*
+*.sublime-project
+*.sublime-workspace
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+.Trashes
+.AppleDouble
+
+# Build logs
+gem_make.out
+mkmf.log
+
+# Misc
 *null-ls*
+
+# Claude
+.claude
