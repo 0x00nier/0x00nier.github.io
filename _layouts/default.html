@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: " en-US" }}">
+<html lang="{{ site.lang | default: "en-US" }}">
 
 <head>
   <meta charset='utf-8'>
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <!-- <meta name="viewport" content="width=device-width, initial-scale=0.5"> -->
-  <meta name="viewport" content="width=device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=0.5">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
   {% include head-custom.html %}
-  <title>{{ site.description }}</title>
+  <title>{{ page.title | default: site.title }} - {{ site.description }}</title>
 
   {% seo %}
 </head>
@@ -16,30 +15,30 @@
 <body>
 
   <header>
-    <div class="container">
-      <a id="a-title" href="{{ '/' | relative_url }}">
+    <div class="container header-inner">
+      <a class="site-title" href="{{ '/' | relative_url }}">
         <h1>{{ site.title | default: site.github.repository_name }}</h1>
       </a>
 
-      <a id="a-title" href="../../../../../../../../../blogs.html" style="text-decoration:none">
-        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 5px;">writeups/</h1>
-      </a>
-
-      <a id="a-title" href="../../../../../../../../../experience.html" style="text-decoration:none">
-        <h1 style="font-size: 18px;float:right;margin-top: -40px; margin-right: 120px;">xp/</h1>
-      </a>
-
-      <a id="a-title" href="../../../../../../../../../aboutme.html" style="text-decoration:none">
-        <h1 style="font-size: 18px; float:right;margin-top: -40px;margin-right: 175px;">whoami/</h1>
-      </a>
+      <nav class="main-nav">
+        <a href="{{ '/aboutme.html' | relative_url }}" class="nav-link">whoami/</a>
+        <a href="{{ '/experience.html' | relative_url }}" class="nav-link">xp/</a>
+        <a href="{{ '/blogs.html' | relative_url }}" class="nav-link">writeups/</a>
+      </nav>
     </div>
   </header>
 
-  <div class="container">
+  <main class="container">
     <section id="main_content">
       {{ content }}
     </section>
-  </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <span class="footer-text">&copy; {{ 'now' | date: "%Y" }} {{ site.title }}</span>
+    </div>
+  </footer>
 </body>
 
 </html>
