@@ -38,6 +38,7 @@ mkmf.log
 
 # Claude
 .claude
+game.md
 
 # Images
 *.png
