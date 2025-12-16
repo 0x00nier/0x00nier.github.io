@@ -11,14 +11,16 @@ layout: default
   height: 100vh;
   z-index: -1;
   opacity: 0;
-  transition: opacity 1.5s ease-in;
+  transition: opacity 1.5s ease-in, z-index 0s 1.5s;
   pointer-events: none;
 }
 
 #matrix-bg.active {
   opacity: 1;
+  z-index: 9999;
   pointer-events: auto;
   cursor: pointer;
+  transition: opacity 1.5s ease-in, z-index 0s 0s;
 }
 
 #matrix-hint {
@@ -30,7 +32,7 @@ layout: default
   font-size: 14px;
   color: #b5e853;
   text-shadow: 0 0 10px #b5e853;
-  z-index: 1000;
+  z-index: 10000;
   opacity: 0;
   transition: opacity 0.5s ease;
   pointer-events: none;
