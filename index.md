@@ -11,16 +11,19 @@ layout: default
   height: 100vh;
   z-index: -1;
   opacity: 0;
-  transition: opacity 1.5s ease-in, z-index 0s 1.5s;
-  pointer-events: none;
+  transition: opacity 1.5s ease-in;
+  cursor: pointer;
 }
 
 #matrix-bg.active {
   opacity: 1;
-  z-index: 9999;
-  pointer-events: auto;
-  cursor: pointer;
-  transition: opacity 1.5s ease-in, z-index 0s 0s;
+}
+
+/* When matrix is active, let clicks pass through content to canvas */
+body.matrix-active #main_content,
+body.matrix-active header,
+body.matrix-active footer {
+  pointer-events: none;
 }
 
 #matrix-hint {
