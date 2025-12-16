@@ -280,11 +280,21 @@ In summary, focus on how to use Linux properly, how to get in and Active Directo
 
 ### For Enumeration
 
-[https://blog.certcube.com/oscp-enumeration-cheatsheet/](https://blog.certcube.com/oscp-enumeration-cheatsheet/)
+> **OSCP Enumeration Cheatsheet**
+>
+> A comprehensive cheatsheet for enumeration techniques useful for OSCP preparation.
+>
+> [blog.certcube.com](https://blog.certcube.com/oscp-enumeration-cheatsheet/)
+
+---
 
 ### For any kind of initial access vector
 
-**HackTricks** — Welcome to the page where you will find each hacking trick/technique/whatever I have learnt from CTFs, real life apps... [book.hacktricks.xyz](https://book.hacktricks.xyz/)
+> **HackTricks**
+>
+> Welcome to the page where you will find each hacking trick/technique/whatever I have learnt from CTFs, real life apps, research, and news.
+>
+> [book.hacktricks.xyz](https://book.hacktricks.xyz/)
 
 Literally. If you think there is something called an SSTI? Google `ssti hacktricks`
 
@@ -306,61 +316,121 @@ searchsploit -m <EDB ID>
 
 Ez pz. But of course, searching for things is the real skill needed here and executing what you find. You learn stuff like this with practice and experience.
 
+---
+
 ### For Reverse Shells
 
-**Online - Reverse Shell Generator** — Online Reverse Shell generator with Local Storage functionality, URI & Base64 Encoding, MSFVenom Generator, and Raw... [www.revshells.com](https://www.revshells.com/)
+> **Online - Reverse Shell Generator**
+>
+> Online Reverse Shell generator with Local Storage functionality, URI & Base64 Encoding, MSFVenom Generator, and Raw mode.
+>
+> [www.revshells.com](https://www.revshells.com/)
+
+---
 
 ### For Privilege Escalation
 
 Same thing. You can find most of what you need on HackTricks. But then again there should be a checklist of what you can look for. Some of them are -
 
-**Linux**
+#### Linux
 
-[PayloadsAllTheThings](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Linux%20-%20Privilege%20Escalation.md) (There is a link here. Hover your mouse on it)
+> **PayloadsAllTheThings - Linux Privilege Escalation**
+>
+> A comprehensive list of useful payloads and bypasses for Linux privilege escalation.
+>
+> [github.com](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Linux%20-%20Privilege%20Escalation.md)
 
-**Checklist - Linux Privilege Escalation** — Checklist - Local Windows Privilege Escalation [book.hacktricks.xyz](https://book.hacktricks.xyz/linux-hardening/linux-privilege-escalation-checklist)
+> **HackTricks - Linux Privilege Escalation Checklist**
+>
+> Checklist for Linux Privilege Escalation techniques and vectors.
+>
+> [book.hacktricks.xyz](https://book.hacktricks.xyz/linux-hardening/linux-privilege-escalation-checklist)
 
-**Windows**
+#### Windows
 
-**Checklist - Local Windows Privilege Escalation** — Checklist - Local Windows Privilege Escalation [book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/checklist-windows-privilege-escalation)
+> **HackTricks - Windows Privilege Escalation Checklist**
+>
+> Checklist for Local Windows Privilege Escalation techniques.
+>
+> [book.hacktricks.xyz](https://book.hacktricks.xyz/windows-hardening/checklist-windows-privilege-escalation)
 
-**Checklist - Local Windows Privilege Escalation** — https://book.hacktricks.xyz/windows/windows-local-privilege-escalation#kernel-exploits [oscp.infosecsanyam.in](https://oscp.infosecsanyam.in/)
+> **OSCP Windows PrivEsc Guide**
+>
+> Another comprehensive guide for Windows local privilege escalation with kernel exploits and more.
+>
+> [oscp.infosecsanyam.in](https://oscp.infosecsanyam.in/)
 
 For Linux, the best thing is running linPEAS. For Windows, it's winPEAS. But there are many more scripts for the same thing. For Active Directory, adPEAS and BloodHound (a little annoying to use sometimes) are great.
 
+---
+
 ### For Other Stuff
 
-**Buffer Overflows for OSCP**
+#### Buffer Overflows
 
-**TryHackMe | Buffer Overflow Prep** — Practice stack based buffer overflows! [tryhackme.com](https://tryhackme.com/room/bufferoverflowprep)
+> **TryHackMe | Buffer Overflow Prep**
+>
+> Practice stack based buffer overflows!
+>
+> [tryhackme.com](https://tryhackme.com/room/bufferoverflowprep)
 
-**Pentest-Cheatsheets/buffer-overflows.rst at master** — There are generally two ways to use Immunity Debugger to debug an application: Make sure the application is running... [github.com](https://github.com/Tib3rius/Pentest-Cheatsheets/blob/master/exploits/buffer-overflows.rst)
+> **Tib3rius - Buffer Overflow Cheatsheet**
+>
+> There are generally two ways to use Immunity Debugger to debug an application. Great methodology guide for OSCP BOF.
+>
+> [github.com](https://github.com/Tib3rius/Pentest-Cheatsheets/blob/master/exploits/buffer-overflows.rst)
 
-**Machines to Practice on**
+#### Machines to Practice on
 
-**NetSecFocus Trophy Room - Google Drive** — Edit description [docs.google.com](https://docs.google.com/spreadsheets/u/1/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/htmlview)
+> **NetSecFocus Trophy Room**
+>
+> TJ Null's list of OSCP-like machines from HackTheBox, Proving Grounds, and more.
+>
+> [docs.google.com](https://docs.google.com/spreadsheets/u/1/d/1dwSMIAPIam0PuRBkCiDI88pU3yzrqqHkDtBngUHNCw8/htmlview)
 
-**Active Directory**
+#### Active Directory
 
-[My favourite cheatsheet](https://wadcoms.github.io/) (Hover your mouse here)
+> **WADComs**
+>
+> An interactive cheat sheet containing a curated list of offensive security tools and their respective commands for Windows/AD environments.
+>
+> [wadcoms.github.io](https://wadcoms.github.io/)
 
-**One of the Best Overall Cheatsheets Out There**
-
-**OSCP personal cheatsheet** — Wordpress panel RCE Username enumeration Drupal panel RCE Default credentials Brute force Tomcat panel RCE HTTP basic... [liodeus.github.io](https://liodeus.github.io/2020/09/18/OSCP-personal-cheatsheet.html)
-
-My top favourite^ (I didn't use it much though honestly. Not an overall cheatsheet kind of guy)
-
-**OSCP Cheatsheet** — OSCP Cheatsheet General Enumeration - Nmap Replace $ip with target IP Initial scan nmap -Pn -n -vvv -oN nmap/initial... [www.noobsec.net](https://www.noobsec.net/)
-
-> **Note** — While these cheatsheets are great by themselves, your own notes may prove to be even more helpful. Be sure to make notes for yourself on all these domains.
-
-**TryHackMe | Compromising Active Directory** — Approximately 90% of the Global Fortune 1000 companies use Active Directory (AD). If an organisation's estate uses... [tryhackme.com](https://tryhackme.com/room/introtoad)
+> **TryHackMe | Compromising Active Directory**
+>
+> Approximately 90% of the Global Fortune 1000 companies use Active Directory (AD). This module walks you through breaching AD, escalating privileges, and pivoting around.
+>
+> [tryhackme.com](https://tryhackme.com/room/introtoad)
 
 The above module in TryHackMe walks you through what AD is all about. How you can breach AD, escalate privileges and pivot around. Absolutely recommended. If you want go above and beyond, also do the **Red Teaming Learning Path**.
 
+#### Overall Cheatsheets
+
+> **OSCP Personal Cheatsheet by Liodeus**
+>
+> Covers Wordpress panel RCE, Username enumeration, Drupal panel RCE, Default credentials, Brute force, Tomcat panel RCE, HTTP basic authentication, and much more.
+>
+> [liodeus.github.io](https://liodeus.github.io/2020/09/18/OSCP-personal-cheatsheet.html)
+
+My top favourite^ (I didn't use it much though honestly. Not an overall cheatsheet kind of guy)
+
+> **OSCP Cheatsheet by NoobSec**
+>
+> OSCP Cheatsheet covering General Enumeration with Nmap, various exploitation techniques, and more.
+>
+> [www.noobsec.net](https://www.noobsec.net/)
+
+> **Note** — While these cheatsheets are great by themselves, your own notes may prove to be even more helpful. Be sure to make notes for yourself on all these domains.
+
+---
+
 ### Platforms to practice on
 
-**TryHackMe | Cyber Security Training** — TryHackMe goes way beyond textbooks and focuses on fun interactive lessons that make you put theory into practice... [tryhackme.com](https://tryhackme.com/)
+> **TryHackMe | Cyber Security Training**
+>
+> TryHackMe goes way beyond textbooks and focuses on fun interactive lessons that make you put theory into practice.
+>
+> [tryhackme.com](https://tryhackme.com/)
 
 I genuinely believe TryHackMe to be the best for beginners. If you are somewhat of a beginner myself, do as many free rooms as you can. Once you start feeling comfortable with the easy-medium difficulty of machines, slowly move onto the real deal that is HackTheBox and ProvingGrounds.
 
@@ -374,11 +444,19 @@ Beyond these learning paths, start with the easy-level challenge machines and sl
 
 If you are able to do the hard ones comfortably, then you sit around 70–80% easier (of course I am including the Active Directory machines on THM as well).
 
-**Offensive Security** — Edit description [portal.offensive-security.com](https://portal.offensive-security.com/)
+> **Offensive Security Portal**
+>
+> Official Offensive Security portal for accessing course materials and labs.
+>
+> [portal.offensive-security.com](https://portal.offensive-security.com/)
 
 **Proving Grounds Play** is said to have machines previously used in past OSCP exams so it is definitely worth the price. The machine by themselves are also challenging and fun. After giving the OSCP, I can easily say that the Proving Grounds Play platform (and of course the Offsec Labs themselves) will be the best starting point after TryHackMe's beginner learning paths.
 
-**Hack The Box** — Edit description [app.hackthebox.com](https://app.hackthebox.com/)
+> **Hack The Box**
+>
+> The ultimate gamified cybersecurity training platform with hands-on labs and challenges.
+>
+> [app.hackthebox.com](https://app.hackthebox.com/)
 
 For **HackTheBox**, make sure to refer to TJ Nulls list on everything. There are some retired machines on the list and you may need to buy a premium VIP subscription for it. I barely did like 10–20 machines on the list but the more practice, the better (as usual).
 
