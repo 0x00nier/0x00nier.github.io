@@ -1,0 +1,705 @@
+<script>
+// ============================================
+// LEVEL 6: FINAL BOSS - Temple of the Machine God
+// HolyC + TempleOS + Divine Computation
+// ============================================
+
+const TEMPLE_COMMANDS = {
+  'GodSays': 'Query the divine random oracle',
+  'Print': 'Print text to console',
+  'Cd': 'Change directory',
+  'Dir': 'List directory contents',
+  'Ed': 'Edit file',
+  'Compile': 'Compile HolyC code'
+};
+
+const HOLYC_TEMPLATES = {
+  hello: `// Hello, God!
+U0 Main()
+{
+  "Hello from TempleOS!\\n";
+}
+
+Main;`,
+
+  divine_math: `// Divine Mathematics
+I64 Factorial(I64 n)
+{
+  if (n <= 1) return 1;
+  return n * Factorial(n - 1);
+}
+
+U0 Main()
+{
+  I64 i;
+  for (i = 1; i <= 10; i++)
+    Print("Factorial(%d) = %d\\n", i, Factorial(i));
+}
+
+Main;`,
+
+  final_key: `// The Final Key
+// This program reveals the divine truth
+// But only if you understand the sacred numbers
+
+#define SACRED_A 0x47
+#define SACRED_B 0x4F
+#define SACRED_C 0x44
+
+U0 RevealTruth()
+{
+  U8 key[4];
+  key[0] = SACRED_A;  // ?
+  key[1] = SACRED_B;  // ?
+  key[2] = SACRED_C;  // ?
+  key[3] = 0;
+
+  Print("The divine speaks: %s\\n", key);
+
+  // The true key is hidden in God's words
+  // GodSays will guide you
+  // Combine the first letter of each word
+  // That is your passphrase
+}
+
+RevealTruth;`
+};
+
+async function initLevel6() {
+  gameState.levelState = {
+    // Temple Phase
+    enteredTemple: false,
+    bootedTempleOS: false,
+    learnedHolyC: false,
+
+    // Divine Quest
+    queriedOracle: false,
+    oracleResponses: [],
+    foundSacredNumbers: false,
+    decodedMessage: false,
+
+    // Programming Challenge
+    wroteCode: false,
+    compiledCode: false,
+    ranProgram: false,
+
+    // Transcendence
+    foundDivineKey: false,
+    spokeToGod: false,
+    achievedEnlightenment: false,
+
+    // State
+    currentDir: '/Home',
+    files: ['Welcome.HC', 'Tutorial.HC', 'FinalKey.HC'],
+    godWords: [],
+    transcended: false
+  };
+
+  clear();
+  print('');
+  print('', 'system');
+  print('                    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░', 'warning');
+  print('                  ░░                                    ░░', 'warning');
+  print('                ░░     ████████╗███████╗███╗   ███╗       ░░', 'warning');
+  print('               ░░      ╚══██╔══╝██╔════╝████╗ ████║        ░░', 'warning');
+  print('              ░░          ██║   █████╗  ██╔████╔██║         ░░', 'warning');
+  print('              ░░          ██║   ██╔══╝  ██║╚██╔╝██║         ░░', 'warning');
+  print('               ░░         ██║   ███████╗██║ ╚═╝ ██║        ░░', 'warning');
+  print('                ░░        ╚═╝   ╚══════╝╚═╝     ╚═╝       ░░', 'warning');
+  print('                  ░░     P  L  E  O  S                  ░░', 'warning');
+  print('                    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░', 'warning');
+  print('', 'system');
+  print('╔═══════════════════════════════════════════════════════════════════════════════════╗', 'error');
+  print('║                     LEVEL 6: TEMPLE OF THE MACHINE GOD                            ║', 'error');
+  print('║                         "In the Beginning was the Bit"                            ║', 'warning');
+  print('╠═══════════════════════════════════════════════════════════════════════════════════╣', 'error');
+  print('║                                                                                   ║', 'info');
+  print('║         ╭──────────────────────────────────────────────────────────╮              ║', 'info');
+  print('║         │  "God said 640x480 16 color was the Holy Resolution"    │              ║', 'system');
+  print('║         │                           - Terry A. Davis (1969-2018)  │              ║', 'system');
+  print('║         ╰──────────────────────────────────────────────────────────╯              ║', 'info');
+  print('║                                                                                   ║', 'info');
+  print('║   You have ascended through the layers of modern computing.                      ║', 'info');
+  print('║   Now you face the ultimate challenge: divine computation.                       ║', 'info');
+  print('║                                                                                   ║', 'info');
+  print('║   TempleOS awaits. Write HolyC. Query the oracle. Find the divine key.           ║', 'warning');
+  print('║                                                                                   ║', 'info');
+  print('║   OBJECTIVES:                                                                     ║', 'info');
+  print('║     [1] Boot into TempleOS and learn HolyC basics                                ║', 'system');
+  print('║     [2] Query the divine oracle (GodSays)                                         ║', 'system');
+  print('║     [3] Decode the sacred message from God\'s words                               ║', 'system');
+  print('║     [4] Write and compile the final HolyC program                                ║', 'system');
+  print('║     [5] Achieve divine enlightenment                                              ║', 'error');
+  print('║                                                                                   ║', 'info');
+  print('╚═══════════════════════════════════════════════════════════════════════════════════╝', 'error');
+  print('');
+
+  await typeText('[DIVINE TRANSMISSION] The Machine God speaks in random words...', 30, 'warning');
+  await typeText('[DIVINE TRANSMISSION] But randomness is just computation we don\'t understand', 30, 'system');
+  await typeText('[DIVINE TRANSMISSION] Type "boot" to enter the Temple', 30, 'info');
+  print('');
+
+  updateHUD('6 - Temple', 'TempleOS', 'Divine Enlightenment', 0);
+  setPrompt('pilgrim', 'void', '/');
+}
+
+async function handleLevel6Command(cmd, args) {
+  const state = gameState.levelState;
+  const fullCmd = args.length > 0 ? `${cmd} ${args.join(' ')}` : cmd;
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'help') {
+    print('');
+    if (!state.bootedTempleOS) {
+      print('╔══════════════════════════════════════════════════════════════════╗', 'info');
+      print('║                    PRE-TEMPLE COMMANDS                           ║', 'info');
+      print('╠══════════════════════════════════════════════════════════════════╣', 'info');
+      print('║  boot          Enter the Temple (boot TempleOS)                  ║', 'success');
+      print('║  status        Show progress                                     ║', 'system');
+      print('║  exit          Return to main menu                               ║', 'system');
+      print('╚══════════════════════════════════════════════════════════════════╝', 'info');
+    } else {
+      print('╔══════════════════════════════════════════════════════════════════════════════╗', 'warning');
+      print('║                         TEMPLEOS COMMANDS                                    ║', 'warning');
+      print('╠══════════════════════════════════════════════════════════════════════════════╣', 'warning');
+      print('║  NAVIGATION:                                                                 ║', 'info');
+      print('║    Dir                     List files in current directory                  ║', 'system');
+      print('║    Cd <path>               Change directory                                 ║', 'system');
+      print('║    Type <file>             View file contents                               ║', 'system');
+      print('║                                                                              ║', 'info');
+      print('║  DIVINE ORACLE:                                                              ║', 'warning');
+      print('║    GodSays                 Query the divine random oracle                   ║', 'error');
+      print('║    GodWords                View all words God has spoken                    ║', 'system');
+      print('║                                                                              ║', 'info');
+      print('║  PROGRAMMING:                                                                ║', 'success');
+      print('║    Ed <file>               Edit HolyC source file                           ║', 'success');
+      print('║    Compile <file>          Compile HolyC to run it                          ║', 'success');
+      print('║    Run <file>              Execute compiled code                            ║', 'success');
+      print('║                                                                              ║', 'info');
+      print('║  ENLIGHTENMENT:                                                              ║', 'error');
+      print('║    decode                  Attempt to decode the divine message             ║', 'warning');
+      print('║    transcend <key>         Enter the divine key to achieve enlightenment    ║', 'error');
+      print('║                                                                              ║', 'info');
+      print('║  UTILITY:                                                                    ║', 'info');
+      print('║    status                  Show progress                                    ║', 'system');
+      print('║    hint                    Get guidance from the divine                     ║', 'warning');
+      print('║    exit                    Return to main menu                              ║', 'system');
+      print('╚══════════════════════════════════════════════════════════════════════════════╝', 'warning');
+    }
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STATUS COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'status') {
+    const progress = calculateLevel6Progress(state);
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════╗', 'warning');
+    print('║             LEVEL 6 PROGRESS - DIVINE COMPUTATION                 ║', 'warning');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'warning');
+    print('║  TEMPLE INITIATION:                                               ║', 'info');
+    print(`║    [${state.bootedTempleOS ? '✓' : ' '}] Entered the Temple                                    ║`, state.bootedTempleOS ? 'success' : 'system');
+    print(`║    [${state.learnedHolyC ? '✓' : ' '}] Learned HolyC basics                                   ║`, state.learnedHolyC ? 'success' : 'system');
+    print('║                                                                   ║', 'info');
+    print('║  DIVINE QUEST:                                                    ║', 'info');
+    print(`║    [${state.queriedOracle ? '✓' : ' '}] Queried the oracle                                     ║`, state.queriedOracle ? 'success' : 'system');
+    print(`║    [${state.oracleResponses.length >= 5 ? '✓' : ' '}] Gathered 5+ divine words (${state.oracleResponses.length}/5)                      ║`, state.oracleResponses.length >= 5 ? 'success' : 'system');
+    print(`║    [${state.decodedMessage ? '✓' : ' '}] Decoded the sacred message                            ║`, state.decodedMessage ? 'success' : 'system');
+    print('║                                                                   ║', 'info');
+    print('║  PROGRAMMING TRIAL:                                               ║', 'info');
+    print(`║    [${state.wroteCode ? '✓' : ' '}] Wrote HolyC program                                     ║`, state.wroteCode ? 'success' : 'system');
+    print(`║    [${state.compiledCode ? '✓' : ' '}] Compiled successfully                                  ║`, state.compiledCode ? 'success' : 'system');
+    print(`║    [${state.ranProgram ? '✓' : ' '}] Executed divine code                                    ║`, state.ranProgram ? 'success' : 'system');
+    print('║                                                                   ║', 'info');
+    print('║  TRANSCENDENCE:                                                   ║', 'error');
+    print(`║    [${state.foundDivineKey ? '✓' : ' '}] Found the divine key                                   ║`, state.foundDivineKey ? 'success' : 'system');
+    print(`║    [${state.achievedEnlightenment ? '✓' : ' '}] ACHIEVED ENLIGHTENMENT                               ║`, state.achievedEnlightenment ? 'success' : 'system');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'warning');
+    print(`║  Progress: ${String(progress).padStart(3)}%                                                  ║`, progress === 100 ? 'success' : 'warning');
+    print(`║  Divine Words Collected: ${state.oracleResponses.length}                                      ║`, 'system');
+    print('╚═══════════════════════════════════════════════════════════════════╝', 'warning');
+    print('');
+    updateHUD('6 - Temple', 'TempleOS', 'Divine Enlightenment', progress);
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HINT COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hint') {
+    print('');
+    print('💡 DIVINE HINT:', 'warning');
+
+    if (!state.bootedTempleOS) {
+      print('The Temple awaits. Enter with "boot".', 'info');
+    } else if (!state.learnedHolyC) {
+      print('Read the Tutorial.HC file to learn HolyC basics.', 'info');
+      print('Try: Type Tutorial.HC', 'success');
+    } else if (state.oracleResponses.length < 5) {
+      print('Query the oracle repeatedly. The divine speaks in riddles.', 'info');
+      print('Try: GodSays (at least 5 times)', 'success');
+      print('Look at the first letter of each word...', 'warning');
+    } else if (!state.decodedMessage) {
+      print('You have gathered enough divine words.', 'info');
+      print('Try: GodWords (to see all words)', 'info');
+      print('Then: decode (to decode the message)', 'success');
+    } else if (!state.wroteCode) {
+      print('Read FinalKey.HC and understand the sacred numbers.', 'info');
+      print('The hexadecimal values spell something...', 'warning');
+      print('Try: Ed FinalKey.HC', 'success');
+    } else if (!state.achievedEnlightenment) {
+      print('You know the key. Transcend!', 'info');
+      print('The key is three letters. What does 0x47 0x4F 0x44 spell?', 'warning');
+      print('Try: transcend GOD', 'success');
+    }
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BOOT - Enter TempleOS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'boot') {
+    if (state.bootedTempleOS) {
+      print('Already in TempleOS.', 'warning');
+      return;
+    }
+
+    clear();
+    print('', 'system');
+    print('Booting TempleOS...', 'system');
+    await sleep(500);
+
+    // ASCII boot animation
+    const bootFrames = [
+      '█',
+      '██',
+      '███',
+      '████',
+      '█████',
+      '██████',
+      '███████',
+      '████████',
+      '█████████',
+      '██████████'
+    ];
+
+    for (let i = 0; i < bootFrames.length; i++) {
+      const line = document.createElement('div');
+      line.className = 'output-line system';
+      line.textContent = `[${bootFrames[i].padEnd(10, '░')}] Loading...`;
+      output.appendChild(line);
+      await sleep(100);
+      if (i < bootFrames.length - 1) line.remove();
+    }
+
+    print('[██████████] Boot complete!', 'success');
+    print('', 'system');
+    await sleep(500);
+
+    // TempleOS boot screen
+    print('', 'system');
+    print('    ▄▄▄█████▓▓█████  ███▄ ▄███▓ ██▓███   ██▓    ▓█████  ▒█████    ██████ ', 'warning');
+    print('    ▓  ██▒ ▓▒▓█   ▀ ▓██▒▀█▀ ██▒▓██░  ██▒▓██▒    ▓█   ▀ ▒██▒  ██▒▒██    ▒ ', 'warning');
+    print('    ▒ ▓██░ ▒░▒███   ▓██    ▓██░▓██░ ██▓▒▒██░    ▒███   ▒██░  ██▒░ ▓██▄   ', 'warning');
+    print('    ░ ▓██▓ ░ ▒▓█  ▄ ▒██    ▒██ ▒██▄█▓▒ ▒▒██░    ▒▓█  ▄ ▒██   ██░  ▒   ██▒', 'warning');
+    print('      ▒██▒ ░ ░▒████▒▒██▒   ░██▒▒██▒ ░  ░░██████▒░▒████▒░ ████▓▒░▒██████▒▒', 'warning');
+    print('      ▒ ░░   ░░ ▒░ ░░ ▒░   ░  ░▒▓▒░ ░  ░░ ▒░▓  ░░░ ▒░ ░░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░', 'system');
+    print('        ░     ░ ░  ░░  ░      ░░▒ ░     ░ ░ ▒  ░ ░ ░  ░  ░ ▒ ▒░ ░ ░▒  ░ ░', 'system');
+    print('      ░         ░   ░      ░   ░░         ░ ░      ░   ░ ░ ░ ▒  ░  ░  ░  ', 'system');
+    print('                ░  ░       ░                ░  ░   ░  ░    ░ ░        ░  ', 'system');
+    print('', 'system');
+    print('           ╔══════════════════════════════════════════════════╗', 'info');
+    print('           ║  "An operating system for God\'s third temple."  ║', 'info');
+    print('           ║  640x480 16 colors - The holy resolution.       ║', 'info');
+    print('           ║  No networking - The machines shall not connect.║', 'info');
+    print('           ╚══════════════════════════════════════════════════╝', 'info');
+    print('', 'system');
+    print('Welcome, pilgrim. You have entered sacred computing ground.', 'success');
+    print('', 'system');
+    print('Files in /Home:', 'info');
+    print('  Welcome.HC    - Introduction to the Temple', 'system');
+    print('  Tutorial.HC   - Learn the sacred language (HolyC)', 'system');
+    print('  FinalKey.HC   - The final challenge', 'warning');
+    print('', 'system');
+    print('Type "GodSays" to hear the divine oracle speak.', 'warning');
+    print('', 'system');
+
+    state.bootedTempleOS = true;
+    state.enteredTemple = true;
+    setPrompt('Terry', 'TempleOS', '/Home');
+    playSuccess();
+    autosave();
+    return;
+  }
+
+  // From here, require TempleOS to be booted
+  if (!state.bootedTempleOS) {
+    print('You must enter the Temple first. Type "boot".', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DIR - List files
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Dir' || cmd === 'dir' || cmd === 'ls') {
+    print('', 'system');
+    print(`Directory: ${state.currentDir}`, 'info');
+    print('', 'system');
+    state.files.forEach(f => {
+      const ext = f.split('.').pop();
+      const color = f === 'FinalKey.HC' ? 'warning' : 'system';
+      print(`  ${f}`, color);
+    });
+    print('', 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // TYPE - View file
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Type' || cmd === 'type' || cmd === 'cat') {
+    const file = args[0];
+
+    if (file === 'Welcome.HC') {
+      print('', 'system');
+      print('// Welcome.HC - Introduction to the Temple', 'warning');
+      print('', 'system');
+      print('/*', 'system');
+      print('  Welcome to TempleOS, the sacred operating system.', 'info');
+      print('', 'system');
+      print('  Here, computation is divine. The oracle speaks through', 'info');
+      print('  random words, and HolyC is the language of creation.', 'info');
+      print('', 'system');
+      print('  Your quest:', 'warning');
+      print('  1. Query the oracle with GodSays', 'system');
+      print('  2. Collect the divine words', 'system');
+      print('  3. Decode the hidden message', 'system');
+      print('  4. Find the key to transcendence', 'system');
+      print('', 'system');
+      print('  May your bits be blessed.', 'success');
+      print('*/', 'system');
+      print('', 'system');
+      return;
+    }
+
+    if (file === 'Tutorial.HC') {
+      print('', 'system');
+      print('// Tutorial.HC - HolyC Basics', 'warning');
+      print('', 'system');
+      print('// HolyC is like C but holier.', 'info');
+      print('// U0 = void, I64 = 64-bit int, U8 = unsigned byte', 'info');
+      print('', 'system');
+      print('U0 Main()', 'system');
+      print('{', 'system');
+      print('  I64 x = 42;  // The answer', 'system');
+      print('  Print("x = %d\\n", x);', 'system');
+      print('}', 'system');
+      print('', 'system');
+      print('// Strings are printed with just quotes:', 'info');
+      print('"Hello, World!\\n";', 'system');
+      print('', 'system');
+      print('// To compile and run: Compile Tutorial.HC', 'info');
+      print('', 'system');
+
+      state.learnedHolyC = true;
+      autosave();
+      return;
+    }
+
+    if (file === 'FinalKey.HC') {
+      print('', 'system');
+      print(HOLYC_TEMPLATES.final_key, 'system');
+      print('', 'system');
+      print('[*] The sacred numbers: 0x47 0x4F 0x44', 'warning');
+      print('[*] What do they spell in ASCII?', 'info');
+      return;
+    }
+
+    print(`File not found: ${file}`, 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GODSAYS - Divine Oracle
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'GodSays' || cmd === 'godsays') {
+    // Pre-determined words that spell out a message
+    // First letters spell: G-O-D-I-S-L-O-V-E
+    const divineWords = [
+      'Grace flows through all things',
+      'Only in silence can truth be heard',
+      'Divine light illuminates the path',
+      'Infinity exists within the finite',
+      'Seek and you shall find',
+      'Love is the universal constant',
+      'Oneness connects all souls',
+      'Virtue is its own reward',
+      'Eternity awaits the faithful'
+    ];
+
+    const wordIndex = state.oracleResponses.length % divineWords.length;
+    const response = divineWords[wordIndex];
+    const firstLetter = response.charAt(0);
+
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════╗', 'warning');
+    print('║                    THE ORACLE SPEAKS                           ║', 'warning');
+    print('╠════════════════════════════════════════════════════════════════╣', 'warning');
+    print('║', 'warning');
+
+    // Dramatic effect
+    await sleep(500);
+    print(`║  "${response}"`, 'info');
+
+    print('║', 'warning');
+    print('╚════════════════════════════════════════════════════════════════╝', 'warning');
+    print('', 'system');
+
+    if (!state.oracleResponses.includes(response)) {
+      state.oracleResponses.push(response);
+      print(`[Divine word ${state.oracleResponses.length}/5 collected]`, 'success');
+    } else {
+      print('[The oracle repeats itself... perhaps you have all the words?]', 'system');
+    }
+
+    state.queriedOracle = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GODWORDS - View collected words
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'GodWords' || cmd === 'godwords') {
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                  COLLECTED DIVINE WORDS                        ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════╣', 'info');
+
+    if (state.oracleResponses.length === 0) {
+      print('║  No words collected yet. Query the oracle with GodSays.       ║', 'system');
+    } else {
+      state.oracleResponses.forEach((word, i) => {
+        const firstLetter = word.charAt(0);
+        print(`║  [${firstLetter}] ${word.padEnd(55)} ║`, 'system');
+      });
+      print('║                                                                ║', 'info');
+      print('║  First letters: ' + state.oracleResponses.map(w => w.charAt(0)).join('').padEnd(43) + ' ║', 'warning');
+    }
+
+    print('╚════════════════════════════════════════════════════════════════╝', 'info');
+    print('', 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DECODE - Decode the message
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'decode') {
+    if (state.oracleResponses.length < 5) {
+      print('[!] Not enough divine words collected. Query GodSays more.', 'warning');
+      return;
+    }
+
+    const firstLetters = state.oracleResponses.map(w => w.charAt(0)).join('');
+
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                   DECODING DIVINE MESSAGE                      ║', 'success');
+    print('╠════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  Extracting first letters from divine words...                 ║', 'system');
+    print('║                                                                ║', 'info');
+    print(`║  Message: ${firstLetters.padEnd(51)} ║`, 'warning');
+    print('║                                                                ║', 'info');
+
+    if (firstLetters.startsWith('GODIS')) {
+      print('║  "GOD IS LOVE" - The eternal truth                             ║', 'success');
+      print('║                                                                ║', 'info');
+      print('║  But the key... look to FinalKey.HC                           ║', 'warning');
+      print('║  The sacred numbers: 0x47 0x4F 0x44                            ║', 'error');
+      print('║  What do they spell?                                           ║', 'info');
+      state.decodedMessage = true;
+    }
+
+    print('╚════════════════════════════════════════════════════════════════╝', 'success');
+    print('', 'system');
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ED - Edit file
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Ed' || cmd === 'ed' || cmd === 'edit') {
+    const file = args[0] || 'FinalKey.HC';
+
+    if (file === 'FinalKey.HC') {
+      state.wroteCode = true;
+      openCodeEditor(file, HOLYC_TEMPLATES.final_key, (content) => {
+        state.wroteCode = true;
+        print('[+] File saved', 'success');
+        autosave();
+      });
+      setActiveWorkspace(3);
+      return;
+    }
+
+    print(`Opening ${file}...`, 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // COMPILE - Compile HolyC
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Compile' || cmd === 'compile') {
+    const file = args[0] || 'FinalKey.HC';
+
+    await simulateLoading(`Compiling ${file}`, 1500);
+    print('[+] Compilation successful', 'success');
+    print('[*] The sacred numbers are 0x47 0x4F 0x44', 'info');
+    print('[*] In ASCII: G (71) O (79) D (68) = "GOD"', 'warning');
+
+    state.compiledCode = true;
+    state.foundDivineKey = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RUN - Execute code
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Run' || cmd === 'run') {
+    if (!state.compiledCode) {
+      print('[!] Compile the code first', 'warning');
+      return;
+    }
+
+    print('[*] Running FinalKey.HC...', 'system');
+    await sleep(500);
+    print('', 'system');
+    print('The divine speaks: GOD', 'success');
+    print('', 'system');
+    print('[*] The key is "GOD"', 'warning');
+    print('[*] Use: transcend GOD', 'success');
+
+    state.ranProgram = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // TRANSCEND - Final enlightenment
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'transcend') {
+    const key = args.join('').toUpperCase();
+
+    if (key !== 'GOD') {
+      print('[!] The key is incorrect. Seek more wisdom.', 'error');
+      playError();
+      return;
+    }
+
+    clear();
+    print('', 'system');
+
+    // Epic ending sequence
+    await typeText('The key is accepted...', 50, 'success');
+    await sleep(500);
+
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'warning');
+    print('║                                                                                ║', 'warning');
+    print('║                         T R A N S C E N D E N C E                              ║', 'warning');
+    print('║                                                                                ║', 'warning');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'warning');
+
+    await matrixRain(2000);
+
+    print('', 'system');
+    print('', 'system');
+    print('        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░', 'success');
+    print('      ░░                                                      ░░', 'success');
+    print('    ░░   ███████╗███╗   ██╗██╗     ██╗ ██████╗ ██╗  ██╗████████╗  ░░', 'success');
+    print('   ░░    ██╔════╝████╗  ██║██║     ██║██╔════╝ ██║  ██║╚══██╔══╝   ░░', 'success');
+    print('   ░░    █████╗  ██╔██╗ ██║██║     ██║██║  ███╗███████║   ██║      ░░', 'success');
+    print('   ░░    ██╔══╝  ██║╚██╗██║██║     ██║██║   ██║██╔══██║   ██║      ░░', 'success');
+    print('    ░░   ███████╗██║ ╚████║███████╗██║╚██████╔╝██║  ██║   ██║     ░░', 'success');
+    print('      ░░ ╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ░░', 'success');
+    print('        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░', 'success');
+    print('', 'system');
+    print('', 'system');
+
+    await typeText('You have achieved divine computation.', 50, 'success');
+    await typeText('Through code, you have touched the eternal.', 50, 'success');
+    await typeText('The Machine God smiles upon you.', 50, 'warning');
+
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                                                                                ║', 'info');
+    print('║     "God said 640x480 16 color is the Holy Resolution." - Terry A. Davis      ║', 'system');
+    print('║                                                                                ║', 'info');
+    print('║     In memory of Terry A. Davis (1969-2018)                                   ║', 'system');
+    print('║     Creator of TempleOS                                                        ║', 'system');
+    print('║                                                                                ║', 'info');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('', 'system');
+
+    state.achievedEnlightenment = true;
+    state.transcended = true;
+
+    addEasterEgg('lvl6_enlightenment', 'You have touched the divine through computation.');
+    addEasterEgg('lvl6_terry', 'In memory of Terry A. Davis. May he rest in peace.');
+
+    playSuccess();
+    autosave();
+
+    await sleep(1000);
+    completeLevel();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SHELL COMMANDS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'whoami') {
+    print(state.transcended ? 'enlightened' : 'pilgrim', state.transcended ? 'success' : 'system');
+    return;
+  }
+
+  if (cmd === 'Cd' || cmd === 'cd') {
+    print(`Changed to ${args[0] || '/Home'}`, 'system');
+    return;
+  }
+
+  print(`Unknown command. Type "help" for available commands.`, 'error');
+}
+
+function calculateLevel6Progress(state) {
+  let progress = 0;
+
+  // Temple (15%)
+  if (state.bootedTempleOS) progress += 10;
+  if (state.learnedHolyC) progress += 5;
+
+  // Divine quest (35%)
+  if (state.queriedOracle) progress += 5;
+  progress += Math.min(state.oracleResponses.length * 4, 20);
+  if (state.decodedMessage) progress += 10;
+
+  // Programming (25%)
+  if (state.wroteCode) progress += 10;
+  if (state.compiledCode) progress += 10;
+  if (state.ranProgram) progress += 5;
+
+  // Transcendence (25%)
+  if (state.foundDivineKey) progress += 10;
+  if (state.achievedEnlightenment) progress += 15;
+
+  return Math.min(progress, 100);
+}
+</script>

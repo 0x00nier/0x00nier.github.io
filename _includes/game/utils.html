@@ -1,0 +1,992 @@
+<script>
+// ============================================
+// ADMIN ACCESS SYSTEM
+// Password: CthulusRevengeOnNeon@1337
+// SHA-256 hash computed at runtime
+// ============================================
+const ADMIN_CONFIG = {
+  // SHA-256 hash of "CthulusRevengeOnNeon@1337"
+  passwordHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855_placeholder',
+  isAdmin: false,
+  showAdminPanel: false,
+  debugMode: false,
+  verboseLog: false
+};
+
+// Compute SHA-256 hash
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Initialize admin hash on page load
+(async function initAdminHash() {
+  // Pre-computed hash for "CthulusRevengeOnNeon@1337"
+  ADMIN_CONFIG.passwordHash = await sha256('CthulusRevengeOnNeon@1337');
+})();
+
+async function checkAdminPassword(password) {
+  const inputHash = await sha256(password);
+  return inputHash === ADMIN_CONFIG.passwordHash;
+}
+
+async function adminLogin(password) {
+  if (await checkAdminPassword(password)) {
+    ADMIN_CONFIG.isAdmin = true;
+    localStorage.setItem('gameAdminAuth', 'true');
+    print('');
+    print('╔════════════════════════════════════════════════════════════════╗', 'success');
+    print('║              ADMIN ACCESS GRANTED                              ║', 'success');
+    print('╠════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  Admin commands unlocked:                                      ║', 'info');
+    print('║    admin unlock <level>    - Unlock specific level            ║', 'system');
+    print('║    admin unlockall         - Unlock all levels                ║', 'system');
+    print('║    admin reset             - Reset game progress              ║', 'system');
+    print('║    admin skip              - Complete current level           ║', 'system');
+    print('║    admin teleport <level>  - Jump to any level                ║', 'system');
+    print('║    admin godmode           - Enable all easter eggs           ║', 'system');
+    print('║    admin debug             - Enable debug mode (advanced)     ║', 'warning');
+    print('╚════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+    playSuccess();
+    return true;
+  } else {
+    print('[!] Invalid admin password', 'error');
+    playError();
+    return false;
+  }
+}
+
+function handleAdminCommand(args) {
+  if (!ADMIN_CONFIG.isAdmin) {
+    print('[!] Admin access required. Use: admin login <password>', 'error');
+    return;
+  }
+
+  const subCmd = args[0];
+
+  if (subCmd === 'unlock') {
+    const level = parseInt(args[1]);
+    if (level >= 1 && level <= 6) {
+      if (!gameState.levelsCompleted.includes(level - 1) && level > 1) {
+        gameState.levelsCompleted.push(level - 1);
+      }
+      print(`[+] Level ${level} unlocked`, 'success');
+      saveGame();
+    }
+    return;
+  }
+
+  if (subCmd === 'unlockall') {
+    gameState.levelsCompleted = [0, 1, 2, 3, 4, 5];
+    print('[+] All levels unlocked', 'success');
+    saveGame();
+    return;
+  }
+
+  if (subCmd === 'reset') {
+    localStorage.removeItem('hackerGame');
+    print('[+] Game progress reset', 'warning');
+    location.reload();
+    return;
+  }
+
+  if (subCmd === 'skip') {
+    if (gameState.inLevel) {
+      completeLevel();
+    } else {
+      print('[!] Not in a level', 'warning');
+    }
+    return;
+  }
+
+  if (subCmd === 'teleport') {
+    const level = parseInt(args[1]);
+    if (level >= 1 && level <= 6) {
+      startLevel(level);
+    }
+    return;
+  }
+
+  if (subCmd === 'godmode') {
+    gameState.easterEggsFound = Object.keys(EASTER_EGG_NAMES);
+    calculateScore();
+    print('[+] All easter eggs unlocked', 'success');
+    saveGame();
+    return;
+  }
+
+  if (subCmd === 'debug') {
+    ADMIN_CONFIG.debugMode = !ADMIN_CONFIG.debugMode;
+    print(`[*] Debug mode: ${ADMIN_CONFIG.debugMode ? 'ENABLED' : 'DISABLED'}`, ADMIN_CONFIG.debugMode ? 'success' : 'warning');
+    if (ADMIN_CONFIG.debugMode) {
+      print('', '');
+      print('╔════════════════════════════════════════════════════════════════╗', 'info');
+      print('║                      DEBUG MODE ENABLED                        ║', 'info');
+      print('╠════════════════════════════════════════════════════════════════╣', 'info');
+      print('║  Commands:                                                     ║', 'system');
+      print('║    admin state        - Show current game state               ║', 'system');
+      print('║    admin levelstate   - Show current level state              ║', 'system');
+      print('║    admin setstate <k> <v> - Set level state variable          ║', 'system');
+      print('║    admin eval <expr>  - Evaluate JavaScript expression        ║', 'warning');
+      print('║    admin log          - Toggle console logging                ║', 'system');
+      print('║    admin storage      - Show localStorage contents            ║', 'system');
+      print('╚════════════════════════════════════════════════════════════════╝', 'info');
+    }
+    return;
+  }
+
+  if (subCmd === 'state') {
+    if (!ADMIN_CONFIG.debugMode) {
+      print('[!] Enable debug mode first: admin debug', 'warning');
+      return;
+    }
+    print('', '');
+    print('╔═══════════════════ GAME STATE ═══════════════════╗', 'info');
+    print(`║  inLevel:           ${gameState.inLevel}`, 'system');
+    print(`║  currentLevel:      ${gameState.currentLevel}`, 'system');
+    print(`║  levelsCompleted:   [${gameState.levelsCompleted.join(', ')}]`, 'system');
+    print(`║  score:             ${gameState.score}`, 'system');
+    print(`║  easterEggsFound:   ${gameState.easterEggsFound.length}`, 'system');
+    print('╚═══════════════════════════════════════════════════╝', 'info');
+    return;
+  }
+
+  if (subCmd === 'levelstate') {
+    if (!ADMIN_CONFIG.debugMode) {
+      print('[!] Enable debug mode first: admin debug', 'warning');
+      return;
+    }
+    print('', '');
+    print('╔═══════════════════ LEVEL STATE ═══════════════════╗', 'info');
+    for (const [key, value] of Object.entries(gameState.levelState || {})) {
+      print(`║  ${key.padEnd(20)}: ${JSON.stringify(value)}`, 'system');
+    }
+    print('╚════════════════════════════════════════════════════╝', 'info');
+    return;
+  }
+
+  if (subCmd === 'setstate') {
+    if (!ADMIN_CONFIG.debugMode) {
+      print('[!] Enable debug mode first: admin debug', 'warning');
+      return;
+    }
+    const key = args[1];
+    const value = args[2];
+    if (!key || value === undefined) {
+      print('Usage: admin setstate <key> <value>', 'error');
+      print('Example: admin setstate scanned true', 'system');
+      return;
+    }
+    // Parse value
+    let parsedValue = value;
+    if (value === 'true') parsedValue = true;
+    else if (value === 'false') parsedValue = false;
+    else if (!isNaN(value)) parsedValue = Number(value);
+
+    gameState.levelState[key] = parsedValue;
+    print(`[+] Set levelState.${key} = ${JSON.stringify(parsedValue)}`, 'success');
+    autosave();
+    return;
+  }
+
+  if (subCmd === 'eval') {
+    if (!ADMIN_CONFIG.debugMode) {
+      print('[!] Enable debug mode first: admin debug', 'warning');
+      return;
+    }
+    const expr = args.slice(1).join(' ');
+    if (!expr) {
+      print('Usage: admin eval <expression>', 'error');
+      return;
+    }
+    try {
+      const result = eval(expr);
+      print(`[eval] ${expr}`, 'warning');
+      print(`[result] ${JSON.stringify(result, null, 2)}`, 'success');
+    } catch (e) {
+      print(`[error] ${e.message}`, 'error');
+    }
+    return;
+  }
+
+  if (subCmd === 'log') {
+    ADMIN_CONFIG.verboseLog = !ADMIN_CONFIG.verboseLog;
+    print(`[*] Verbose logging: ${ADMIN_CONFIG.verboseLog ? 'ON' : 'OFF'}`, 'info');
+    return;
+  }
+
+  if (subCmd === 'storage') {
+    if (!ADMIN_CONFIG.debugMode) {
+      print('[!] Enable debug mode first: admin debug', 'warning');
+      return;
+    }
+    print('', '');
+    print('╔═══════════════════ LOCALSTORAGE ═══════════════════╗', 'info');
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      let value = localStorage.getItem(key);
+      if (value && value.length > 50) value = value.substring(0, 50) + '...';
+      print(`║  ${key}: ${value}`, 'system');
+    }
+    print('╚═════════════════════════════════════════════════════╝', 'info');
+    return;
+  }
+
+  print('Unknown admin command. Try: admin help', 'error');
+}
+
+// Check if admin was previously authenticated
+function checkAdminAuth() {
+  if (localStorage.getItem('gameAdminAuth') === 'true') {
+    ADMIN_CONFIG.isAdmin = true;
+  }
+}
+
+// ============================================
+// MUSIC PLAYER SYSTEM
+// ============================================
+const MUSIC_PLAYER = {
+  isPlaying: false,
+  audioContext: null,
+  analyser: null,
+  dataArray: null,
+  player: null,
+  visualizerActive: false,
+  videoId: 'eCnj0etOmZ0' // Default video ID from user's playlist
+};
+
+function createMusicPlayer() {
+  // Create music control in i3 bar
+  const i3Right = document.getElementById('i3-bar-right');
+  if (i3Right && !document.getElementById('music-control')) {
+    const musicBtn = document.createElement('span');
+    musicBtn.id = 'music-control';
+    musicBtn.innerHTML = '♪ Music';
+    musicBtn.style.cssText = `
+      cursor: pointer;
+      padding: 2px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 2px;
+      font-size: 10px;
+      transition: all 0.2s;
+    `;
+    musicBtn.onclick = toggleMusicPanel;
+    i3Right.insertBefore(musicBtn, i3Right.firstChild);
+  }
+
+  // Create music panel
+  if (!document.getElementById('music-panel')) {
+    const panel = document.createElement('div');
+    panel.id = 'music-panel';
+    panel.style.cssText = `
+      display: none;
+      position: fixed;
+      bottom: 60px;
+      right: 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      padding: 15px;
+      z-index: 1000;
+      min-width: 320px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    `;
+    panel.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span style="color: var(--accent-aqua); font-size: 12px;">♪ AMBIENT MUSIC</span>
+        <span onclick="toggleMusicPanel()" style="cursor: pointer; color: var(--text-muted);">✕</span>
+      </div>
+      <div id="youtube-container" style="margin-bottom: 10px;">
+        <iframe id="youtube-player" width="290" height="60"
+          src="https://www.youtube.com/embed/eCnj0etOmZ0?enablejsapi=1&list=PLfZ5i4ICNKpOo81wjhEOF7HfyMTbqKrz4&loop=1"
+          frameborder="0"
+          allow="autoplay; encrypted-media"
+          style="border: 1px solid var(--border-color);">
+        </iframe>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button onclick="toggleMusic()" id="music-toggle-btn" style="
+          background: var(--bg-tertiary);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          padding: 5px 15px;
+          cursor: pointer;
+          font-family: inherit;
+        ">▶ Play</button>
+        <button onclick="toggleVisualizer()" id="visualizer-toggle-btn" style="
+          background: var(--bg-tertiary);
+          border: 1px solid var(--border-color);
+          color: var(--text-primary);
+          padding: 5px 15px;
+          cursor: pointer;
+          font-family: inherit;
+        ">Matrix ░</button>
+      </div>
+      <div style="margin-top: 10px; font-size: 10px; color: var(--text-muted);">
+        Synthwave / Cyberpunk Ambient Mix
+      </div>
+    `;
+    document.body.appendChild(panel);
+  }
+
+  // Create matrix visualizer canvas
+  if (!document.getElementById('matrix-visualizer')) {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'matrix-visualizer';
+    canvas.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.15;
+      z-index: -1;
+      display: none;
+    `;
+    document.body.insertBefore(canvas, document.body.firstChild);
+  }
+}
+
+function toggleMusicPanel() {
+  const panel = document.getElementById('music-panel');
+  if (panel) {
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function toggleMusic() {
+  const btn = document.getElementById('music-toggle-btn');
+  const iframe = document.getElementById('youtube-player');
+
+  if (MUSIC_PLAYER.isPlaying) {
+    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+    btn.textContent = '▶ Play';
+    MUSIC_PLAYER.isPlaying = false;
+  } else {
+    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+    btn.textContent = '❚❚ Pause';
+    MUSIC_PLAYER.isPlaying = true;
+  }
+}
+
+// ============================================
+// MATRIX VISUALIZER
+// ============================================
+let matrixInterval = null;
+
+function toggleVisualizer() {
+  const canvas = document.getElementById('matrix-visualizer');
+  const btn = document.getElementById('visualizer-toggle-btn');
+
+  if (MUSIC_PLAYER.visualizerActive) {
+    canvas.style.display = 'none';
+    if (matrixInterval) {
+      cancelAnimationFrame(matrixInterval);
+      matrixInterval = null;
+    }
+    btn.textContent = 'Matrix ░';
+    MUSIC_PLAYER.visualizerActive = false;
+  } else {
+    canvas.style.display = 'block';
+    btn.textContent = 'Matrix █';
+    MUSIC_PLAYER.visualizerActive = true;
+    startMatrixVisualizer();
+  }
+}
+
+function startMatrixVisualizer() {
+  const canvas = document.getElementById('matrix-visualizer');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const chars = 'アイウエオカキクケコサシスセソタチツテト0123456789@#$%^&*()';
+  const fontSize = 14;
+  const columns = Math.floor(canvas.width / fontSize);
+  const drops = Array(columns).fill(1);
+
+  function draw() {
+    if (!MUSIC_PLAYER.visualizerActive) return;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = '#0F0';
+    ctx.font = fontSize + 'px monospace';
+
+    for (let i = 0; i < drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+      if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+
+    matrixInterval = requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+// Handle window resize for visualizer
+window.addEventListener('resize', () => {
+  const canvas = document.getElementById('matrix-visualizer');
+  if (canvas) {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+});
+
+// ============================================
+// WORKSPACE TAB SYSTEM
+// ============================================
+function initWorkspaceTabs() {
+  const workspaces = document.querySelectorAll('.i3-workspace');
+
+  workspaces.forEach(ws => {
+    ws.addEventListener('click', () => {
+      const wsNum = ws.dataset.ws;
+      switchWorkspace(wsNum);
+    });
+  });
+}
+
+function switchWorkspace(ws) {
+  setActiveWorkspace(ws);
+
+  switch (ws) {
+    case '1': // Terminal
+      document.getElementById('terminal-output').style.display = 'block';
+      document.getElementById('input-line').style.display = 'flex';
+      document.getElementById('code-editor-overlay').style.display = 'none';
+      document.getElementById('web-workspace').style.display = 'none';
+      document.getElementById('mon-workspace').style.display = 'none';
+      break;
+
+    case '2': // Web browser (man pages)
+      showWebWorkspace();
+      break;
+
+    case '3': // Code editor
+      showCodeWorkspace();
+      break;
+
+    case '4': // Monitor
+      showMonWorkspace();
+      break;
+  }
+}
+
+function showWebWorkspace() {
+  // Create web workspace if it doesn't exist
+  if (!document.getElementById('web-workspace')) {
+    const webWs = document.createElement('div');
+    webWs.id = 'web-workspace';
+    webWs.style.cssText = `
+      display: none;
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+    `;
+    webWs.innerHTML = `
+      <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
+        <span style="color: var(--accent-blue);">man://</span>
+        <input type="text" id="man-search" placeholder="Enter command name..."
+          style="background: var(--bg-tertiary); border: 1px solid var(--border-color);
+          color: var(--text-primary); padding: 4px 8px; width: 200px; font-family: inherit;"
+          onkeydown="event.stopPropagation();">
+        <button onclick="searchManPage()" style="background: var(--accent-blue); border: none;
+          color: var(--bg-primary); padding: 4px 12px; cursor: pointer;">Search</button>
+      </div>
+      <div id="man-content" style="color: var(--text-primary); font-size: 12px; line-height: 1.6;">
+        <h3 style="color: var(--accent-aqua);">MANUAL PAGES</h3>
+        <p>Enter a command name to view its manual page.</p>
+        <br>
+        <p style="color: var(--text-secondary);">Available commands:</p>
+        <ul style="color: var(--text-muted);">
+          <li>nmap - Network scanner</li>
+          <li>gobuster - Directory enumeration</li>
+          <li>hashcat - Password cracker</li>
+          <li>mimikatz - Credential extraction</li>
+          <li>chisel - TCP tunneling</li>
+          <li>bloodhound - AD enumeration</li>
+          <li>certipy - ADCS attacks</li>
+          <li>rubeus - Kerberos attacks</li>
+        </ul>
+      </div>
+    `;
+    document.getElementById('terminal-output').parentNode.appendChild(webWs);
+
+    // Setup man-search enter key handler
+    setTimeout(() => {
+      const manSearch = document.getElementById('man-search');
+      if (manSearch) {
+        manSearch.addEventListener('keydown', (e) => {
+          e.stopPropagation();
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            searchManPage();
+          }
+        });
+      }
+    }, 100);
+  }
+
+  // Blur terminal input to prevent capturing keystrokes
+  const terminalInput = document.getElementById('terminal-input');
+  if (terminalInput) terminalInput.blur();
+
+  document.getElementById('terminal-output').style.display = 'none';
+  document.getElementById('input-line').style.display = 'none';
+  document.getElementById('code-editor-overlay').style.display = 'none';
+  document.getElementById('web-workspace').style.display = 'block';
+
+  const monWs = document.getElementById('mon-workspace');
+  if (monWs) monWs.style.display = 'none';
+
+  // Focus on man-search input
+  setTimeout(() => {
+    const manSearch = document.getElementById('man-search');
+    if (manSearch) manSearch.focus();
+  }, 100);
+}
+
+function showCodeWorkspace() {
+  // If no file is open in editor, show a placeholder
+  const editorOverlay = document.getElementById('code-editor-overlay');
+
+  if (!codeEditor.isOpen) {
+    // Open with a default file
+    const defaultCode = `// Welcome to the Code Editor
+// This is a vim-like editor
+//
+// Commands:
+//   i     - Enter INSERT mode
+//   Esc   - Return to NORMAL mode
+//   :w    - Save file
+//   :q    - Quit
+//   :wq   - Save and quit
+
+// Write your code here...
+`;
+    openCodeEditor('scratch.c', defaultCode, (content) => {
+      print('[+] File saved', 'success');
+    });
+  }
+
+  document.getElementById('terminal-output').style.display = 'none';
+  document.getElementById('input-line').style.display = 'none';
+  editorOverlay.style.display = 'flex';
+
+  const webWs = document.getElementById('web-workspace');
+  if (webWs) webWs.style.display = 'none';
+
+  const monWs = document.getElementById('mon-workspace');
+  if (monWs) monWs.style.display = 'none';
+}
+
+function showMonWorkspace() {
+  // Create monitor workspace if it doesn't exist
+  if (!document.getElementById('mon-workspace')) {
+    const monWs = document.createElement('div');
+    monWs.id = 'mon-workspace';
+    monWs.style.cssText = `
+      display: none;
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: var(--bg-primary);
+      font-size: 11px;
+    `;
+    monWs.innerHTML = `
+      <div style="color: var(--accent-aqua); margin-bottom: 10px;">SYSTEM MONITOR</div>
+      <div id="mon-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="border: 1px solid var(--border-color); padding: 10px;">
+          <div style="color: var(--text-secondary); margin-bottom: 5px;">CPU Usage</div>
+          <div id="cpu-bar" style="background: var(--bg-tertiary); height: 20px; position: relative;">
+            <div style="background: var(--accent-green); height: 100%; width: 23%;"></div>
+          </div>
+          <div style="color: var(--text-muted); font-size: 10px; margin-top: 5px;">23% @ 3.4GHz</div>
+        </div>
+        <div style="border: 1px solid var(--border-color); padding: 10px;">
+          <div style="color: var(--text-secondary); margin-bottom: 5px;">Memory</div>
+          <div style="background: var(--bg-tertiary); height: 20px; position: relative;">
+            <div style="background: var(--accent-blue); height: 100%; width: 67%;"></div>
+          </div>
+          <div style="color: var(--text-muted); font-size: 10px; margin-top: 5px;">5.4G / 8G (67%)</div>
+        </div>
+      </div>
+      <div style="margin-top: 15px; border: 1px solid var(--border-color); padding: 10px;">
+        <div style="color: var(--text-secondary); margin-bottom: 10px;">Network Connections</div>
+        <div style="color: var(--text-muted); font-family: monospace; font-size: 10px;">
+          PROTO  LOCAL           REMOTE          STATE<br>
+          tcp    127.0.0.1:1080  0.0.0.0:*       LISTEN<br>
+          tcp    10.10.14.5:445  10.10.10.15:52  ESTABLISHED<br>
+          tcp    10.10.14.5:22   172.16.1.20:49  ESTABLISHED<br>
+        </div>
+      </div>
+      <div style="margin-top: 15px; border: 1px solid var(--border-color); padding: 10px;">
+        <div style="color: var(--text-secondary); margin-bottom: 10px;">Active Sessions</div>
+        <div id="session-list" style="color: var(--text-muted); font-family: monospace; font-size: 10px;"></div>
+      </div>
+    `;
+    document.getElementById('terminal-output').parentNode.appendChild(monWs);
+  }
+
+  document.getElementById('terminal-output').style.display = 'none';
+  document.getElementById('input-line').style.display = 'none';
+  document.getElementById('code-editor-overlay').style.display = 'none';
+  document.getElementById('mon-workspace').style.display = 'block';
+
+  const webWs = document.getElementById('web-workspace');
+  if (webWs) webWs.style.display = 'none';
+
+  updateMonitorStats();
+}
+
+function updateMonitorStats() {
+  // Update session list based on game state
+  const sessionList = document.getElementById('session-list');
+  if (sessionList && gameState.levelState) {
+    let sessions = 'ID  TYPE         HOST           USER\n';
+    sessions += '0   attacker     kali           root\n';
+
+    if (gameState.levelState.compromisedHosts) {
+      gameState.levelState.compromisedHosts.forEach((host, i) => {
+        sessions += `${i + 1}   shell        ${host.padEnd(14)} pwned\n`;
+      });
+    }
+
+    sessionList.innerHTML = sessions.replace(/\n/g, '<br>');
+  }
+}
+
+// ============================================
+// MAN PAGES DATABASE
+// ============================================
+const MAN_PAGES = {
+  nmap: {
+    name: 'nmap',
+    section: '1',
+    description: 'Network exploration tool and security scanner',
+    synopsis: 'nmap [Scan Type] [Options] {target specification}',
+    content: `
+<b>NAME</b>
+    nmap - Network exploration tool and security / port scanner
+
+<b>SYNOPSIS</b>
+    nmap [Scan Type...] [Options] {target specification}
+
+<b>DESCRIPTION</b>
+    Nmap ("Network Mapper") is an open source tool for network exploration
+    and security auditing. It was designed to rapidly scan large networks.
+
+<b>COMMON OPTIONS</b>
+    <span style="color: var(--accent-yellow);">-sV</span>    Probe open ports to determine service/version info
+    <span style="color: var(--accent-yellow);">-sC</span>    Equivalent to --script=default
+    <span style="color: var(--accent-yellow);">-p-</span>    Scan all 65535 ports
+    <span style="color: var(--accent-yellow);">-A</span>     Enable OS detection, version detection, script scanning
+    <span style="color: var(--accent-yellow);">-T4</span>    Set timing template (higher is faster)
+    <span style="color: var(--accent-yellow);">-oN</span>    Output scan in normal format
+
+<b>EXAMPLES</b>
+    nmap -sV -sC 10.10.10.15
+    nmap -p- -T4 192.168.1.0/24
+    nmap -A -oN scan.txt target.com
+`
+  },
+
+  hashcat: {
+    name: 'hashcat',
+    section: '1',
+    description: 'Advanced password recovery utility',
+    synopsis: 'hashcat [options] hashfile [dictionary|mask]',
+    content: `
+<b>NAME</b>
+    hashcat - World's fastest password cracker
+
+<b>SYNOPSIS</b>
+    hashcat [options]... hash|hashfile [dictionary|mask|directory]...
+
+<b>DESCRIPTION</b>
+    Hashcat is the world's fastest CPU-based password recovery tool,
+    supporting five unique modes of attack for over 300 hash types.
+
+<b>COMMON HASH MODES (-m)</b>
+    <span style="color: var(--accent-yellow);">0</span>      MD5
+    <span style="color: var(--accent-yellow);">100</span>    SHA1
+    <span style="color: var(--accent-yellow);">1000</span>   NTLM
+    <span style="color: var(--accent-yellow);">1800</span>   sha512crypt (Unix)
+    <span style="color: var(--accent-yellow);">3200</span>   bcrypt
+    <span style="color: var(--accent-yellow);">13100</span>  Kerberos TGS-REP (Kerberoast)
+    <span style="color: var(--accent-yellow);">18200</span>  Kerberos AS-REP (ASREPRoast)
+
+<b>ATTACK MODES (-a)</b>
+    <span style="color: var(--accent-yellow);">0</span>      Dictionary attack
+    <span style="color: var(--accent-yellow);">1</span>      Combinator attack
+    <span style="color: var(--accent-yellow);">3</span>      Brute-force / Mask attack
+    <span style="color: var(--accent-yellow);">6</span>      Hybrid (dict + mask)
+
+<b>EXAMPLES</b>
+    hashcat -m 1000 hash.txt rockyou.txt
+    hashcat -m 13100 tgs.txt wordlist.txt -r rules/best64.rule
+`
+  },
+
+  chisel: {
+    name: 'chisel',
+    section: '1',
+    description: 'TCP/UDP tunnel over HTTP',
+    synopsis: 'chisel server|client [options]',
+    content: `
+<b>NAME</b>
+    chisel - A fast TCP/UDP tunnel over HTTP
+
+<b>SYNOPSIS</b>
+    chisel server [options]
+    chisel client [options] server remote [remote...]
+
+<b>DESCRIPTION</b>
+    Chisel is a fast TCP/UDP tunnel, transported over HTTP, secured via SSH.
+    Useful for passing through firewalls and pivoting through networks.
+
+<b>SERVER OPTIONS</b>
+    <span style="color: var(--accent-yellow);">-p, --port</span>     Listening port (default: 8080)
+    <span style="color: var(--accent-yellow);">--reverse</span>      Allow reverse port forwarding
+    <span style="color: var(--accent-yellow);">--socks5</span>       Enable SOCKS5 proxy
+
+<b>CLIENT OPTIONS</b>
+    <span style="color: var(--accent-yellow);">R:socks</span>        Reverse SOCKS proxy
+    <span style="color: var(--accent-yellow);">R:port:host:port</span>   Reverse port forward
+
+<b>EXAMPLES</b>
+    # On attacker (start server)
+    chisel server -p 8000 --reverse
+
+    # On target (connect back)
+    chisel client 10.10.14.5:8000 R:1080:socks
+
+    # Use with proxychains
+    proxychains nmap -sT 172.16.1.20
+`
+  },
+
+  mimikatz: {
+    name: 'mimikatz',
+    section: '1',
+    description: 'Windows credential extraction tool',
+    synopsis: 'mimikatz.exe [module::command]',
+    content: `
+<b>NAME</b>
+    mimikatz - Windows credential extraction and manipulation
+
+<b>SYNOPSIS</b>
+    mimikatz.exe
+    mimikatz # module::command
+
+<b>DESCRIPTION</b>
+    Mimikatz is a tool that extracts passwords, hashes, PINs, and
+    Kerberos tickets from memory. Created by Benjamin Delpy.
+
+<b>COMMON COMMANDS</b>
+    <span style="color: var(--accent-yellow);">privilege::debug</span>          Enable debug privilege
+    <span style="color: var(--accent-yellow);">sekurlsa::logonpasswords</span>  Dump credentials from LSASS
+    <span style="color: var(--accent-yellow);">sekurlsa::tickets</span>         List Kerberos tickets
+    <span style="color: var(--accent-yellow);">lsadump::sam</span>              Dump SAM database
+    <span style="color: var(--accent-yellow);">lsadump::dcsync</span>           DCSync attack
+    <span style="color: var(--accent-yellow);">kerberos::golden</span>          Create golden ticket
+    <span style="color: var(--accent-yellow);">misc::skeleton</span>            Inject skeleton key
+
+<b>EXAMPLES</b>
+    mimikatz # privilege::debug
+    mimikatz # sekurlsa::logonpasswords
+    mimikatz # lsadump::dcsync /domain:corp.local /user:Administrator
+`
+  },
+
+  certipy: {
+    name: 'certipy',
+    section: '1',
+    description: 'AD CS abuse tool',
+    synopsis: 'certipy <command> [options]',
+    content: `
+<b>NAME</b>
+    certipy - Active Directory Certificate Services attack tool
+
+<b>SYNOPSIS</b>
+    certipy <find|req|auth|shadow|...> [options]
+
+<b>DESCRIPTION</b>
+    Certipy is a Python tool to enumerate and abuse misconfigurations
+    in Active Directory Certificate Services (AD CS).
+
+<b>COMMANDS</b>
+    <span style="color: var(--accent-yellow);">find</span>     Enumerate AD CS for vulnerable templates
+    <span style="color: var(--accent-yellow);">req</span>      Request certificates
+    <span style="color: var(--accent-yellow);">auth</span>     Authenticate with certificates (PKINIT)
+    <span style="color: var(--accent-yellow);">shadow</span>   Shadow credentials attack
+    <span style="color: var(--accent-yellow);">relay</span>    AD CS relay attack
+
+<b>ESC VULNERABILITIES</b>
+    <span style="color: var(--accent-red);">ESC1</span>  - Enrollee supplies subject (SAN)
+    <span style="color: var(--accent-red);">ESC2</span>  - Any purpose EKU
+    <span style="color: var(--accent-red);">ESC3</span>  - Certificate agent enrollment
+    <span style="color: var(--accent-red);">ESC4</span>  - Vulnerable template ACL
+    <span style="color: var(--accent-red);">ESC8</span>  - Web enrollment NTLM relay
+
+<b>EXAMPLES</b>
+    certipy find -u user@domain.local -p password -dc-ip 10.10.10.10
+    certipy req -u user -ca CA-NAME -template VulnTemplate -upn admin@domain.local
+    certipy auth -pfx admin.pfx
+`
+  },
+
+  bloodhound: {
+    name: 'bloodhound',
+    section: '1',
+    description: 'Active Directory attack path mapping',
+    synopsis: 'bloodhound-python [options]',
+    content: `
+<b>NAME</b>
+    bloodhound - Active Directory reconnaissance and attack path mapping
+
+<b>SYNOPSIS</b>
+    bloodhound-python -d DOMAIN -u USER -p PASS -c COLLECTION
+
+<b>DESCRIPTION</b>
+    BloodHound uses graph theory to reveal the hidden relationships
+    within an Active Directory environment.
+
+<b>COLLECTION METHODS (-c)</b>
+    <span style="color: var(--accent-yellow);">all</span>        All collection methods
+    <span style="color: var(--accent-yellow);">group</span>      Group memberships
+    <span style="color: var(--accent-yellow);">session</span>    Session information
+    <span style="color: var(--accent-yellow);">acl</span>        ACL information
+    <span style="color: var(--accent-yellow);">trusts</span>     Domain trusts
+    <span style="color: var(--accent-yellow);">objectprops</span> Object properties
+
+<b>ATTACK PATHS TO LOOK FOR</b>
+    - Shortest path to Domain Admin
+    - Kerberoastable users
+    - AS-REP Roastable users
+    - Users with constrained delegation
+    - Users with DCSync rights
+    - Paths from owned principals
+
+<b>EXAMPLES</b>
+    bloodhound-python -d corp.local -u user -p pass -c all
+    bloodhound-python -d corp.local -u user -p pass --dns-tcp
+`
+  },
+
+  rubeus: {
+    name: 'rubeus',
+    section: '1',
+    description: 'Kerberos attack toolkit',
+    synopsis: 'Rubeus.exe <command> [options]',
+    content: `
+<b>NAME</b>
+    rubeus - Kerberos abuse toolkit for Windows
+
+<b>SYNOPSIS</b>
+    Rubeus.exe <command> [/option:value]
+
+<b>DESCRIPTION</b>
+    Rubeus is a C# toolset for raw Kerberos interaction and abuse,
+    heavily based on the Kekeo project.
+
+<b>COMMANDS</b>
+    <span style="color: var(--accent-yellow);">asktgt</span>       Request a TGT
+    <span style="color: var(--accent-yellow);">asktgs</span>       Request a service ticket
+    <span style="color: var(--accent-yellow);">kerberoast</span>   Kerberoast attack
+    <span style="color: var(--accent-yellow);">asreproast</span>   AS-REP Roast attack
+    <span style="color: var(--accent-yellow);">s4u</span>          S4U2Self/S4U2Proxy constrained delegation
+    <span style="color: var(--accent-yellow);">ptt</span>          Pass-the-ticket
+    <span style="color: var(--accent-yellow);">dump</span>         Dump tickets from memory
+
+<b>EXAMPLES</b>
+    Rubeus.exe asktgt /user:svc /rc4:HASH
+    Rubeus.exe kerberoast /outfile:hashes.txt
+    Rubeus.exe s4u /ticket:TGT.kirbi /impersonateuser:admin /msdsspn:cifs/dc
+`
+  },
+
+  gobuster: {
+    name: 'gobuster',
+    section: '1',
+    description: 'Directory/file & DNS busting tool',
+    synopsis: 'gobuster <mode> [options]',
+    content: `
+<b>NAME</b>
+    gobuster - Directory/File, DNS and VHost busting tool
+
+<b>SYNOPSIS</b>
+    gobuster <dir|dns|vhost|fuzz> [options]
+
+<b>DESCRIPTION</b>
+    Gobuster is a tool used to brute-force URIs, DNS subdomains,
+    virtual host names, and more.
+
+<b>MODES</b>
+    <span style="color: var(--accent-yellow);">dir</span>    Directory/file enumeration
+    <span style="color: var(--accent-yellow);">dns</span>    DNS subdomain enumeration
+    <span style="color: var(--accent-yellow);">vhost</span>  Virtual host enumeration
+    <span style="color: var(--accent-yellow);">fuzz</span>   Fuzzing mode
+
+<b>DIR OPTIONS</b>
+    <span style="color: var(--accent-yellow);">-u</span>     Target URL
+    <span style="color: var(--accent-yellow);">-w</span>     Wordlist path
+    <span style="color: var(--accent-yellow);">-x</span>     File extensions to search for
+    <span style="color: var(--accent-yellow);">-t</span>     Number of threads
+    <span style="color: var(--accent-yellow);">-o</span>     Output file
+
+<b>EXAMPLES</b>
+    gobuster dir -u http://10.10.10.15 -w /usr/share/wordlists/common.txt
+    gobuster dir -u http://target -w wordlist.txt -x php,html,txt
+    gobuster dns -d target.com -w subdomains.txt
+`
+  }
+};
+
+function searchManPage() {
+  const searchInput = document.getElementById('man-search');
+  const content = document.getElementById('man-content');
+  const query = searchInput.value.toLowerCase().trim();
+
+  if (MAN_PAGES[query]) {
+    const page = MAN_PAGES[query];
+    content.innerHTML = `
+      <div style="color: var(--accent-yellow); margin-bottom: 10px;">
+        ${page.name.toUpperCase()}(${page.section}) - ${page.description}
+      </div>
+      <div style="white-space: pre-wrap; font-family: monospace; font-size: 11px;">
+        ${page.content}
+      </div>
+    `;
+  } else {
+    content.innerHTML = `
+      <div style="color: var(--accent-red);">No manual entry for '${query}'</div>
+      <br>
+      <div style="color: var(--text-muted);">Try one of: ${Object.keys(MAN_PAGES).join(', ')}</div>
+    `;
+  }
+}
+
+// ============================================
+// INITIALIZE UTILITIES ON LOAD
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    checkAdminAuth();
+    createMusicPlayer();
+    initWorkspaceTabs();
+  }, 500);
+});
+</script>

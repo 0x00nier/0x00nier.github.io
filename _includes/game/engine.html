@@ -1,0 +1,688 @@
+<style>
+/* ============================================
+   CYBERPUNK + LOVECRAFTIAN VISUAL EFFECTS
+   ============================================ */
+
+/* CRT Screen Effect */
+.crt-effect {
+  animation: crt-flicker 0.15s infinite;
+  position: relative;
+}
+
+.crt-effect::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+              linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 0.97; }
+  50% { opacity: 1; }
+  100% { opacity: 0.98; }
+}
+
+/* Scanlines */
+.scanlines {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.3;
+}
+
+/* Glitch Effect */
+.glitch {
+  animation: glitch-anim 2s infinite;
+}
+
+@keyframes glitch-anim {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+/* Neon Glow */
+.neon-text {
+  text-shadow:
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 40px currentColor;
+}
+
+/* Cyberpunk Colors */
+.cyber-pink { color: #ff2a6d; }
+.cyber-cyan { color: #05d9e8; }
+.cyber-yellow { color: #fff700; }
+.cyber-purple { color: #d300c5; }
+
+/* Lovecraftian Pulse */
+.eldritch-pulse {
+  animation: eldritch 3s ease-in-out infinite;
+}
+
+@keyframes eldritch {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.8; filter: brightness(1.2) hue-rotate(10deg); }
+}
+
+/* Terminal Cursor */
+.cursor-blink {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Typing indicator */
+.typing-indicator::after {
+  content: '█';
+  animation: cursor-blink 0.7s step-end infinite;
+}
+
+/* Progress bars */
+.progress-bar {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-aqua));
+  transition: width 0.3s ease;
+}
+
+/* Alert flash */
+.alert-flash {
+  animation: alert-flash 0.5s ease-out;
+}
+
+@keyframes alert-flash {
+  0% { background: var(--urgent); }
+  100% { background: transparent; }
+}
+
+/* Hacking animation overlay */
+#hack-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 2000;
+  font-family: 'Courier New', monospace;
+}
+
+#hack-overlay.active {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* ASCII art animations */
+.ascii-animate {
+  animation: ascii-glow 2s ease-in-out infinite;
+}
+
+@keyframes ascii-glow {
+  0%, 100% { text-shadow: 0 0 5px currentColor; }
+  50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
+}
+</style>
+
+<script>
+// ============================================
+// ADVANCED GAME ENGINE
+// Realistic terminal emulation with proper parsing
+// ============================================
+
+const GameEngine = {
+  // Virtual file system
+  fileSystem: {
+    '/': { type: 'dir', contents: ['home', 'etc', 'var', 'tmp', 'root'] },
+    '/home': { type: 'dir', contents: ['user', 'svc'] },
+    '/home/user': { type: 'dir', contents: ['.bash_history', '.ssh', 'notes.txt'] },
+    '/etc': { type: 'dir', contents: ['passwd', 'shadow', 'hosts'] },
+    '/etc/passwd': { type: 'file', content: 'root:x:0:0:root:/root:/bin/bash\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nsvc:x:1000:1000:Service Account:/home/svc:/bin/bash' },
+  },
+
+  // Network simulation
+  network: {
+    hosts: {},
+    scanned: [],
+    currentHost: null
+  },
+
+  // Command history per session
+  commandHistory: [],
+  historyIndex: -1,
+
+  // Environment variables
+  env: {
+    USER: 'user',
+    HOME: '/home/user',
+    PWD: '/home/user',
+    PATH: '/usr/local/bin:/usr/bin:/bin',
+    SHELL: '/bin/bash'
+  },
+
+  // Active processes
+  processes: [],
+
+  // Captured credentials
+  credentials: [],
+
+  // Initialize engine
+  init() {
+    this.setupCommandParser();
+    this.setupNetworkSimulation();
+    console.log('[GameEngine] Initialized');
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // COMMAND PARSER - Realistic flag parsing
+  // ═══════════════════════════════════════════════════════════════
+  parseCommand(input) {
+    const tokens = this.tokenize(input);
+    if (tokens.length === 0) return null;
+
+    const cmd = tokens[0];
+    const args = tokens.slice(1);
+
+    // Parse flags and positional arguments
+    const parsed = {
+      command: cmd,
+      flags: {},
+      args: [],
+      raw: input
+    };
+
+    let i = 0;
+    while (i < args.length) {
+      const arg = args[i];
+
+      // Long flag (--flag or --flag=value)
+      if (arg.startsWith('--')) {
+        const [key, value] = arg.slice(2).split('=');
+        parsed.flags[key] = value || true;
+      }
+      // Short flag (-f or -f value or -abc)
+      else if (arg.startsWith('-') && arg.length > 1 && !arg.match(/^-\d/)) {
+        const flagChars = arg.slice(1);
+
+        // Check if it's a flag with value (-u user, -p port)
+        const flagsWithValues = ['u', 'p', 'i', 'o', 'H', 'c', 'd', 'w', 'x', 't', 'm', 'a'];
+
+        if (flagChars.length === 1 && flagsWithValues.includes(flagChars) && i + 1 < args.length) {
+          parsed.flags[flagChars] = args[i + 1];
+          i++;
+        } else {
+          // Multiple short flags (-sVC) or single flag
+          for (const char of flagChars) {
+            parsed.flags[char] = true;
+          }
+        }
+      }
+      // Positional argument
+      else {
+        parsed.args.push(arg);
+      }
+
+      i++;
+    }
+
+    return parsed;
+  },
+
+  tokenize(input) {
+    const tokens = [];
+    let current = '';
+    let inQuotes = false;
+    let quoteChar = '';
+
+    for (let i = 0; i < input.length; i++) {
+      const char = input[i];
+
+      if ((char === '"' || char === "'") && !inQuotes) {
+        inQuotes = true;
+        quoteChar = char;
+      } else if (char === quoteChar && inQuotes) {
+        inQuotes = false;
+        quoteChar = '';
+      } else if (char === ' ' && !inQuotes) {
+        if (current) {
+          tokens.push(current);
+          current = '';
+        }
+      } else {
+        current += char;
+      }
+    }
+
+    if (current) tokens.push(current);
+    return tokens;
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // COMMAND VALIDATORS - Ensure proper usage
+  // ═══════════════════════════════════════════════════════════════
+  validators: {
+    nmap: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage: nmap [Scan Type] [Options] {target}\nExample: nmap -sV -sC 10.10.10.15' };
+      }
+      // Check for valid IP/hostname
+      const target = parsed.args[parsed.args.length - 1];
+      if (!target.match(/^\d+\.\d+\.\d+\.\d+$/) && !target.includes('.')) {
+        return { valid: false, error: `Invalid target specification: ${target}` };
+      }
+      return { valid: true, target, flags: parsed.flags };
+    },
+
+    gobuster: (parsed) => {
+      if (!parsed.args.includes('dir') && !parsed.args.includes('dns') && !parsed.args.includes('vhost')) {
+        return { valid: false, error: 'Usage: gobuster <dir|dns|vhost> [options]\nExample: gobuster dir -u http://10.10.10.15 -w /usr/share/wordlists/common.txt' };
+      }
+      if (!parsed.flags.u) {
+        return { valid: false, error: 'Error: -u <url> flag is required\nExample: gobuster dir -u http://10.10.10.15' };
+      }
+      return { valid: true, mode: parsed.args[0], url: parsed.flags.u, wordlist: parsed.flags.w };
+    },
+
+    hashcat: (parsed) => {
+      if (!parsed.flags.m) {
+        return { valid: false, error: 'Usage: hashcat -m <mode> [options] <hash|hashfile> [dictionary]\nCommon modes:\n  0     MD5\n  1000  NTLM\n  3200  bcrypt\n  13100 Kerberos TGS' };
+      }
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Error: No hash or hashfile specified' };
+      }
+      return { valid: true, mode: parsed.flags.m, hash: parsed.args[0], wordlist: parsed.args[1] };
+    },
+
+    curl: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage: curl [options] <url>\nExample: curl -X POST -d "data" http://target/api' };
+      }
+      const url = parsed.args[parsed.args.length - 1];
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return { valid: false, error: `Invalid URL: ${url}\nURL must start with http:// or https://` };
+      }
+      return { valid: true, url, method: parsed.flags.X || 'GET', data: parsed.flags.d };
+    },
+
+    ssh: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage: ssh [user@]hostname [command]\nExample: ssh user@10.10.10.15' };
+      }
+      const target = parsed.args[0];
+      let user = 'root', host = target;
+      if (target.includes('@')) {
+        [user, host] = target.split('@');
+      }
+      return { valid: true, user, host, port: parsed.flags.p || 22, identity: parsed.flags.i };
+    },
+
+    impacket: (parsed, tool) => {
+      // impacket-secretsdump, impacket-psexec, etc.
+      if (parsed.args.length === 0) {
+        return { valid: false, error: `Usage: ${tool} [domain/]username[:password]@target [options]\nExample: ${tool} DOMAIN/admin:pass@10.10.10.10\n         ${tool} DOMAIN/admin@10.10.10.10 -hashes :NTHASH` };
+      }
+      const target = parsed.args[0];
+      if (!target.includes('@')) {
+        return { valid: false, error: 'Error: Target must be in format [domain/]user[:pass]@host' };
+      }
+      const [auth, host] = target.split('@');
+      let domain = '', user = auth, pass = '';
+      if (auth.includes('/')) {
+        [domain, user] = auth.split('/');
+      }
+      if (user.includes(':')) {
+        [user, pass] = user.split(':');
+      }
+      // Check for hashes flag
+      if (!pass && !parsed.flags.hashes) {
+        return { valid: false, error: 'Error: Password or -hashes flag required' };
+      }
+      return { valid: true, domain, user, pass, host, hashes: parsed.flags.hashes };
+    },
+
+    'evil-winrm': (parsed) => {
+      if (!parsed.flags.i) {
+        return { valid: false, error: 'Usage: evil-winrm -i <ip> -u <user> [-p <pass>|-H <hash>]\nExample: evil-winrm -i 10.10.10.10 -u Administrator -H NTHASH' };
+      }
+      if (!parsed.flags.u) {
+        return { valid: false, error: 'Error: -u <username> is required' };
+      }
+      if (!parsed.flags.p && !parsed.flags.H) {
+        return { valid: false, error: 'Error: Either -p <password> or -H <hash> is required' };
+      }
+      return { valid: true, ip: parsed.flags.i, user: parsed.flags.u, pass: parsed.flags.p, hash: parsed.flags.H };
+    },
+
+    chisel: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage:\n  chisel server -p <port> [--reverse]\n  chisel client <server:port> <remote>' };
+      }
+      const mode = parsed.args[0];
+      if (mode === 'server') {
+        if (!parsed.flags.p) {
+          return { valid: false, error: 'Error: -p <port> is required for server mode' };
+        }
+        return { valid: true, mode: 'server', port: parsed.flags.p, reverse: parsed.flags.reverse };
+      }
+      if (mode === 'client') {
+        if (parsed.args.length < 3) {
+          return { valid: false, error: 'Usage: chisel client <server:port> <remote>\nExample: chisel client 10.10.14.5:8000 R:1080:socks' };
+        }
+        return { valid: true, mode: 'client', server: parsed.args[1], remote: parsed.args[2] };
+      }
+      return { valid: false, error: 'Unknown mode. Use "server" or "client"' };
+    },
+
+    certipy: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage: certipy <find|req|auth> [options]\n\nCommands:\n  find  - Enumerate CA and templates\n  req   - Request certificate\n  auth  - Authenticate with certificate' };
+      }
+      const action = parsed.args[0];
+      if (action === 'find') {
+        if (!parsed.flags.u) {
+          return { valid: false, error: 'Usage: certipy find -u <user> [-p <pass>] -dc-ip <ip>' };
+        }
+        return { valid: true, action: 'find', user: parsed.flags.u, pass: parsed.flags.p, dcIp: parsed.flags['dc-ip'] };
+      }
+      if (action === 'req') {
+        if (!parsed.flags.u || !parsed.flags.ca || !parsed.flags.template) {
+          return { valid: false, error: 'Usage: certipy req -u <user> -p <pass> -ca <ca-name> -template <template> [-upn <target-upn>]' };
+        }
+        return { valid: true, action: 'req', user: parsed.flags.u, ca: parsed.flags.ca, template: parsed.flags.template, upn: parsed.flags.upn };
+      }
+      if (action === 'auth') {
+        if (!parsed.flags.pfx) {
+          return { valid: false, error: 'Usage: certipy auth -pfx <certificate.pfx>' };
+        }
+        return { valid: true, action: 'auth', pfx: parsed.flags.pfx };
+      }
+      return { valid: false, error: `Unknown action: ${action}` };
+    },
+
+    rubeus: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage: rubeus <command> [/option:value]\n\nCommands:\n  asktgt      - Request TGT\n  kerberoast  - Kerberoast attack\n  s4u         - S4U delegation attack' };
+      }
+      const action = parsed.args[0];
+      // Rubeus uses /flag:value format
+      const rubeusFlags = {};
+      parsed.args.slice(1).forEach(arg => {
+        if (arg.startsWith('/')) {
+          const [key, value] = arg.slice(1).split(':');
+          rubeusFlags[key.toLowerCase()] = value || true;
+        }
+      });
+
+      if (action === 'asktgt') {
+        if (!rubeusFlags.user) {
+          return { valid: false, error: 'Usage: rubeus asktgt /user:<username> /rc4:<hash>\n       rubeus asktgt /user:<username> /password:<pass>' };
+        }
+        if (!rubeusFlags.rc4 && !rubeusFlags.password && !rubeusFlags.aes256) {
+          return { valid: false, error: 'Error: /rc4:<hash>, /aes256:<key>, or /password:<pass> required' };
+        }
+        return { valid: true, action: 'asktgt', ...rubeusFlags };
+      }
+      if (action === 's4u') {
+        if (!rubeusFlags.ticket || !rubeusFlags.impersonateuser || !rubeusFlags.msdsspn) {
+          return { valid: false, error: 'Usage: rubeus s4u /ticket:<base64> /impersonateuser:<user> /msdsspn:<spn>\nExample: rubeus s4u /ticket:doIF... /impersonateuser:Administrator /msdsspn:cifs/dc.domain.local' };
+        }
+        return { valid: true, action: 's4u', ...rubeusFlags };
+      }
+      return { valid: true, action, flags: rubeusFlags };
+    },
+
+    sqlite3: (parsed) => {
+      if (parsed.args.length === 0) {
+        return { valid: false, error: 'Usage: sqlite3 <database> [SQL]\nExample: sqlite3 /var/www/data.db ".tables"' };
+      }
+      return { valid: true, database: parsed.args[0], query: parsed.args.slice(1).join(' ') };
+    },
+
+    nc: (parsed) => {
+      if (parsed.args.length < 2 && !parsed.flags.l) {
+        return { valid: false, error: 'Usage:\n  nc <host> <port>           - Connect to host\n  nc -lvnp <port>            - Listen on port\nExample: nc -lvnp 4444' };
+      }
+      if (parsed.flags.l) {
+        const port = parsed.flags.p || parsed.args[0];
+        if (!port) {
+          return { valid: false, error: 'Error: Port required for listen mode' };
+        }
+        return { valid: true, mode: 'listen', port };
+      }
+      return { valid: true, mode: 'connect', host: parsed.args[0], port: parsed.args[1] };
+    }
+  },
+
+  validateCommand(cmd, parsed) {
+    // Handle impacket tools
+    if (cmd.startsWith('impacket-')) {
+      return this.validators.impacket(parsed, cmd);
+    }
+    if (this.validators[cmd]) {
+      return this.validators[cmd](parsed);
+    }
+    return { valid: true }; // Unknown commands pass through
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // NETWORK SIMULATION
+  // ═══════════════════════════════════════════════════════════════
+  setupNetworkSimulation() {
+    // This will be configured per-level
+    this.network = {
+      hosts: {},
+      routes: {},
+      proxies: []
+    };
+  },
+
+  addHost(ip, config) {
+    this.network.hosts[ip] = {
+      ip,
+      hostname: config.hostname || ip,
+      os: config.os || 'Unknown',
+      ports: config.ports || [],
+      services: config.services || {},
+      accessible: config.accessible !== false,
+      compromised: false,
+      credentials: config.credentials || [],
+      files: config.files || {},
+      ...config
+    };
+  },
+
+  scanHost(ip, scanType = 'default') {
+    const host = this.network.hosts[ip];
+    if (!host) {
+      return { success: false, error: `Host ${ip} not found or unreachable` };
+    }
+    if (!host.accessible) {
+      return { success: false, error: `Host ${ip} is not accessible from current network segment` };
+    }
+
+    // Mark as scanned
+    if (!this.network.scanned.includes(ip)) {
+      this.network.scanned.push(ip);
+    }
+
+    return {
+      success: true,
+      host: ip,
+      hostname: host.hostname,
+      os: host.os,
+      ports: host.ports,
+      services: host.services
+    };
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // VISUAL EFFECTS
+  // ═══════════════════════════════════════════════════════════════
+  effects: {
+    async hackingSequence(target, duration = 3000) {
+      const overlay = document.getElementById('hack-overlay');
+      if (!overlay) return;
+
+      overlay.classList.add('active');
+      overlay.innerHTML = `
+        <div style="color: #0f0; text-align: center;">
+          <pre id="hack-ascii" class="ascii-animate" style="font-size: 10px; line-height: 1.2;"></pre>
+          <div id="hack-status" style="margin-top: 20px; font-size: 14px;"></div>
+          <div id="hack-progress" style="width: 400px; margin-top: 10px;">
+            <div class="progress-bar">
+              <div class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const asciiArt = `
+   ██░ ██  ▄▄▄       ▄████▄   ██ ▄█▀
+  ▓██░ ██▒▒████▄    ▒██▀ ▀█   ██▄█▒
+  ▒██▀▀██░▒██  ▀█▄  ▒▓█    ▄ ▓███▄░
+  ░▓█ ░██ ░██▄▄▄▄██ ▒▓▓▄ ▄██▒▓██ █▄
+  ░▓█▒░██▓ ▓█   ▓██▒▒ ▓███▀ ░▒██▒ █▄
+   ▒ ░░▒░▒ ▒▒   ▓▒█░░ ░▒ ▒  ░▒ ▒▒ ▓▒
+      `;
+
+      document.getElementById('hack-ascii').textContent = asciiArt;
+      const statusEl = document.getElementById('hack-status');
+      const progressBar = overlay.querySelector('.progress-bar-fill');
+
+      const stages = [
+        'Initializing exploit...',
+        `Connecting to ${target}...`,
+        'Bypassing security...',
+        'Injecting payload...',
+        'Establishing persistence...',
+        'Access granted!'
+      ];
+
+      for (let i = 0; i < stages.length; i++) {
+        statusEl.textContent = stages[i];
+        progressBar.style.width = ((i + 1) / stages.length * 100) + '%';
+        await sleep(duration / stages.length);
+      }
+
+      await sleep(500);
+      overlay.classList.remove('active');
+    },
+
+    glitchText(element, duration = 500) {
+      const original = element.textContent;
+      const chars = '!@#$%^&*()_+-=[]{}|;:,.<>?░▒▓█';
+      const interval = setInterval(() => {
+        element.textContent = original.split('').map(c =>
+          Math.random() > 0.7 ? chars[Math.floor(Math.random() * chars.length)] : c
+        ).join('');
+      }, 50);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        element.textContent = original;
+      }, duration);
+    },
+
+    async typewriter(text, element, speed = 30) {
+      element.textContent = '';
+      for (let i = 0; i < text.length; i++) {
+        element.textContent += text[i];
+        if (text[i] !== ' ') playKeyPress();
+        await sleep(speed);
+      }
+    },
+
+    scanlines(enable = true) {
+      let scanlineEl = document.querySelector('.scanlines');
+      if (enable && !scanlineEl) {
+        scanlineEl = document.createElement('div');
+        scanlineEl.className = 'scanlines';
+        document.body.appendChild(scanlineEl);
+      } else if (!enable && scanlineEl) {
+        scanlineEl.remove();
+      }
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CRYPTO CHALLENGES
+  // ═══════════════════════════════════════════════════════════════
+  crypto: {
+    // Known hash database for "cracking"
+    hashes: {
+      // NTLM hashes
+      '2b576acbe6bcfda7294d6bd18041b8fe': { plain: 'Backup2023!', type: 'NTLM' },
+      '88a4c0a5d8f4e2b1c3d5a6f7e8b9c0d1': { plain: 'Summer2024!', type: 'NTLM' },
+      'a87f3a4d4a9c32dee5f5c6b7a8d9e0f1': { plain: 'P@ssw0rd123', type: 'NTLM' },
+
+      // bcrypt hashes
+      '$2a$10$VM6E.spfD9n/rD8q/LqGaOPJfz4xQPdvhddT6xyUF4TjXJbHv/rrm': { plain: 'kljh12k3jhaskjh12', type: 'bcrypt' },
+      '$2b$12$SOn8j.MxSq2hcqXH4VK1UONF8d9nXY2l7xKCZ9hAqB8JF.Q4Zvhma': { plain: 'spongebob', type: 'bcrypt' },
+
+      // MD5
+      '5f4dcc3b5aa765d61d8327deb882cf99': { plain: 'password', type: 'MD5' },
+      '098f6bcd4621d373cade4e832627b4f6': { plain: 'test', type: 'MD5' },
+
+      // Kerberos TGS (simplified)
+      '$krb5tgs$23$*svc_sql$': { plain: 'MSSQLSvc2024!', type: 'Kerberos' }
+    },
+
+    crack(hash, mode) {
+      // Simulate cracking with known hashes
+      for (const [h, data] of Object.entries(this.hashes)) {
+        if (hash.includes(h) || h.includes(hash)) {
+          return { success: true, plain: data.plain, type: data.type };
+        }
+      }
+      return { success: false, error: 'Hash not in wordlist' };
+    }
+  }
+};
+
+// Initialize engine when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  GameEngine.init();
+});
+
+// Helper function
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+
+<div id="hack-overlay"></div>

