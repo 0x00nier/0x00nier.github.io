@@ -416,6 +416,55 @@ input[type="range"]::-moz-range-thumb {
   font-family: inherit;
 }
 
+/* Mini Music Player */
+#music-player {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 100;
+}
+
+#music-btn {
+  background: rgba(10, 10, 10, 0.9);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+#music-btn:hover {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+#music-btn.active {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(184, 187, 38, 0.3);
+}
+
+#music-dropdown {
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  background: rgba(10, 10, 10, 0.95);
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  transition: all 0.2s ease;
+}
+
+#music-dropdown.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   #control-panel {
@@ -449,6 +498,17 @@ input[type="range"]::-moz-range-thumb {
 
 <div id="matrix-container">
   <canvas id="matrix-canvas"></canvas>
+
+  <!-- Mini Music Player -->
+  <div id="music-player">
+    <button id="music-btn" onclick="toggleMusicPlayer()">🎵</button>
+    <div id="music-dropdown" class="hidden">
+      <iframe id="yt-player" width="200" height="40"
+        src="https://www.youtube.com/embed/BSsfjHCFosw?enablejsapi=1&loop=1&playlist=BSsfjHCFosw"
+        frameborder="0" allow="autoplay; encrypted-media" allowfullscreen>
+      </iframe>
+    </div>
+  </div>
 
   <a href="/game.html" id="back-btn">
     <span>←</span> BACK
@@ -601,7 +661,7 @@ input[type="range"]::-moz-range-thumb {
     </div>
 
     <div class="keyboard-hints">
-      <kbd>ESC</kbd> Toggle panel · <kbd>F</kbd> Fullscreen<br>
+      <kbd>ESC</kbd> Toggle panel · <kbd>F</kbd> Fullscreen · <kbd>P</kbd> Music<br>
       <kbd>1-6</kbd> Themes · <kbd>M</kbd> Matrix · <kbd>D</kbd> Fire<br>
       <kbd>R</kbd> Retro · <kbd>S</kbd> Smooth
     </div>
@@ -1042,6 +1102,21 @@ function togglePanel() {
   document.getElementById('control-panel').classList.toggle('collapsed');
 }
 
+// Music player toggle
+let musicPlayerOpen = false;
+
+function toggleMusicPlayer() {
+  const dropdown = document.getElementById('music-dropdown');
+  const btn = document.getElementById('music-btn');
+  musicPlayerOpen = !musicPlayerOpen;
+  dropdown.classList.toggle('hidden', !musicPlayerOpen);
+  btn.classList.toggle('active', musicPlayerOpen);
+}
+
+function toggleMusic() {
+  toggleMusicPlayer();
+}
+
 // Fullscreen
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
@@ -1087,6 +1162,7 @@ document.addEventListener('keydown', (e) => {
     case '4': setTheme('void'); break;
     case '5': setTheme('blood'); break;
     case '6': setTheme('amber'); break;
+    case 'p': toggleMusic(); break;
   }
 });
 
