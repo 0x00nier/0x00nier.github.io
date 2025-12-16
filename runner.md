@@ -239,8 +239,10 @@ permalink: /runner.html
       <p>Find the secret backdoor.</p>
       <div class="controls-info">
         <kbd>←</kbd> <kbd>→</kbd> Move &nbsp;|&nbsp;
-        <kbd>Space</kbd> / <kbd>↑</kbd> Jump<br>
-        <kbd>↓</kbd> Crouch / Enter pipe
+        <kbd>Space</kbd> / <kbd>↑</kbd> Jump &nbsp;|&nbsp;
+        <kbd>Z</kbd> / <kbd>RShift</kbd> Run<br>
+        <kbd>↓</kbd> Crouch / Enter pipe &nbsp;|&nbsp;
+        <kbd>X</kbd> / <kbd>LShift</kbd> Shoot (with fire power)
       </div>
       <button onclick="startGame()">INITIALIZE</button>
     </div>
@@ -305,26 +307,64 @@ let cameraX = 0;
 let secretFound = false;
 let inSecretArea = false;
 
-// Player
+// Player - Buttery smooth physics inspired by Super Mario Bros
 const player = {
   x: 100,
   y: 300,
+  // Sub-pixel position for smooth movement
+  subX: 0,
+  subY: 0,
   width: 24,
   height: 32,
   vx: 0,
   vy: 0,
-  speed: 5,
-  jumpForce: -14,
+  // Movement parameters tuned for smooth feel
+  walkSpeed: 2.2,
+  runSpeed: 3.8,
+  accelGround: 0.18,     // Ground acceleration (smooth ramp up)
+  decelGround: 0.25,     // Ground deceleration (responsive stop)
+  accelAir: 0.08,        // Air acceleration (less control = momentum)
+  decelAir: 0.02,        // Air decel (preserve momentum in air)
+  turnBoost: 0.3,        // Extra decel when changing direction
+  // Jump physics - Mario-style
+  jumpForce: -11.5,
+  jumpHoldGravity: 0.35, // Lower gravity while holding jump
+  fallGravity: 0.55,     // Higher gravity when falling
+  shortHopGravity: 0.8,  // Extra gravity for short hops
+  // State
   grounded: false,
+  wasGrounded: false,
   powered: false,
   powerTimer: 0,
   facing: 1,
-  crouching: false
+  crouching: false,
+  running: false,
+  animFrame: 0,
+  animTimer: 0,
+  // Powerup states
+  big: false,
+  canShoot: false,
+  fireballs: [],
+  shootCooldown: 0,
+  // Advanced platformer mechanics
+  coyoteTime: 0,
+  jumpBuffer: 0,
+  jumpHeld: false,
+  nearSecretPipe: false,
+  invincible: 0,
+  // Landing boost (small vertical when running fast)
+  runningUpBoost: 0
 };
 
-// Physics
-const GRAVITY = 0.6;
-const FRICTION = 0.85;
+// Physics constants - tuned for smooth Mario-like feel
+const MAX_FALL_SPEED = 10;
+const COYOTE_TIME_MAX = 6;   // ~100ms at 60fps
+const JUMP_BUFFER_MAX = 8;   // ~133ms at 60fps
+const RUN_THRESHOLD = 0.7;   // Speed to trigger running animation
+
+// Delta time for smooth framerate
+let lastTime = 0;
+let deltaTime = 1;
 
 // Level data - tile-based (0=empty, 1=ground, 2=brick, 3=question, 4=pipe, 5=flag, 6=secret)
 const LEVEL_WIDTH = 100;
@@ -429,54 +469,92 @@ function initLevel() {
   ];
   extraCoins.forEach(c => level.coins.push({ ...c, collected: false }));
 
-  // Enemies
+  // Enemies with different types
   const enemyPositions = [
-    { x: 300, y: GAME_HEIGHT - TILE_SIZE * 3 },
-    { x: 600, y: GAME_HEIGHT - TILE_SIZE * 3 },
-    { x: 750, y: 248 },
-    { x: 1050, y: GAME_HEIGHT - TILE_SIZE * 3 },
-    { x: 1150, y: 188 },
-    { x: 1350, y: GAME_HEIGHT - TILE_SIZE * 3 },
-    { x: 1750, y: GAME_HEIGHT - TILE_SIZE * 3 },
-    { x: 2050, y: GAME_HEIGHT - TILE_SIZE * 3 },
-    { x: 2450, y: 288 },
+    { x: 300, y: GAME_HEIGHT - TILE_SIZE * 3, type: 'walker' },
+    { x: 600, y: GAME_HEIGHT - TILE_SIZE * 3, type: 'jumper' },
+    { x: 750, y: 248, type: 'walker' },
+    { x: 1050, y: GAME_HEIGHT - TILE_SIZE * 3, type: 'chaser' },
+    { x: 1150, y: 188, type: 'walker' },
+    { x: 1350, y: GAME_HEIGHT - TILE_SIZE * 3, type: 'jumper' },
+    { x: 1750, y: GAME_HEIGHT - TILE_SIZE * 3, type: 'chaser' },
+    { x: 2050, y: GAME_HEIGHT - TILE_SIZE * 3, type: 'walker' },
+    { x: 2450, y: 288, type: 'jumper' },
   ];
   enemyPositions.forEach(e => {
     level.enemies.push({
       x: e.x, y: e.y,
       width: 28, height: 28,
-      vx: -1.5,
-      alive: true
+      vx: e.type === 'chaser' ? -0.6 : -0.8,
+      vy: 0,
+      type: e.type || 'walker',
+      alive: true,
+      grounded: true,
+      jumpTimer: Math.random() * 60
     });
   });
 
   // Pipes (one leads to secret area)
   level.pipes = [
-    { x: 650, y: GAME_HEIGHT - TILE_SIZE * 4, height: 2, secret: false },
-    { x: 1250, y: GAME_HEIGHT - TILE_SIZE * 5, height: 3, secret: true }, // Secret pipe!
-    { x: 1950, y: GAME_HEIGHT - TILE_SIZE * 4, height: 2, secret: false },
-    { x: 2300, y: GAME_HEIGHT - TILE_SIZE * 3, height: 1, secret: false },
+    { x: 650, y: GAME_HEIGHT - TILE_SIZE * 4, height: 2, secret: false, hasPiranha: true },
+    { x: 1250, y: GAME_HEIGHT - TILE_SIZE * 5, height: 3, secret: true, hasPiranha: false }, // Secret pipe!
+    { x: 1950, y: GAME_HEIGHT - TILE_SIZE * 4, height: 2, secret: false, hasPiranha: true },
+    { x: 2300, y: GAME_HEIGHT - TILE_SIZE * 3, height: 1, secret: false, hasPiranha: false },
   ];
+
+  // Initialize piranha plants
+  level.piranhas = [];
+  for (const pipe of level.pipes) {
+    if (pipe.hasPiranha) {
+      level.piranhas.push({
+        x: pipe.x + TILE_SIZE / 2,
+        y: pipe.y,
+        baseY: pipe.y,
+        height: 40,
+        phase: Math.random() * Math.PI * 2, // Random starting phase
+        speed: 0.02 + Math.random() * 0.01,
+        extended: 0, // 0 = hidden, 1 = fully out
+        waitTimer: 0,
+        state: 'waiting' // waiting, rising, biting, falling
+      });
+    }
+  }
 
   // Flag at end
   level.flag = { x: 2850, y: GAME_HEIGHT - TILE_SIZE * 8, height: 6 };
 
-  // Secret area
+  // Secret area - Underground bonus room with proper level design
   level.secretArea = {
-    x: 0, y: -300,
-    width: 500, height: 250,
+    x: 0, y: 0,
+    width: 700, height: GAME_HEIGHT,
     coins: [
-      { x: 100, y: -250, collected: false },
-      { x: 150, y: -250, collected: false },
-      { x: 200, y: -250, collected: false },
-      { x: 250, y: -250, collected: false },
-      { x: 300, y: -250, collected: false },
+      // Row of coins on first platform
+      { x: 100, y: 280, collected: false },
+      { x: 140, y: 280, collected: false },
+      { x: 180, y: 280, collected: false },
+      { x: 220, y: 280, collected: false },
+      // High coins requiring jump
+      { x: 320, y: 200, collected: false },
+      { x: 360, y: 200, collected: false },
+      { x: 400, y: 200, collected: false },
+      // Secret stash at the top
+      { x: 500, y: 100, collected: false },
+      { x: 540, y: 100, collected: false },
+      { x: 580, y: 100, collected: false },
     ],
     platforms: [
-      { x: 50, y: -200, w: TILE_SIZE * 15, h: TILE_SIZE },
-      { x: 50, y: -100, w: TILE_SIZE * 15, h: TILE_SIZE },
+      // Ground platform (spawn area)
+      { x: 0, y: GAME_HEIGHT - TILE_SIZE * 2, w: TILE_SIZE * 8, h: TILE_SIZE * 2 },
+      // Stepping stones up
+      { x: 280, y: 320, w: TILE_SIZE * 4, h: TILE_SIZE },
+      { x: 400, y: 260, w: TILE_SIZE * 3, h: TILE_SIZE },
+      { x: 280, y: 200, w: TILE_SIZE * 5, h: TILE_SIZE },
+      // Top platform with bonus coins
+      { x: 480, y: 140, w: TILE_SIZE * 5, h: TILE_SIZE },
+      // Exit platform
+      { x: 550, y: GAME_HEIGHT - TILE_SIZE * 4, w: TILE_SIZE * 4, h: TILE_SIZE * 4 },
     ],
-    exitPipe: { x: 400, y: -100 - TILE_SIZE * 2 }
+    exitPipe: { x: 580, y: GAME_HEIGHT - TILE_SIZE * 6 }
   };
 }
 
@@ -498,23 +576,57 @@ function rectCollision(a, b) {
          a.y + a.height > b.y;
 }
 
-function checkPlatformCollisions() {
-  player.grounded = false;
-
-  const platforms = inSecretArea ?
+// Get all collidable platforms for current area
+function getCollidablePlatforms() {
+  let platforms = inSecretArea ?
     level.secretArea.platforms.map(p => ({ x: p.x, y: p.y, w: p.w, h: p.h, type: 'brick' })) :
-    level.platforms;
+    [...level.platforms];
+
+  // Add pipes as solid platforms (only in main area)
+  if (!inSecretArea) {
+    for (const pipe of level.pipes) {
+      platforms.push({
+        x: pipe.x - 4,
+        y: pipe.y,
+        w: TILE_SIZE * 2 + 8,
+        h: pipe.height * TILE_SIZE,
+        type: 'pipe'
+      });
+    }
+  }
+  return platforms;
+}
+
+// Horizontal collision resolution
+function resolveHorizontalCollisions() {
+  const platforms = getCollidablePlatforms();
 
   for (const plat of platforms) {
     if (rectCollision(player, plat)) {
-      // Collision from above
-      if (player.vy > 0 && player.y + player.height - player.vy <= plat.y) {
+      if (player.vx > 0) {
+        player.x = plat.x - player.width;
+      } else if (player.vx < 0) {
+        player.x = plat.x + plat.w;
+      }
+      player.vx = 0;
+    }
+  }
+}
+
+// Vertical collision resolution
+function resolveVerticalCollisions() {
+  player.grounded = false;
+  const platforms = getCollidablePlatforms();
+
+  for (const plat of platforms) {
+    if (rectCollision(player, plat)) {
+      if (player.vy > 0) {
+        // Landing on platform
         player.y = plat.y - player.height;
         player.vy = 0;
         player.grounded = true;
-      }
-      // Collision from below
-      else if (player.vy < 0 && player.y - player.vy >= plat.y + plat.h) {
+      } else if (player.vy < 0) {
+        // Hitting from below
         player.y = plat.y + plat.h;
         player.vy = 0;
 
@@ -522,26 +634,23 @@ function checkPlatformCollisions() {
         if (plat.type === 'question' && !plat.hit) {
           plat.hit = true;
           score += 100;
+          screenShake = 5;
+          spawnParticles(plat.x + TILE_SIZE/2, plat.y, 10, COLORS.coin);
           // Spawn powerup
           level.powerups.push({
             x: plat.x,
             y: plat.y - TILE_SIZE,
-            active: true
+            targetY: plat.y - TILE_SIZE - 10,
+            active: true,
+            type: Math.random() > 0.5 ? 'grow' : 'fire'
           });
         }
-      }
-      // Horizontal collision
-      else {
-        if (player.vx > 0) player.x = plat.x - player.width;
-        else if (player.vx < 0) player.x = plat.x + plat.w;
-        player.vx = 0;
       }
     }
   }
 
-  // Ground collision (simple floor)
+  // Ground collision (simple floor check)
   if (!inSecretArea && player.y > GAME_HEIGHT - TILE_SIZE * 2 - player.height) {
-    // Check if over a gap
     let overGround = false;
     for (const plat of level.platforms) {
       if (plat.type === 'ground' &&
@@ -560,35 +669,249 @@ function checkPlatformCollisions() {
   }
 }
 
-// Update player
+// Particle system
+let particles = [];
+let screenShake = 0;
+
+function spawnParticles(x, y, count, color) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      vx: (Math.random() - 0.5) * 4,
+      vy: (Math.random() - 1) * 3,
+      life: 20 + Math.random() * 20,
+      color: color,
+      size: 2 + Math.random() * 3
+    });
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.2;
+    p.life--;
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life / 40;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - cameraX, p.y, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Fireball system
+function shootFireball() {
+  player.fireballs.push({
+    x: player.x + (player.facing > 0 ? player.width : -8),
+    y: player.y + player.height / 2,
+    vx: player.facing * 6,
+    vy: 0,
+    bounces: 0
+  });
+  spawnParticles(player.x + player.width/2, player.y + player.height/2, 5, '#ff6600');
+}
+
+function updateFireballs() {
+  for (let i = player.fireballs.length - 1; i >= 0; i--) {
+    const fb = player.fireballs[i];
+    fb.x += fb.vx;
+    fb.vy += 0.3;
+    fb.y += fb.vy;
+
+    // Trail particles
+    if (Math.random() > 0.5) {
+      particles.push({
+        x: fb.x,
+        y: fb.y,
+        vx: (Math.random() - 0.5) * 1,
+        vy: (Math.random() - 0.5) * 1,
+        life: 10,
+        color: '#ff6600',
+        size: 2
+      });
+    }
+
+    // Bounce off ground
+    if (fb.y > GAME_HEIGHT - TILE_SIZE * 2 - 8) {
+      fb.y = GAME_HEIGHT - TILE_SIZE * 2 - 8;
+      fb.vy = -5;
+      fb.bounces++;
+      spawnParticles(fb.x, fb.y, 3, '#ff9900');
+    }
+
+    // Bounce off platforms too
+    const platforms = getCollidablePlatforms();
+    for (const plat of platforms) {
+      if (fb.x > plat.x && fb.x < plat.x + plat.w &&
+          fb.y > plat.y - 5 && fb.y < plat.y + 5) {
+        fb.vy = -5;
+        fb.bounces++;
+        break;
+      }
+    }
+
+    // Remove if off screen or too many bounces
+    if (fb.x < cameraX - 50 || fb.x > cameraX + GAME_WIDTH + 50 || fb.bounces > 4) {
+      player.fireballs.splice(i, 1);
+      continue;
+    }
+
+    // Hit enemies - more generous hitbox
+    let hitEnemy = false;
+    for (const enemy of level.enemies) {
+      if (!enemy.alive) continue;
+      // Generous collision (fireball radius + enemy box)
+      const fbRadius = 10;
+      if (fb.x + fbRadius > enemy.x && fb.x - fbRadius < enemy.x + enemy.width &&
+          fb.y + fbRadius > enemy.y && fb.y - fbRadius < enemy.y + enemy.height) {
+        enemy.alive = false;
+        score += 100;
+        screenShake = 4;
+        spawnParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 20, COLORS.enemy);
+        spawnParticles(fb.x, fb.y, 10, '#ff6600');
+        player.fireballs.splice(i, 1);
+        hitEnemy = true;
+        break;
+      }
+    }
+    if (hitEnemy) continue;
+  }
+}
+
+function drawFireballs() {
+  for (const fb of player.fireballs) {
+    const screenX = fb.x - cameraX;
+    // Glowing fireball
+    ctx.fillStyle = '#ff4400';
+    ctx.shadowColor = '#ff6600';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(screenX, fb.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffaa00';
+    ctx.beginPath();
+    ctx.arc(screenX, fb.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// Update player with buttery smooth Mario-style physics
 function updatePlayer() {
-  // Horizontal movement
-  if (keys['ArrowLeft'] || keys['KeyA']) {
-    player.vx = -player.speed;
+  // Reset per-frame state
+  player.nearSecretPipe = false;
+  player.wasGrounded = player.grounded;
+
+  // Input
+  const moveLeft = keys['ArrowLeft'] || keys['KeyA'];
+  const moveRight = keys['ArrowRight'] || keys['KeyD'];
+  const jumpPressed = keys['Space'] || keys['ArrowUp'] || keys['KeyW'];
+  const runHeld = keys['ShiftRight'] || keys['KeyZ'];
+
+  // Crouching (only when grounded)
+  player.crouching = (keys['ArrowDown'] || keys['KeyS']) && player.grounded;
+
+  // Determine max speed based on run button
+  const maxSpeed = runHeld ? player.runSpeed : player.walkSpeed;
+  player.running = Math.abs(player.vx) > RUN_THRESHOLD;
+
+  // Horizontal movement with smooth acceleration curves
+  const accel = player.grounded ? player.accelGround : player.accelAir;
+  const decel = player.grounded ? player.decelGround : player.decelAir;
+
+  if (moveLeft && !player.crouching) {
+    // Turning around bonus (faster direction change)
+    const turnBonus = (player.vx > 0) ? player.turnBoost : 0;
+    player.vx -= (accel + turnBonus);
+    if (player.vx < -maxSpeed) player.vx = -maxSpeed;
     player.facing = -1;
-  } else if (keys['ArrowRight'] || keys['KeyD']) {
-    player.vx = player.speed;
+  } else if (moveRight && !player.crouching) {
+    const turnBonus = (player.vx < 0) ? player.turnBoost : 0;
+    player.vx += (accel + turnBonus);
+    if (player.vx > maxSpeed) player.vx = maxSpeed;
     player.facing = 1;
   } else {
-    player.vx *= FRICTION;
+    // Smooth deceleration with exponential decay for silky feel
+    if (Math.abs(player.vx) < 0.1) {
+      player.vx = 0;
+    } else {
+      // Lerp toward zero for smooth stop
+      player.vx *= (1 - decel);
+    }
   }
 
-  // Crouching
-  player.crouching = keys['ArrowDown'] || keys['KeyS'];
+  // Coyote time - allows jumping shortly after leaving platform
+  if (player.grounded) {
+    player.coyoteTime = COYOTE_TIME_MAX;
+  } else if (player.coyoteTime > 0) {
+    player.coyoteTime--;
+  }
 
-  // Jumping
-  if ((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.grounded) {
-    player.vy = player.jumpForce;
+  // Jump buffering - pressing jump before landing registers
+  if (jumpPressed && !player.jumpHeld) {
+    player.jumpBuffer = JUMP_BUFFER_MAX;
+  }
+  if (player.jumpBuffer > 0) {
+    player.jumpBuffer--;
+  }
+
+  // Execute jump if conditions met
+  const canJump = player.grounded || player.coyoteTime > 0;
+  if (player.jumpBuffer > 0 && canJump && !player.crouching) {
+    // Jump force varies slightly with horizontal speed (like Mario)
+    const speedBonus = Math.abs(player.vx) * 0.08;
+    player.vy = player.jumpForce - speedBonus;
     player.grounded = false;
+    player.coyoteTime = 0;
+    player.jumpBuffer = 0;
+    spawnParticles(player.x + player.width/2, player.y + player.height, 5, '#666');
+  }
+  player.jumpHeld = jumpPressed;
+
+  // Variable gravity for smooth jump arc (key to Mario feel)
+  let gravity;
+  if (player.vy < 0) {
+    // Rising
+    if (jumpPressed) {
+      // Hold jump for higher jump
+      gravity = player.jumpHoldGravity;
+    } else {
+      // Released jump early - cut height
+      gravity = player.shortHopGravity;
+    }
+  } else {
+    // Falling - faster gravity for snappy feel
+    gravity = player.fallGravity;
   }
 
-  // Apply gravity
-  player.vy += GRAVITY;
-  if (player.vy > 15) player.vy = 15;
+  player.vy += gravity;
 
-  // Update position
+  // Smooth cap on fall speed
+  if (player.vy > MAX_FALL_SPEED) {
+    player.vy = MAX_FALL_SPEED;
+  }
+
+  // Running upward boost (subtle lift when running fast, like SMB1)
+  if (player.grounded && Math.abs(player.vx) > player.walkSpeed * 0.9) {
+    player.y -= 0.2;
+  }
+
+  // Move and resolve collisions separately for X and Y
   player.x += player.vx;
+  resolveHorizontalCollisions();
+
   player.y += player.vy;
+  resolveVerticalCollisions();
 
   // Boundaries
   if (player.x < 0) player.x = 0;
@@ -606,16 +929,33 @@ function updatePlayer() {
     player.powerTimer--;
     if (player.powerTimer <= 0) {
       player.powered = false;
+      player.canShoot = false;
     }
   }
 
+  // Update fireballs
+  updateFireballs();
+
+  // Shoot fireball
+  if (player.canShoot && (keys['KeyX'] || keys['ShiftLeft']) && !player.shootCooldown) {
+    shootFireball();
+    player.shootCooldown = 20;
+  }
+  if (player.shootCooldown > 0) player.shootCooldown--;
+
   // Check collisions
-  checkPlatformCollisions();
   checkCoinCollisions();
   checkEnemyCollisions();
   checkPowerupCollisions();
   checkPipeCollisions();
   checkFlagCollision();
+
+  // Landing effects
+  if (player.grounded && !player.wasGrounded && player.vy >= 0) {
+    // Dust particles on landing
+    const intensity = Math.min(8, Math.abs(player.vy));
+    spawnParticles(player.x + player.width/2, player.y + player.height, intensity, '#888');
+  }
 }
 
 // Coin collection
@@ -650,16 +990,28 @@ function checkEnemyCollisions() {
         enemy.alive = false;
         player.vy = -8;
         score += 100;
-      } else if (!player.powered) {
-        die();
-      } else {
-        // Powered - kill enemy
+        screenShake = 3;
+        spawnParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 15, COLORS.enemy);
+      } else if (player.invincible > 0) {
+        // Invincible - ignore collision
+        continue;
+      } else if (player.powered || player.big) {
+        // Powered/big - kill enemy
         enemy.alive = false;
         score += 100;
+        screenShake = 3;
+        spawnParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 15, COLORS.enemy);
+      } else {
+        die();
       }
     }
   }
 }
+
+// Powerup help tracking
+let shownPowerupHelp = { grow: false, fire: false };
+let powerupHelpMessage = '';
+let powerupHelpTimer = 0;
 
 // Powerup collision
 function checkPowerupCollisions() {
@@ -669,9 +1021,40 @@ function checkPowerupCollisions() {
     const rect = { x: powerup.x, y: powerup.y, w: 24, h: 24 };
     if (rectCollision(player, rect)) {
       powerup.active = false;
-      player.powered = true;
-      player.powerTimer = 600; // 10 seconds at 60fps
       score += 200;
+      screenShake = 5;
+
+      if (powerup.type === 'grow') {
+        // Growth powerup - makes player bigger
+        if (!player.big) {
+          player.big = true;
+          player.height = 48;
+          player.y -= 16; // Adjust position so player doesn't clip into ground
+          spawnParticles(player.x + player.width/2, player.y + player.height/2, 20, COLORS.powerup);
+
+          // Show help first time
+          if (!shownPowerupHelp.grow) {
+            shownPowerupHelp.grow = true;
+            powerupHelpMessage = 'POWER UP! You can now take one hit!';
+            powerupHelpTimer = 180;
+          }
+        }
+        player.powered = true;
+        player.powerTimer = 900; // 15 seconds
+      } else if (powerup.type === 'fire') {
+        // Fire powerup - allows shooting fireballs
+        player.canShoot = true;
+        player.powered = true;
+        player.powerTimer = 900;
+        spawnParticles(player.x + player.width/2, player.y + player.height/2, 20, '#ff6600');
+
+        // Show help first time
+        if (!shownPowerupHelp.fire) {
+          shownPowerupHelp.fire = true;
+          powerupHelpMessage = 'FIRE POWER! Press X or SHIFT to shoot!';
+          powerupHelpTimer = 180;
+        }
+      }
     }
   }
 }
@@ -681,20 +1064,36 @@ function checkPipeCollisions() {
   if (inSecretArea) {
     // Check exit pipe in secret area
     const exitPipe = level.secretArea.exitPipe;
+    const playerCenterX = player.x + player.width / 2;
+    const playerBottom = player.y + player.height;
+
     if (player.crouching &&
-        player.x > exitPipe.x && player.x < exitPipe.x + TILE_SIZE * 2 &&
-        player.y > exitPipe.y - TILE_SIZE && player.y < exitPipe.y + TILE_SIZE) {
+        playerCenterX > exitPipe.x - 20 && playerCenterX < exitPipe.x + TILE_SIZE * 2 + 20 &&
+        player.y > exitPipe.y - TILE_SIZE * 2 && player.y < exitPipe.y + TILE_SIZE * 2) {
       exitSecretArea();
     }
     return;
   }
 
   for (const pipe of level.pipes) {
-    if (pipe.secret && player.crouching) {
-      if (player.x > pipe.x && player.x < pipe.x + TILE_SIZE * 2 &&
-          player.y > pipe.y - TILE_SIZE && player.y < pipe.y + TILE_SIZE * 2) {
-        enterSecretArea();
-      }
+    const playerCenterX = player.x + player.width / 2;
+    const playerBottom = player.y + player.height;
+    const pipeTop = pipe.y;
+
+    // More lenient collision box for pipe entry
+    const nearPipe = playerCenterX > pipe.x - 15 &&
+                     playerCenterX < pipe.x + TILE_SIZE * 2 + 15 &&
+                     player.y + player.height > pipeTop - 20 &&
+                     player.y < pipeTop + TILE_SIZE * 2;
+
+    // Track if near secret pipe for UI hint
+    if (pipe.secret && nearPipe) {
+      player.nearSecretPipe = true;
+    }
+
+    // Enter secret pipe when pressing down near it
+    if (pipe.secret && player.crouching && nearPipe) {
+      enterSecretArea();
     }
   }
 }
@@ -704,10 +1103,12 @@ function enterSecretArea() {
   if (secretFound) return;
   secretFound = true;
   inSecretArea = true;
+  // Spawn on the ground platform
   player.x = 100;
-  player.y = -150;
+  player.y = GAME_HEIGHT - TILE_SIZE * 2 - player.height - 10;
   player.vx = 0;
   player.vy = 0;
+  player.grounded = true;
   score += 500;
 
   // Show notification
@@ -718,10 +1119,12 @@ function enterSecretArea() {
 
 function exitSecretArea() {
   inSecretArea = false;
+  // Return to main level near where you entered
   player.x = 1300;
-  player.y = 200;
+  player.y = GAME_HEIGHT - TILE_SIZE * 3 - player.height;
   player.vx = 0;
   player.vy = 0;
+  player.grounded = true;
 }
 
 // Flag collision (win)
@@ -733,35 +1136,155 @@ function checkFlagCollision() {
   }
 }
 
-// Update enemies
+// Update enemies with improved AI
 function updateEnemies() {
   if (inSecretArea) return;
 
   for (const enemy of level.enemies) {
     if (!enemy.alive) continue;
 
-    enemy.x += enemy.vx;
-
-    // Simple AI - reverse at edges or walls
-    let onPlatform = false;
-    for (const plat of level.platforms) {
-      if (enemy.x + enemy.width > plat.x && enemy.x < plat.x + plat.w &&
-          enemy.y + enemy.height >= plat.y && enemy.y + enemy.height <= plat.y + 10) {
-        onPlatform = true;
+    // Different AI behaviors based on enemy type
+    if (enemy.type === 'chaser') {
+      // Chaser enemies move toward player when nearby
+      const dx = player.x - enemy.x;
+      const dist = Math.abs(dx);
+      if (dist < 200 && dist > 10) {
+        enemy.vx = Math.sign(dx) * 1.2;
+      }
+    } else if (enemy.type === 'jumper') {
+      // Jumping enemies hop periodically
+      enemy.jumpTimer = (enemy.jumpTimer || 0) + 1;
+      if (enemy.jumpTimer > 90 && enemy.grounded) {
+        enemy.vy = -8;
+        enemy.grounded = false;
+        enemy.jumpTimer = 0;
+      }
+      enemy.vy = (enemy.vy || 0) + 0.4;
+      enemy.y += enemy.vy;
+      if (enemy.y > GAME_HEIGHT - TILE_SIZE * 3) {
+        enemy.y = GAME_HEIGHT - TILE_SIZE * 3;
+        enemy.vy = 0;
+        enemy.grounded = true;
       }
     }
 
-    // Check ground
-    if (enemy.y >= GAME_HEIGHT - TILE_SIZE * 3) {
+    enemy.x += enemy.vx;
+
+    // Edge detection - reverse at gaps
+    if (enemy.y >= GAME_HEIGHT - TILE_SIZE * 3 - enemy.height) {
       let overGround = false;
-      const nextX = enemy.x + enemy.vx * 20;
+      const checkX = enemy.x + (enemy.vx > 0 ? enemy.width + 10 : -10);
       for (const plat of level.platforms) {
-        if (plat.type === 'ground' && nextX + enemy.width > plat.x && nextX < plat.x + plat.w) {
+        if (plat.type === 'ground' && checkX > plat.x && checkX < plat.x + plat.w) {
           overGround = true;
           break;
         }
       }
-      if (!overGround) enemy.vx *= -1;
+      if (!overGround) {
+        enemy.vx *= -1;
+      }
+    }
+
+    // Wall collision - reverse at pipes
+    for (const pipe of level.pipes) {
+      if (enemy.x + enemy.width > pipe.x && enemy.x < pipe.x + TILE_SIZE * 2 &&
+          enemy.y + enemy.height > pipe.y) {
+        enemy.vx *= -1;
+        enemy.x += enemy.vx * 2;
+      }
+    }
+  }
+}
+
+// Update piranha plants
+function updatePiranhas() {
+  if (inSecretArea || !level.piranhas) return;
+
+  for (const piranha of level.piranhas) {
+    // State machine for piranha behavior
+    switch (piranha.state) {
+      case 'waiting':
+        piranha.waitTimer++;
+        // Don't emerge if player is too close to pipe
+        const playerDist = Math.abs(player.x - piranha.x);
+        if (piranha.waitTimer > 120 && playerDist > 40) {
+          piranha.state = 'rising';
+          piranha.waitTimer = 0;
+        }
+        break;
+
+      case 'rising':
+        piranha.extended = Math.min(1, piranha.extended + 0.03);
+        if (piranha.extended >= 1) {
+          piranha.state = 'biting';
+          piranha.waitTimer = 0;
+        }
+        break;
+
+      case 'biting':
+        // Snap animation
+        piranha.waitTimer++;
+        piranha.bitePhase = Math.sin(piranha.waitTimer * 0.3) > 0;
+        if (piranha.waitTimer > 90) {
+          piranha.state = 'falling';
+        }
+        break;
+
+      case 'falling':
+        piranha.extended = Math.max(0, piranha.extended - 0.03);
+        if (piranha.extended <= 0) {
+          piranha.state = 'waiting';
+          piranha.waitTimer = 0;
+        }
+        break;
+    }
+
+    // Update visual position
+    piranha.y = piranha.baseY - (piranha.height * piranha.extended);
+  }
+}
+
+// Check piranha collisions
+function checkPiranhaCollisions() {
+  if (inSecretArea || !level.piranhas) return;
+
+  for (const piranha of level.piranhas) {
+    if (piranha.extended < 0.3) continue; // Can't hit if mostly hidden
+
+    const piranhaRect = {
+      x: piranha.x - 12,
+      y: piranha.y,
+      w: 24,
+      h: piranha.height * piranha.extended
+    };
+
+    if (rectCollision(player, piranhaRect)) {
+      if (player.powered || player.big) {
+        // Powered player destroys piranha
+        piranha.extended = 0;
+        piranha.state = 'waiting';
+        piranha.waitTimer = 0;
+        score += 200;
+        screenShake = 5;
+        spawnParticles(piranha.x, piranha.y, 15, '#00aa00');
+      } else {
+        die();
+      }
+    }
+
+    // Fireballs can kill piranhas
+    for (let i = player.fireballs.length - 1; i >= 0; i--) {
+      const fb = player.fireballs[i];
+      if (fb.x > piranhaRect.x && fb.x < piranhaRect.x + piranhaRect.w &&
+          fb.y > piranhaRect.y && fb.y < piranhaRect.y + piranhaRect.h) {
+        piranha.extended = 0;
+        piranha.state = 'waiting';
+        piranha.waitTimer = 200; // Longer wait after being killed
+        score += 200;
+        screenShake = 3;
+        spawnParticles(piranha.x, piranha.y, 15, '#00aa00');
+        player.fireballs.splice(i, 1);
+      }
     }
   }
 }
@@ -775,15 +1298,23 @@ function updatePowerups() {
   }
 }
 
-// Camera
+// Camera with smooth lerping
+let targetCameraX = 0;
 function updateCamera() {
   if (inSecretArea) {
     cameraX = 0;
+    targetCameraX = 0;
     return;
   }
 
-  const targetX = player.x - GAME_WIDTH / 3;
-  cameraX = Math.max(0, Math.min(targetX, LEVEL_WIDTH * TILE_SIZE - GAME_WIDTH));
+  // Calculate target camera position (player slightly left of center for forward visibility)
+  const lookAhead = player.vx * 15; // Look ahead based on velocity
+  targetCameraX = player.x - GAME_WIDTH / 3 + lookAhead;
+  targetCameraX = Math.max(0, Math.min(targetCameraX, LEVEL_WIDTH * TILE_SIZE - GAME_WIDTH));
+
+  // Smooth lerp camera toward target for buttery feel
+  const lerpSpeed = 0.08;
+  cameraX += (targetCameraX - cameraX) * lerpSpeed;
 }
 
 // Draw functions
@@ -922,20 +1453,67 @@ function drawEnemies() {
     const screenX = enemy.x - cameraX;
     if (screenX < -enemy.width || screenX > GAME_WIDTH) continue;
 
-    // Enemy body
-    ctx.fillStyle = COLORS.enemy;
-    ctx.fillRect(screenX, enemy.y, enemy.width, enemy.height);
+    // Update animation
+    enemy.animTimer = (enemy.animTimer || 0) + 1;
+    if (enemy.animTimer > 10) {
+      enemy.animTimer = 0;
+      enemy.animFrame = ((enemy.animFrame || 0) + 1) % 2;
+    }
 
-    // Eyes
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(screenX + 6, enemy.y + 6, 6, 6);
-    ctx.fillRect(screenX + 16, enemy.y + 6, 6, 6);
+    const flip = enemy.vx > 0;
+    drawEnemy(screenX, enemy.y, flip, enemy.animFrame || 0);
+  }
+}
 
-    // Pupils
-    ctx.fillStyle = '#000';
-    const pupilOffset = enemy.vx > 0 ? 2 : 0;
-    ctx.fillRect(screenX + 8 + pupilOffset, enemy.y + 8, 3, 3);
-    ctx.fillRect(screenX + 18 + pupilOffset, enemy.y + 8, 3, 3);
+// Pixel art enemy sprite drawing (virus/malware themed)
+function drawEnemy(x, y, flip, frame) {
+  const s = 4; // Pixel size
+  const main = COLORS.enemy;
+  const dark = '#aa2020';
+  const light = '#ff6666';
+
+  // Malware virus sprites - angry little bugs
+  const sprites = {
+    walk0: [
+      '  ████  ',
+      ' ██████ ',
+      '█●▓▓▓▓●█',
+      '██▓▓▓▓██',
+      ' ██████ ',
+      '█ ████ █',
+      '█  ██  █'
+    ],
+    walk1: [
+      '  ████  ',
+      ' ██████ ',
+      '█●▓▓▓▓●█',
+      '██▓▓▓▓██',
+      ' ██████ ',
+      ' █ ██ █ ',
+      '█      █'
+    ]
+  };
+
+  const sprite = sprites['walk' + frame] || sprites.walk0;
+  const charW = 8;
+
+  for (let row = 0; row < sprite.length; row++) {
+    const line = sprite[row];
+    for (let col = 0; col < charW; col++) {
+      const actualCol = flip ? (charW - 1 - col) : col;
+      const char = line[actualCol] || ' ';
+
+      let color = null;
+      if (char === '█') color = main;
+      else if (char === '▓') color = dark;
+      else if (char === '●') color = '#fff';
+      else if (char === ' ') continue;
+
+      if (color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x + col * (s - 1), y + row * (s - 1), s - 1, s - 1);
+      }
+    }
   }
 }
 
@@ -946,43 +1524,412 @@ function drawPowerups() {
     const screenX = powerup.x - cameraX;
     if (screenX < -24 || screenX > GAME_WIDTH) continue;
 
-    // Glowing powerup
-    ctx.fillStyle = COLORS.powerup;
-    ctx.shadowColor = COLORS.powerup;
-    ctx.shadowBlur = 10;
-    ctx.fillRect(screenX, powerup.y, 24, 24);
-
-    // Icon
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText('↑', screenX + 6, powerup.y + 18);
+    // Different powerup visuals
+    if (powerup.type === 'grow') {
+      // Mushroom-like grow powerup
+      ctx.fillStyle = '#00ffaa';
+      ctx.shadowColor = '#00ffaa';
+      ctx.shadowBlur = 10;
+      // Stem
+      ctx.fillRect(screenX + 8, powerup.y + 12, 8, 12);
+      // Cap
+      ctx.beginPath();
+      ctx.arc(screenX + 12, powerup.y + 10, 12, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(screenX + 8, powerup.y + 6, 3, 0, Math.PI * 2);
+      ctx.arc(screenX + 16, powerup.y + 8, 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (powerup.type === 'fire') {
+      // Fire flower powerup
+      ctx.fillStyle = '#ff6600';
+      ctx.shadowColor = '#ff4400';
+      ctx.shadowBlur = 15;
+      // Stem
+      ctx.fillStyle = '#00aa00';
+      ctx.fillRect(screenX + 10, powerup.y + 14, 4, 10);
+      // Petals
+      ctx.fillStyle = '#ff6600';
+      for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI * 2 + Date.now() / 500;
+        const px = screenX + 12 + Math.cos(angle) * 8;
+        const py = powerup.y + 8 + Math.sin(angle) * 8;
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Center
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath();
+      ctx.arc(screenX + 12, powerup.y + 8, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Default powerup
+      ctx.fillStyle = COLORS.powerup;
+      ctx.shadowColor = COLORS.powerup;
+      ctx.shadowBlur = 10;
+      ctx.fillRect(screenX, powerup.y, 24, 24);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 14px monospace';
+      ctx.fillText('↑', screenX + 6, powerup.y + 18);
+    }
     ctx.shadowBlur = 0;
   }
 }
 
+// Draw piranha plants
+function drawPiranhas() {
+  if (inSecretArea || !level.piranhas) return;
+
+  for (const piranha of level.piranhas) {
+    if (piranha.extended < 0.05) continue;
+
+    const screenX = piranha.x - cameraX;
+    if (screenX < -30 || screenX > GAME_WIDTH + 30) continue;
+
+    const visibleHeight = piranha.height * piranha.extended;
+
+    // Stem
+    ctx.fillStyle = '#006600';
+    ctx.fillRect(screenX - 6, piranha.y, 12, visibleHeight);
+
+    // Head
+    const headY = piranha.y;
+    const mouthOpen = piranha.bitePhase ? 8 : 2;
+
+    // Head body
+    ctx.fillStyle = '#00aa00';
+    ctx.beginPath();
+    ctx.ellipse(screenX, headY + 10, 14, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Spots
+    ctx.fillStyle = '#008800';
+    ctx.beginPath();
+    ctx.arc(screenX - 5, headY + 8, 3, 0, Math.PI * 2);
+    ctx.arc(screenX + 6, headY + 12, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mouth
+    ctx.fillStyle = '#220000';
+    ctx.beginPath();
+    ctx.ellipse(screenX, headY + 2, 10, mouthOpen, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Teeth
+    ctx.fillStyle = '#fff';
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(screenX + i * 4, headY + 2 - mouthOpen/2);
+      ctx.lineTo(screenX + i * 4 - 2, headY + 2 + 3);
+      ctx.lineTo(screenX + i * 4 + 2, headY + 2 + 3);
+      ctx.fill();
+    }
+
+    // Eyes (menacing)
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath();
+    ctx.arc(screenX - 6, headY + 6, 3, 0, Math.PI * 2);
+    ctx.arc(screenX + 6, headY + 6, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(screenX - 6, headY + 6, 1.5, 0, Math.PI * 2);
+    ctx.arc(screenX + 6, headY + 6, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 function drawPlayer() {
+  // Invincibility flicker - skip drawing every other frame
+  if (player.invincible > 0 && Math.floor(player.invincible / 3) % 2 === 0) {
+    return;
+  }
+
   const screenX = player.x - (inSecretArea ? 0 : cameraX);
 
+  // Color based on power state
+  let baseColor, darkColor, lightColor;
+  if (player.canShoot) {
+    baseColor = '#ff6600';
+    darkColor = '#aa3300';
+    lightColor = '#ffaa44';
+  } else if (player.big || player.powered) {
+    baseColor = COLORS.playerPowered;
+    darkColor = '#008888';
+    lightColor = '#88ffff';
+  } else {
+    baseColor = COLORS.player;
+    darkColor = '#6a6b1a';
+    lightColor = '#d4d76a';
+  }
+
+  // Animation frame
+  player.animTimer++;
+  if (player.animTimer > 8) {
+    player.animTimer = 0;
+    if (Math.abs(player.vx) > 0.5) {
+      player.animFrame = (player.animFrame + 1) % 4;
+    } else {
+      player.animFrame = 0;
+    }
+  }
+
+  // Calculate squash/stretch
+  let scaleX = 1, scaleY = 1;
+  if (!player.grounded) {
+    if (player.vy < -2) {
+      // Jumping up - stretch vertically
+      scaleX = 0.85;
+      scaleY = 1.15;
+    } else if (player.vy > 2) {
+      // Falling - squash
+      scaleX = 1.1;
+      scaleY = 0.9;
+    }
+  }
+
   // Power glow
-  if (player.powered) {
-    ctx.shadowColor = COLORS.playerPowered;
+  if (player.powered || player.big || player.canShoot) {
+    ctx.shadowColor = baseColor;
     ctx.shadowBlur = 15;
   }
 
-  // Body
-  ctx.fillStyle = player.powered ? COLORS.playerPowered : COLORS.player;
-  const height = player.crouching ? player.height * 0.6 : player.height;
-  const y = player.crouching ? player.y + player.height * 0.4 : player.y;
-  ctx.fillRect(screenX, y, player.width, height);
+  ctx.save();
 
-  // Face
-  ctx.fillStyle = '#000';
-  const eyeY = y + 8;
-  const eyeOffset = player.facing > 0 ? 4 : 0;
-  ctx.fillRect(screenX + 6 + eyeOffset, eyeY, 4, 4);
-  ctx.fillRect(screenX + 14 + eyeOffset, eyeY, 4, 4);
+  // Apply squash/stretch
+  const px = Math.floor(screenX);
+  const py = Math.floor(player.crouching ? player.y + 12 : player.y);
+  const centerX = px + player.width / 2;
+  const centerY = py + player.height / 2;
 
+  ctx.translate(centerX, centerY);
+  ctx.scale(scaleX, scaleY);
+  ctx.translate(-centerX, -centerY);
+
+  const flip = player.facing < 0;
+
+  // Draw different based on big state
+  if (player.big) {
+    // Big player - draw larger sprite
+    if (player.crouching) {
+      drawPixelBig(px - 4, py - 8, 32, 32, baseColor, darkColor, lightColor, flip, 'crouch');
+    } else if (!player.grounded) {
+      drawPixelBig(px - 4, py - 8, 32, 48, baseColor, darkColor, lightColor, flip, 'jump');
+    } else if (Math.abs(player.vx) > 0.5) {
+      drawPixelBig(px - 4, py - 8, 32, 48, baseColor, darkColor, lightColor, flip, 'walk' + (player.animFrame % 2));
+    } else {
+      drawPixelBig(px - 4, py - 8, 32, 48, baseColor, darkColor, lightColor, flip, 'idle');
+    }
+  } else {
+    // Normal size player
+    if (player.crouching) {
+      drawPixel(px, py, 20, 20, baseColor, darkColor, lightColor, flip, 'crouch');
+    } else if (!player.grounded) {
+      drawPixel(px, py, 24, 32, baseColor, darkColor, lightColor, flip, 'jump');
+    } else if (Math.abs(player.vx) > 0.5) {
+      drawPixel(px, py, 24, 32, baseColor, darkColor, lightColor, flip, 'walk' + (player.animFrame % 2));
+    } else {
+      drawPixel(px, py, 24, 32, baseColor, darkColor, lightColor, flip, 'idle');
+    }
+  }
+
+  ctx.restore();
   ctx.shadowBlur = 0;
+}
+
+// Bigger sprite for powered-up player
+function drawPixelBig(x, y, w, h, main, dark, light, flip, pose) {
+  const s = 5; // Larger pixel size
+
+  const sprites = {
+    idle: [
+      '   ████   ',
+      '  ██████  ',
+      '  █▓▓▓▓█  ',
+      '  █●██●█  ',
+      '  ██▓▓██  ',
+      '   ████   ',
+      '  ██████  ',
+      ' ████████ ',
+      '██████████',
+      '██ ████ ██',
+      '█  ████  █',
+      '   ████   ',
+      '  █    █  '
+    ],
+    walk0: [
+      '   ████   ',
+      '  ██████  ',
+      '  █▓▓▓▓█  ',
+      '  █●██●█  ',
+      '  ██▓▓██  ',
+      '   ████   ',
+      '  ██████  ',
+      ' ████████ ',
+      '██████████',
+      '██ ████   ',
+      '█  ████   ',
+      '  ████    ',
+      ' █    █   '
+    ],
+    walk1: [
+      '   ████   ',
+      '  ██████  ',
+      '  █▓▓▓▓█  ',
+      '  █●██●█  ',
+      '  ██▓▓██  ',
+      '   ████   ',
+      '  ██████  ',
+      ' ████████ ',
+      '██████████',
+      '   ████ ██',
+      '   ████  █',
+      '    ████  ',
+      '   █    █ '
+    ],
+    jump: [
+      '   ████   ',
+      '  ██████  ',
+      '  █▓▓▓▓█  ',
+      '  █●██●█  ',
+      '  ██▓▓██  ',
+      '   ████   ',
+      ' ████████ ',
+      '█ ██████ █',
+      '  ██████  ',
+      '   █  █   ',
+      '  █    █  ',
+      ' █      █ '
+    ],
+    crouch: [
+      '   ████   ',
+      '  ██████  ',
+      '  █●██●█  ',
+      '  ██▓▓██  ',
+      ' ████████ ',
+      '██████████',
+      '██ ████ ██'
+    ]
+  };
+
+  const sprite = sprites[pose] || sprites.idle;
+  const charW = 10;
+
+  for (let row = 0; row < sprite.length; row++) {
+    const line = sprite[row];
+    for (let col = 0; col < charW; col++) {
+      const actualCol = flip ? (charW - 1 - col) : col;
+      const char = line[actualCol] || ' ';
+
+      let color = null;
+      if (char === '█') color = main;
+      else if (char === '▓') color = light;
+      else if (char === '●') color = '#000';
+      else if (char === ' ') continue;
+
+      if (color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x + col * (s - 1), y + row * (s - 1), s - 1, s - 1);
+      }
+    }
+  }
+}
+
+// Pixel art sprite drawing
+function drawPixel(x, y, w, h, main, dark, light, flip, pose) {
+  const s = 4; // Pixel size for retro look
+
+  // Simple pixel art character based on pose
+  const sprites = {
+    idle: [
+      '  ████  ',
+      ' ██████ ',
+      ' █▓▓▓▓█ ',
+      ' █●██●█ ',
+      ' ██▓▓██ ',
+      '  ████  ',
+      ' ██████ ',
+      '████████',
+      '██ ██ ██',
+      '█  ██  █',
+      '   ██   ',
+      '  █  █  '
+    ],
+    walk0: [
+      '  ████  ',
+      ' ██████ ',
+      ' █▓▓▓▓█ ',
+      ' █●██●█ ',
+      ' ██▓▓██ ',
+      '  ████  ',
+      ' ██████ ',
+      '████████',
+      '██ ██ ██',
+      '█  ██   ',
+      '  ██    ',
+      ' █   █  '
+    ],
+    walk1: [
+      '  ████  ',
+      ' ██████ ',
+      ' █▓▓▓▓█ ',
+      ' █●██●█ ',
+      ' ██▓▓██ ',
+      '  ████  ',
+      ' ██████ ',
+      '████████',
+      '██ ██ ██',
+      '   ██  █',
+      '    ██  ',
+      '  █   █ '
+    ],
+    jump: [
+      '  ████  ',
+      ' ██████ ',
+      ' █▓▓▓▓█ ',
+      ' █●██●█ ',
+      ' ██▓▓██ ',
+      '  ████  ',
+      '████████',
+      '█ ████ █',
+      '  ████  ',
+      '  █  █  ',
+      ' █    █ ',
+      '█      █'
+    ],
+    crouch: [
+      '  ████  ',
+      ' ██████ ',
+      ' █●██●█ ',
+      ' ██▓▓██ ',
+      '████████',
+      '██ ██ ██'
+    ]
+  };
+
+  const sprite = sprites[pose] || sprites.idle;
+  const charW = 8;
+
+  for (let row = 0; row < sprite.length; row++) {
+    const line = sprite[row];
+    for (let col = 0; col < charW; col++) {
+      const actualCol = flip ? (charW - 1 - col) : col;
+      const char = line[actualCol] || ' ';
+
+      let color = null;
+      if (char === '█') color = main;
+      else if (char === '▓') color = light;
+      else if (char === '●') color = '#000';
+      else if (char === ' ') continue;
+
+      if (color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x + col * (s - 1), y + row * (s - 1), s - 1, s - 1);
+      }
+    }
+  }
 }
 
 function drawFlag() {
@@ -1043,8 +1990,23 @@ function updateHUD() {
 
 // Game states
 function die() {
+  // If big, shrink instead of dying
+  if (player.big) {
+    player.big = false;
+    player.height = 32;
+    player.powered = false;
+    player.canShoot = false;
+    screenShake = 10;
+    spawnParticles(player.x + player.width/2, player.y + player.height/2, 20, '#ff0000');
+    // Brief invincibility
+    player.invincible = 60;
+    return;
+  }
+
   lives--;
   updateHUD();
+  screenShake = 15;
+  spawnParticles(player.x + player.width/2, player.y + player.height/2, 30, '#ff0000');
 
   if (lives <= 0) {
     gameOver();
@@ -1055,6 +2017,11 @@ function die() {
     player.vx = 0;
     player.vy = 0;
     player.powered = false;
+    player.canShoot = false;
+    player.big = false;
+    player.height = 32;
+    player.fireballs = [];
+    player.invincible = 120;
     inSecretArea = false;
     cameraX = 0;
   }
@@ -1089,6 +2056,8 @@ function restartGame() {
   cameraX = 0;
   secretFound = false;
   inSecretArea = false;
+  particles = [];
+  screenShake = 0;
 
   player.x = 100;
   player.y = 300;
@@ -1096,6 +2065,13 @@ function restartGame() {
   player.vy = 0;
   player.powered = false;
   player.powerTimer = 0;
+  player.canShoot = false;
+  player.big = false;
+  player.height = 32;
+  player.fireballs = [];
+  player.invincible = 0;
+  player.coyoteTime = 0;
+  player.jumpBuffer = 0;
 
   initLevel();
   updateHUD();
@@ -1108,13 +2084,36 @@ function restartGame() {
 function gameLoop() {
   if (!gameRunning) return;
 
-  // Update
+  // Update all systems
   updatePlayer();
   updateEnemies();
+  updatePiranhas();
   updatePowerups();
+  updateParticles();
   updateCamera();
+  checkPiranhaCollisions();
 
-  // Draw
+  // Handle invincibility
+  if (player.invincible > 0) {
+    player.invincible--;
+  }
+
+  // Handle screen shake
+  if (screenShake > 0) {
+    screenShake *= 0.9;
+    if (screenShake < 0.5) screenShake = 0;
+  }
+
+  // Apply screen shake to canvas
+  ctx.save();
+  if (screenShake > 0) {
+    ctx.translate(
+      (Math.random() - 0.5) * screenShake * 2,
+      (Math.random() - 0.5) * screenShake * 2
+    );
+  }
+
+  // Draw everything
   if (inSecretArea) {
     drawSecretAreaBG();
   } else {
@@ -1122,11 +2121,49 @@ function gameLoop() {
   }
   drawPlatforms();
   drawPipes();
+  drawPiranhas();
   drawCoins();
   drawEnemies();
   drawPowerups();
+  drawFireballs();
   drawFlag();
   drawPlayer();
+  drawParticles();
+
+  // Draw power indicator
+  if (player.canShoot) {
+    ctx.fillStyle = '#ff6600';
+    ctx.font = '10px monospace';
+    ctx.fillText('FIRE: X/SHIFT', 10, GAME_HEIGHT - 10);
+  }
+
+  // Draw powerup help message
+  if (powerupHelpTimer > 0) {
+    powerupHelpTimer--;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(GAME_WIDTH/2 - 180, 60, 360, 40);
+    ctx.strokeStyle = COLORS.powerup;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(GAME_WIDTH/2 - 180, 60, 360, 40);
+    ctx.fillStyle = COLORS.powerup;
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(powerupHelpMessage, GAME_WIDTH/2, 85);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+
+  // Draw hint near secret pipe
+  if (player.nearSecretPipe && !secretFound) {
+    ctx.fillStyle = COLORS.secret;
+    ctx.font = '12px monospace';
+    ctx.globalAlpha = 0.5 + Math.sin(Date.now() / 200) * 0.3;
+    ctx.fillText('↓ PRESS DOWN', player.x - cameraX - 20, player.y - 20);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
 
   requestAnimationFrame(gameLoop);
 }
