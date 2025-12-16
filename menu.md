@@ -402,6 +402,30 @@ permalink: /game.html
         </div>
       </div>
 
+      <!-- 0x00Tetris -->
+      <div class="project-card" onclick="window.location.href='/tetris.html'">
+        <div class="project-header">
+          <span class="project-id">PRJ-003</span>
+          <span class="project-status active">ACTIVE</span>
+        </div>
+        <div class="project-title">
+          <span class="icon">🎮</span>
+          0x00Tetris
+        </div>
+        <div class="project-description">
+          Classic block-stacking arcade game with terminal aesthetics. Features ghost pieces, hold system, and increasing difficulty. How long can you survive?
+        </div>
+        <div class="project-tags">
+          <span class="project-tag">arcade</span>
+          <span class="project-tag">tetris</span>
+          <span class="project-tag">game</span>
+          <span class="project-tag">canvas</span>
+        </div>
+        <div class="project-action">
+          START GAME
+        </div>
+      </div>
+
       <!-- Placeholder for future projects -->
       <div class="project-card locked">
         <div class="project-header">
@@ -429,7 +453,7 @@ permalink: /game.html
 
   <div id="terminal-footer">
     <div class="footer-stat">
-      PROJECTS: <span class="value">2</span>/3 AVAILABLE
+      PROJECTS: <span class="value">3</span>/4 AVAILABLE
     </div>
     <div class="footer-stat">
       STATUS: <span class="value">ONLINE</span>
