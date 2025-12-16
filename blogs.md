@@ -366,24 +366,32 @@ title: writeups
     </div>
   </div>
 
-  <!-- External -->
-  <div class="toc-category" data-category="external">
+  <!-- Guides & Resources -->
+  <div class="toc-category" data-category="guides">
     <div class="toc-category-header">
       <span class="toc-toggle"></span>
-      <span class="toc-category-title">External Articles</span>
+      <span class="toc-category-title">Guides & Resources</span>
       <span class="toc-category-count">1</span>
     </div>
     <div class="toc-posts">
-      <div class="toc-post" data-post="oscp">
+      <div class="toc-post" data-post="oscp-guide">
         <div class="toc-post-header">
-          <span class="toc-post-toggle hidden"></span>
-          <a href="https://nier0x00.medium.com/navigating-the-oscp-minefield-in-2023-a-guide-to-passing-the-exam-b4cce117c704" class="toc-post-link toc-external" target="_blank">
-            Navigating the OSCP Minefield
-            <svg class="toc-external-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
-            </svg>
-          </a>
-          <span class="toc-post-type">Medium</span>
+          <span class="toc-post-toggle"></span>
+          <a href="./blogs/oscp/guide/oscp-guide.html" class="toc-post-link">Navigating the OSCP Minefield in 2023</a>
+          <span class="toc-post-type">Guide</span>
+        </div>
+        <div class="toc-sections">
+          <div class="toc-section">
+            <a href="./blogs/oscp/guide/oscp-guide.html" class="toc-section-link">Website Version</a>
+          </div>
+          <div class="toc-section">
+            <a href="https://nier0x00.medium.com/navigating-the-oscp-minefield-in-2023-a-guide-to-passing-the-exam-b4cce117c704" class="toc-section-link toc-external" target="_blank">
+              Medium Version
+              <svg class="toc-external-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;margin-left:4px;">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </div>

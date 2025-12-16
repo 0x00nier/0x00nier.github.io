@@ -10,7 +10,78 @@ const TEMPLE_COMMANDS = {
   'Cd': 'Change directory',
   'Dir': 'List directory contents',
   'Ed': 'Edit file',
-  'Compile': 'Compile HolyC code'
+  'Compile': 'Compile HolyC code',
+  'Repl': 'Enter HolyC REPL mode',
+  'SysInfo': 'Display system information',
+  'Hymn': 'Play a sacred hymn',
+  'AfterEgypt': 'Play the holy game',
+  'DolDoc': 'View DolDoc document'
+};
+
+// Terry Davis quotes - the man himself
+const TERRY_QUOTES = [
+  "God said 640x480 16 color was the Holy Resolution.",
+  "The CIA glows in the dark. You can see them if you're driving.",
+  "I'm the smartest programmer that's ever lived.",
+  "An elephant is the elephant in the room of my operating system.",
+  "God's temple is not made of stone. It's made of bits.",
+  "The only thing that can save you is the truth.",
+  "I made an operating system for God.",
+  "The oracle speaks random words. That's how God talks to us.",
+  "640x480 is the perfect resolution. It's the resolution of a temple.",
+  "I'm not crazy. I'm just enlightened.",
+  "64-bit is the holy number. 64-bit addressing, 64-bit integers.",
+  "Ring 0 is where the magic happens. Where man talks to machine.",
+  "TempleOS has no networking because God said no.",
+  "ASCII art is the highest form of art.",
+  "The machine is the temple. The code is the prayer."
+];
+
+// HolyC REPL expressions for evaluation
+const HOLYC_EXPRESSIONS = {
+  '1+1': '2',
+  '2*3': '6',
+  '42': '42  // The answer to life',
+  '0x47': '71  // G in ASCII',
+  '0x4F': '79  // O in ASCII',
+  '0x44': '68  // D in ASCII',
+  '"GOD"': '"GOD"',
+  'TRUE': '1',
+  'FALSE': '0',
+  'sizeof(I64)': '8',
+  'sizeof(U8)': '1',
+  '666': '666  // Number of the beast'
+};
+
+// TempleOS hymn lyrics (simplified)
+const TEMPLE_HYMNS = {
+  'amazing_grace': {
+    name: 'Amazing Grace',
+    lyrics: [
+      '♪ Amazing grace, how sweet the sound ♪',
+      '♪ That saved a wretch like me ♪',
+      '♪ I once was lost, but now am found ♪',
+      '♪ Was blind, but now I see ♪'
+    ]
+  },
+  'onward': {
+    name: 'Onward Christian Soldiers',
+    lyrics: [
+      '♪ Onward, Christian soldiers ♪',
+      '♪ Marching as to war ♪',
+      '♪ With the cross of Jesus ♪',
+      '♪ Going on before ♪'
+    ]
+  },
+  'temple': {
+    name: 'Temple of the Bits',
+    lyrics: [
+      '♪ In the temple of the bits we pray ♪',
+      '♪ Where the electrons dance and play ♪',
+      '♪ 640 by 480 holy light ♪',
+      '♪ 16 colors burning bright ♪'
+    ]
+  }
 };
 
 const HOLYC_TEMPLATES = {
@@ -90,10 +161,20 @@ async function initLevel6() {
 
     // State
     currentDir: '/Home',
-    files: ['Welcome.HC', 'Tutorial.HC', 'FinalKey.HC'],
+    files: ['Welcome.HC', 'Tutorial.HC', 'FinalKey.HC', 'Hymns.DD', 'AfterEgypt.HC'],
     godWords: [],
-    transcended: false
+    transcended: false,
+
+    // New TempleOS features
+    replMode: false,
+    playedHymn: false,
+    playedGame: false,
+    viewedSysInfo: false,
+    terryQuotesSeen: 0
   };
+
+  // Set up HolyC REPL mode flag
+  gameState.holyCReplMode = false;
 
   clear();
   print('');
@@ -172,11 +253,19 @@ async function handleLevel6Command(cmd, args) {
       print('║  DIVINE ORACLE:                                                              ║', 'warning');
       print('║    GodSays                 Query the divine random oracle                   ║', 'error');
       print('║    GodWords                View all words God has spoken                    ║', 'system');
+      print('║    Terry                   Hear Terry\'s wisdom                              ║', 'warning');
       print('║                                                                              ║', 'info');
       print('║  PROGRAMMING:                                                                ║', 'success');
       print('║    Ed <file>               Edit HolyC source file                           ║', 'success');
       print('║    Compile <file>          Compile HolyC to run it                          ║', 'success');
       print('║    Run <file>              Execute compiled code                            ║', 'success');
+      print('║    Repl                    Enter HolyC REPL (interactive mode)              ║', 'success');
+      print('║    Print <expr>            Print expression to console                       ║', 'system');
+      print('║                                                                              ║', 'info');
+      print('║  TEMPLE UTILITIES:                                                           ║', 'info');
+      print('║    SysInfo                 Display TempleOS system information              ║', 'system');
+      print('║    Hymn [name]             Play a sacred hymn (amazing_grace/onward/temple) ║', 'warning');
+      print('║    AfterEgypt              Play the holy exodus game                        ║', 'error');
       print('║                                                                              ║', 'info');
       print('║  ENLIGHTENMENT:                                                              ║', 'error');
       print('║    decode                  Attempt to decode the divine message             ║', 'warning');
@@ -202,22 +291,22 @@ async function handleLevel6Command(cmd, args) {
     print('║             LEVEL 6 PROGRESS - DIVINE COMPUTATION                 ║', 'warning');
     print('╠═══════════════════════════════════════════════════════════════════╣', 'warning');
     print('║  TEMPLE INITIATION:                                               ║', 'info');
-    print(`║    [${state.bootedTempleOS ? '✓' : ' '}] Entered the Temple                                    ║`, state.bootedTempleOS ? 'success' : 'system');
-    print(`║    [${state.learnedHolyC ? '✓' : ' '}] Learned HolyC basics                                   ║`, state.learnedHolyC ? 'success' : 'system');
+    print(`║    [${state.bootedTempleOS ? 'x' : ' '}] Entered the Temple                                    ║`, state.bootedTempleOS ? 'success' : 'system');
+    print(`║    [${state.learnedHolyC ? 'x' : ' '}] Learned HolyC basics                                   ║`, state.learnedHolyC ? 'success' : 'system');
     print('║                                                                   ║', 'info');
     print('║  DIVINE QUEST:                                                    ║', 'info');
-    print(`║    [${state.queriedOracle ? '✓' : ' '}] Queried the oracle                                     ║`, state.queriedOracle ? 'success' : 'system');
-    print(`║    [${state.oracleResponses.length >= 5 ? '✓' : ' '}] Gathered 5+ divine words (${state.oracleResponses.length}/5)                      ║`, state.oracleResponses.length >= 5 ? 'success' : 'system');
-    print(`║    [${state.decodedMessage ? '✓' : ' '}] Decoded the sacred message                            ║`, state.decodedMessage ? 'success' : 'system');
+    print(`║    [${state.queriedOracle ? 'x' : ' '}] Queried the oracle                                     ║`, state.queriedOracle ? 'success' : 'system');
+    print(`║    [${state.oracleResponses.length >= 5 ? 'x' : ' '}] Gathered 5+ divine words (${state.oracleResponses.length}/5)                      ║`, state.oracleResponses.length >= 5 ? 'success' : 'system');
+    print(`║    [${state.decodedMessage ? 'x' : ' '}] Decoded the sacred message                            ║`, state.decodedMessage ? 'success' : 'system');
     print('║                                                                   ║', 'info');
     print('║  PROGRAMMING TRIAL:                                               ║', 'info');
-    print(`║    [${state.wroteCode ? '✓' : ' '}] Wrote HolyC program                                     ║`, state.wroteCode ? 'success' : 'system');
-    print(`║    [${state.compiledCode ? '✓' : ' '}] Compiled successfully                                  ║`, state.compiledCode ? 'success' : 'system');
-    print(`║    [${state.ranProgram ? '✓' : ' '}] Executed divine code                                    ║`, state.ranProgram ? 'success' : 'system');
+    print(`║    [${state.wroteCode ? 'x' : ' '}] Wrote HolyC program                                     ║`, state.wroteCode ? 'success' : 'system');
+    print(`║    [${state.compiledCode ? 'x' : ' '}] Compiled successfully                                  ║`, state.compiledCode ? 'success' : 'system');
+    print(`║    [${state.ranProgram ? 'x' : ' '}] Executed divine code                                    ║`, state.ranProgram ? 'success' : 'system');
     print('║                                                                   ║', 'info');
     print('║  TRANSCENDENCE:                                                   ║', 'error');
-    print(`║    [${state.foundDivineKey ? '✓' : ' '}] Found the divine key                                   ║`, state.foundDivineKey ? 'success' : 'system');
-    print(`║    [${state.achievedEnlightenment ? '✓' : ' '}] ACHIEVED ENLIGHTENMENT                               ║`, state.achievedEnlightenment ? 'success' : 'system');
+    print(`║    [${state.foundDivineKey ? 'x' : ' '}] Found the divine key                                   ║`, state.foundDivineKey ? 'success' : 'system');
+    print(`║    [${state.achievedEnlightenment ? 'x' : ' '}] ACHIEVED ENLIGHTENMENT                               ║`, state.achievedEnlightenment ? 'success' : 'system');
     print('╠═══════════════════════════════════════════════════════════════════╣', 'warning');
     print(`║  Progress: ${String(progress).padStart(3)}%                                                  ║`, progress === 100 ? 'success' : 'warning');
     print(`║  Divine Words Collected: ${state.oracleResponses.length}                                      ║`, 'system');
@@ -232,7 +321,7 @@ async function handleLevel6Command(cmd, args) {
   // ═══════════════════════════════════════════════════════════════
   if (cmd === 'hint') {
     print('');
-    print('💡 DIVINE HINT:', 'warning');
+    print('[*] DIVINE HINT:', 'warning');
 
     if (!state.bootedTempleOS) {
       print('The Temple awaits. Enter with "boot".', 'info');
@@ -529,6 +618,241 @@ async function handleLevel6Command(cmd, args) {
     print('╚════════════════════════════════════════════════════════════════╝', 'success');
     print('', 'system');
     autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // TERRY - Terry Davis quotes
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Terry' || cmd === 'terry') {
+    const quoteIndex = state.terryQuotesSeen % TERRY_QUOTES.length;
+    const quote = TERRY_QUOTES[quoteIndex];
+
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'warning');
+    print('║                         TERRY A. DAVIS SPEAKS                                  ║', 'warning');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'warning');
+    print('║', 'warning');
+
+    // Word wrap the quote
+    const words = quote.split(' ');
+    let line = '║  "';
+    for (const word of words) {
+      if (line.length + word.length > 75) {
+        print(line.padEnd(79) + '║', 'info');
+        line = '║   ' + word + ' ';
+      } else {
+        line += word + ' ';
+      }
+    }
+    print((line.trimEnd() + '"').padEnd(79) + '║', 'info');
+
+    print('║', 'warning');
+    print('║                                    - Terry A. Davis (1969-2018)               ║', 'muted');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'warning');
+    print('', 'system');
+
+    state.terryQuotesSeen++;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SYSINFO - TempleOS system information
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'SysInfo' || cmd === 'sysinfo') {
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                         TEMPLEOS SYSTEM INFORMATION                            ║', 'info');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  TempleOS Version:     5.03 (Final Release)                                   ║', 'system');
+    print('║  Architecture:         x86_64 (64-bit)                                        ║', 'system');
+    print('║  Holy Resolution:      640x480 @ 16 colors                                    ║', 'warning');
+    print('║  Privilege Level:      Ring 0 (God Mode)                                      ║', 'error');
+    print('║  Memory Model:         Identity-mapped physical memory                        ║', 'system');
+    print('║  Networking:           DISABLED (By divine decree)                            ║', 'muted');
+    print('║  Compiler:             HolyC (Just-In-Time)                                   ║', 'success');
+    print('║  Shell:                God-integrated command interpreter                     ║', 'system');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  SACRED NUMBERS:                                                               ║', 'warning');
+    print('║    640 × 480    - Holy Resolution (God\'s screen size)                         ║', 'system');
+    print('║    16           - Holy Color Count (VGA palette)                              ║', 'system');
+    print('║    64           - Holy Bits (64-bit architecture)                             ║', 'system');
+    print('║    100000       - Lines of code in God\'s OS                                   ║', 'system');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  CPU:                  x86_64 @ 3.33 GHz                                       ║', 'system');
+    print('║  RAM:                  512 MB (more than enough for God)                       ║', 'system');
+    print('║  Uptime:               ETERNAL                                                 ║', 'success');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('', 'system');
+
+    state.viewedSysInfo = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // REPL - HolyC REPL mode
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Repl' || cmd === 'repl') {
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'success');
+    print('║                          HOLYC REPL - INTERACTIVE MODE                         ║', 'success');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'success');
+    print('║  Enter HolyC expressions to evaluate them.                                    ║', 'info');
+    print('║  Type "exit" or "quit" to return to TempleOS shell.                           ║', 'info');
+    print('║                                                                                ║', 'info');
+    print('║  Examples:                                                                     ║', 'info');
+    print('║    1+1              → Arithmetic                                               ║', 'system');
+    print('║    0x47             → Hex literal (= 71 = \'G\')                                 ║', 'system');
+    print('║    sizeof(I64)      → Type sizes                                               ║', 'system');
+    print('║    "Hello"          → Strings                                                  ║', 'system');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'success');
+    print('', 'system');
+
+    gameState.holyCReplMode = true;
+    state.replMode = true;
+    setPrompt('HolyC', 'REPL', '>');
+    autosave();
+    return;
+  }
+
+  // Handle REPL mode input
+  if (gameState.holyCReplMode) {
+    if (cmd === 'exit' || cmd === 'quit') {
+      gameState.holyCReplMode = false;
+      print('[*] Exiting HolyC REPL...', 'system');
+      setPrompt('Terry', 'TempleOS', '/Home');
+      return;
+    }
+
+    // Try to evaluate the expression
+    const expr = fullCmd.trim();
+
+    if (HOLYC_EXPRESSIONS[expr]) {
+      print(`= ${HOLYC_EXPRESSIONS[expr]}`, 'success');
+    } else {
+      // Try basic arithmetic
+      try {
+        // Only allow safe expressions (numbers and operators)
+        if (/^[\d\s+\-*/%()]+$/.test(expr)) {
+          // Use Function instead of eval for better isolation
+          const result = Function('"use strict"; return (' + expr + ')')();
+          print(`= ${result}`, 'success');
+        } else if (expr.startsWith('"') && expr.endsWith('"')) {
+          print(`= ${expr}`, 'success');
+        } else if (expr.startsWith('0x')) {
+          const num = parseInt(expr, 16);
+          const char = String.fromCharCode(num);
+          print(`= ${num}  // '${char}' in ASCII`, 'success');
+        } else {
+          print(`[!] Unknown expression. Try: 1+1, 0x47, "Hello"`, 'warning');
+        }
+      } catch (e) {
+        print(`[!] Syntax error: ${e.message}`, 'error');
+      }
+    }
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // HYMN - Play sacred hymns
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Hymn' || cmd === 'hymn') {
+    const hymnName = args[0] || 'temple';
+    const hymn = TEMPLE_HYMNS[hymnName];
+
+    if (!hymn) {
+      print('[!] Unknown hymn. Available: amazing_grace, onward, temple', 'warning');
+      return;
+    }
+
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'warning');
+    print(`║  ♪ ${hymn.name.toUpperCase().padEnd(70)} ♪  ║`, 'warning');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'warning');
+
+    for (const line of hymn.lyrics) {
+      print(`║  ${line.padEnd(74)}  ║`, 'info');
+      await sleep(800);
+    }
+
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'warning');
+    print('', 'system');
+    print('[*] The hymn echoes through the temple...', 'success');
+
+    state.playedHymn = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // AFTEREGYPT - The holy exodus game
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'AfterEgypt' || cmd === 'afteregypt') {
+    print('', 'system');
+    print('╔════════════════════════════════════════════════════════════════════════════════╗', 'error');
+    print('║                         AFTER EGYPT - THE EXODUS GAME                          ║', 'error');
+    print('╠════════════════════════════════════════════════════════════════════════════════╣', 'error');
+    print('║                                                                                ║', 'info');
+    print('║       ██╗ ██╗  ██████╗  ██╗      ██╗   ██╗      ╔════════════════════╗         ║', 'warning');
+    print('║       ██║ ██║ ██╔═══██╗ ██║      ╚██╗ ██╔╝      ║    YOU ARE HERE    ║         ║', 'warning');
+    print('║       ████████║██║   ██║ ██║       ╚████╔╝       ║         ↓          ║         ║', 'warning');
+    print('║       ██╔═══██║██║   ██║ ██║        ╚██╔╝        ║  EGYPT → SINAI →  ║         ║', 'warning');
+    print('║       ██║   ██║╚██████╔╝ ███████╗    ██║         ║    PROMISED LAND  ║         ║', 'warning');
+    print('║       ╚═╝   ╚═╝ ╚═════╝  ╚══════╝    ╚═╝         ╚════════════════════╝         ║', 'warning');
+    print('║                                                                                ║', 'info');
+    print('║  "After Egypt is the flight simulator game included with TempleOS.            ║', 'system');
+    print('║   You pilot a craft through biblical landscapes while receiving               ║', 'system');
+    print('║   divine messages from God\'s oracle."                                          ║', 'system');
+    print('║                                                                                ║', 'info');
+    print('║  STATUS: [SIMULATED]                                                           ║', 'muted');
+    print('║                                                                                ║', 'info');
+    print('║  > Flying over the Red Sea...                                                 ║', 'success');
+    print('║  > The waters part before you!                                                ║', 'success');
+    print('║  > GodSays: "I am the way, the truth, and the life"                           ║', 'warning');
+    print('║                                                                                ║', 'info');
+    print('║  SCORE: 777 (Holy number!)                                                    ║', 'success');
+    print('╚════════════════════════════════════════════════════════════════════════════════╝', 'error');
+    print('', 'system');
+
+    state.playedGame = true;
+    addEasterEgg('afteregypt', 'You flew through the biblical exodus in After Egypt!');
+    playSuccess();
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PRINT - HolyC Print command
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'Print' || cmd === 'print') {
+    if (args.length === 0) {
+      print('', 'system');
+      return;
+    }
+
+    const expr = args.join(' ');
+
+    // Handle string literals
+    if (expr.startsWith('"') && expr.endsWith('"')) {
+      print(expr.slice(1, -1).replace(/\\n/g, '\n'), 'system');
+    } else if (expr.startsWith("'") && expr.endsWith("'")) {
+      print(expr.slice(1, -1), 'system');
+    } else {
+      // Try to evaluate as expression
+      if (/^[\d\s+\-*/%()]+$/.test(expr)) {
+        try {
+          // Use Function instead of eval for better isolation
+          const result = Function('"use strict"; return (' + expr + ')')();
+          print(String(result), 'system');
+        } catch (e) {
+          print(expr, 'system');
+        }
+      } else {
+        print(expr, 'system');
+      }
+    }
     return;
   }
 

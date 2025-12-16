@@ -204,27 +204,27 @@ async function handleLevel2Command(cmd, args) {
     print('║              LEVEL 2 PROGRESS - NETWORK PIVOT                ║', 'info');
     print('╠══════════════════════════════════════════════════════════════╣', 'info');
     print('║  PHASE 1 - INITIAL ACCESS (WEB01):                           ║', 'info');
-    print(`║    [${state.webScanned ? '✓' : ' '}] Web server scanned                              ║`, state.webScanned ? 'success' : 'system');
-    print(`║    [${state.foundJenkins ? '✓' : ' '}] Jenkins discovered                              ║`, state.foundJenkins ? 'success' : 'system');
-    print(`║    [${state.gotWebShell ? '✓' : ' '}] Shell obtained on WEB01                         ║`, state.gotWebShell ? 'success' : 'system');
-    print(`║    [${state.foundCreds ? '✓' : ' '}] Credentials found                               ║`, state.foundCreds ? 'success' : 'system');
+    print(`║    [${state.webScanned ? 'x' : ' '}] Web server scanned                              ║`, state.webScanned ? 'success' : 'system');
+    print(`║    [${state.foundJenkins ? 'x' : ' '}] Jenkins discovered                              ║`, state.foundJenkins ? 'success' : 'system');
+    print(`║    [${state.gotWebShell ? 'x' : ' '}] Shell obtained on WEB01                         ║`, state.gotWebShell ? 'success' : 'system');
+    print(`║    [${state.foundCreds ? 'x' : ' '}] Credentials found                               ║`, state.foundCreds ? 'success' : 'system');
     print('║                                                              ║', 'info');
     print('║  PHASE 2 - PIVOTING:                                         ║', 'info');
-    print(`║    [${state.uploadedChisel ? '✓' : ' '}] Chisel uploaded                                ║`, state.uploadedChisel ? 'success' : 'system');
-    print(`║    [${state.tunnelEstablished ? '✓' : ' '}] SOCKS tunnel established                      ║`, state.tunnelEstablished ? 'success' : 'system');
-    print(`║    [${state.internalScanned ? '✓' : ' '}] Internal network scanned                       ║`, state.internalScanned ? 'success' : 'system');
+    print(`║    [${state.uploadedChisel ? 'x' : ' '}] Chisel uploaded                                ║`, state.uploadedChisel ? 'success' : 'system');
+    print(`║    [${state.tunnelEstablished ? 'x' : ' '}] SOCKS tunnel established                      ║`, state.tunnelEstablished ? 'success' : 'system');
+    print(`║    [${state.internalScanned ? 'x' : ' '}] Internal network scanned                       ║`, state.internalScanned ? 'success' : 'system');
     print('║                                                              ║', 'info');
     print('║  PHASE 3 - LATERAL MOVEMENT (FILE01):                        ║', 'info');
-    print(`║    [${state.file01Accessed ? '✓' : ' '}] FILE01 compromised                             ║`, state.file01Accessed ? 'success' : 'system');
-    print(`║    [${state.dumpedCreds ? '✓' : ' '}] Domain credentials dumped                       ║`, state.dumpedCreds ? 'success' : 'system');
+    print(`║    [${state.file01Accessed ? 'x' : ' '}] FILE01 compromised                             ║`, state.file01Accessed ? 'success' : 'system');
+    print(`║    [${state.dumpedCreds ? 'x' : ' '}] Domain credentials dumped                       ║`, state.dumpedCreds ? 'success' : 'system');
     print('║                                                              ║', 'info');
     print('║  PHASE 4 - DATABASE PIVOT (DB01):                            ║', 'info');
-    print(`║    [${state.mssqlAccessed ? '✓' : ' '}] MSSQL access obtained                          ║`, state.mssqlAccessed ? 'success' : 'system');
-    print(`║    [${state.db01Shell ? '✓' : ' '}] Shell on DB01                                   ║`, state.db01Shell ? 'success' : 'system');
+    print(`║    [${state.mssqlAccessed ? 'x' : ' '}] MSSQL access obtained                          ║`, state.mssqlAccessed ? 'success' : 'system');
+    print(`║    [${state.db01Shell ? 'x' : ' '}] Shell on DB01                                   ║`, state.db01Shell ? 'success' : 'system');
     print('║                                                              ║', 'info');
     print('║  PHASE 5 - DOMAIN COMPROMISE (DC01):                         ║', 'info');
-    print(`║    [${state.skeletonKeyInjected ? '✓' : ' '}] Skeleton key injected                         ║`, state.skeletonKeyInjected ? 'success' : 'system');
-    print(`║    [${state.domainAdmin ? '✓' : ' '}] Domain Admin achieved                          ║`, state.domainAdmin ? 'success' : 'system');
+    print(`║    [${state.skeletonKeyInjected ? 'x' : ' '}] Skeleton key injected                         ║`, state.skeletonKeyInjected ? 'success' : 'system');
+    print(`║    [${state.domainAdmin ? 'x' : ' '}] Domain Admin achieved                          ║`, state.domainAdmin ? 'success' : 'system');
     print('╠══════════════════════════════════════════════════════════════╣', 'info');
     print(`║  Overall Progress: ${String(progress).padStart(3)}%                                      ║`, progress === 100 ? 'success' : 'warning');
     print(`║  Current Host: ${state.currentHost.padEnd(42)} ║`, 'system');
@@ -240,7 +240,7 @@ async function handleLevel2Command(cmd, args) {
   // ═══════════════════════════════════════════════════════════════
   if (cmd === 'hint') {
     print('');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
 
     if (!state.webScanned) {
       print('Start by scanning the web server in the DMZ.', 'info');
@@ -778,8 +778,8 @@ async function handleLevel2Command(cmd, args) {
     const target = args[1];
     const userArg = args.indexOf('-u');
     const passArg = args.indexOf('-p');
-    const user = userArg !== -1 ? args[userArg + 1] : null;
-    const pass = passArg !== -1 ? args[passArg + 1]?.replace(/"/g, '') : null;
+    const user = (userArg !== -1 && userArg + 1 < args.length) ? args[userArg + 1] : null;
+    const pass = (passArg !== -1 && passArg + 1 < args.length) ? args[passArg + 1]?.replace(/"/g, '') : null;
 
     if (target === '172.16.1.20' && state.tunnelEstablished) {
       if (user === 'svc_jenkins' && pass === 'J3nk1ns@dm1n!') {
@@ -816,9 +816,9 @@ async function handleLevel2Command(cmd, args) {
     const userArg = args.indexOf('-u');
     const passArg = args.indexOf('-p');
 
-    const ip = ipArg !== -1 ? args[ipArg + 1] : null;
-    const user = userArg !== -1 ? args[userArg + 1] : null;
-    const pass = passArg !== -1 ? args[passArg + 1] : null;
+    const ip = (ipArg !== -1 && ipArg + 1 < args.length) ? args[ipArg + 1] : null;
+    const user = (userArg !== -1 && userArg + 1 < args.length) ? args[userArg + 1] : null;
+    const pass = (passArg !== -1 && passArg + 1 < args.length) ? args[passArg + 1] : null;
 
     if (ip === '172.16.1.20' && state.file01Accessed) {
       if (user === 'svc_jenkins' && pass === 'J3nk1ns@dm1n!') {
@@ -1166,10 +1166,10 @@ function printLevel2NetworkMap(state) {
   print('║   EXTERNAL              DMZ                 INTERNAL              CORE       ║', 'info');
   print('║   ────────              ───                 ────────              ────       ║', 'info');
 
-  const web = state.compromisedHosts.includes('WEB01') ? '✓' : (state.webScanned ? '○' : '?');
-  const file = state.compromisedHosts.includes('FILE01') ? '✓' : (state.file01Scanned ? '○' : '?');
-  const db = state.compromisedHosts.includes('DB01') ? '✓' : (state.db01Scanned ? '○' : '?');
-  const dc = state.compromisedHosts.includes('DC01') ? '✓' : '?';
+  const web = state.compromisedHosts.includes('WEB01') ? 'x' : (state.webScanned ? 'o' : '?');
+  const file = state.compromisedHosts.includes('FILE01') ? 'x' : (state.file01Scanned ? 'o' : '?');
+  const db = state.compromisedHosts.includes('DB01') ? 'x' : (state.db01Scanned ? 'o' : '?');
+  const dc = state.compromisedHosts.includes('DC01') ? 'x' : '?';
 
   print(`║   ┌────────┐       ┌────────┐         ┌────────┐         ┌────────┐          ║`, 'info');
   print(`║   │ATTACKER│──────▶│ WEB01  │────────▶│ FILE01 │         │  DC01  │          ║`, 'info');
@@ -1183,7 +1183,7 @@ function printLevel2NetworkMap(state) {
   print('║        │               │              └────────┘                             ║', 'info');
   print('║                                                                              ║', 'info');
   print('╠══════════════════════════════════════════════════════════════════════════════╣', 'info');
-  print('║  LEGEND: [✓] Compromised  [○] Scanned  [?] Unknown                           ║', 'system');
+  print('║  LEGEND: [x] Compromised  [o] Scanned  [?] Unknown                           ║', 'system');
   print('╠══════════════════════════════════════════════════════════════════════════════╣', 'info');
   print('║  HOST DETAILS:                                                               ║', 'info');
   print('║    10.10.10.15   WEB01   Ubuntu 22.04    Jenkins CI (DMZ)                   ║', state.compromisedHosts.includes('WEB01') ? 'success' : 'system');

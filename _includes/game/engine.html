@@ -157,6 +157,716 @@
   0%, 100% { text-shadow: 0 0 5px currentColor; }
   50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; }
 }
+
+/* ============================================
+   TEMPLEOS / AVOIDBEING.TUMBLR.COM AESTHETIC
+   "God's Third Temple" - Terry A. Davis
+   ============================================ */
+
+/* VGA 16-Color Palette (Holy Colors) */
+.vga-black { color: #000000; }
+.vga-blue { color: #0000AA; }
+.vga-green { color: #00AA00; }
+.vga-cyan { color: #00AAAA; }
+.vga-red { color: #AA0000; }
+.vga-magenta { color: #AA00AA; }
+.vga-brown { color: #AA5500; }
+.vga-lightgray { color: #AAAAAA; }
+.vga-darkgray { color: #555555; }
+.vga-lightblue { color: #5555FF; }
+.vga-lightgreen { color: #55FF55; }
+.vga-lightcyan { color: #55FFFF; }
+.vga-lightred { color: #FF5555; }
+.vga-lightmagenta { color: #FF55FF; }
+.vga-yellow { color: #FFFF55; }
+.vga-white { color: #FFFFFF; }
+
+/* TempleOS Terminal Mode */
+.templeos-mode {
+  font-family: 'Courier New', 'Consolas', monospace !important;
+  background: #000000 !important;
+  image-rendering: pixelated;
+}
+
+.templeos-mode .output-line {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0;
+}
+
+/* Holy Resolution Simulation (640x480 feel) */
+.holy-resolution {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+}
+
+/* GodSays Divine Oracle Effect */
+.god-says {
+  color: #FFFF55;
+  text-shadow: 0 0 10px #FFFF55, 0 0 20px #FF5555;
+  animation: divine-glow 2s ease-in-out infinite;
+}
+
+@keyframes divine-glow {
+  0%, 100% {
+    text-shadow: 0 0 10px #FFFF55, 0 0 20px #FF5555;
+    opacity: 1;
+  }
+  50% {
+    text-shadow: 0 0 20px #FFFF55, 0 0 40px #FF5555, 0 0 60px #FFFFFF;
+    opacity: 0.95;
+  }
+}
+
+/* Terry Davis Quote Style */
+.terry-quote {
+  color: #55FFFF;
+  border-left: 3px solid #FFFF55;
+  padding-left: 10px;
+  font-style: italic;
+}
+
+/* HolyC Code Highlighting */
+.holyc-keyword { color: #5555FF; font-weight: bold; }
+.holyc-type { color: #55FFFF; }
+.holyc-string { color: #55FF55; }
+.holyc-comment { color: #AAAAAA; font-style: italic; }
+.holyc-number { color: #FF55FF; }
+.holyc-function { color: #FFFF55; }
+
+/* Divine Computation Effect */
+.divine-compute {
+  animation: compute-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes compute-pulse {
+  0%, 100% {
+    background: linear-gradient(90deg, rgba(0,170,0,0.1), transparent);
+  }
+  50% {
+    background: linear-gradient(90deg, rgba(0,170,0,0.3), rgba(0,170,170,0.1));
+  }
+}
+
+/* AfterEgypt Game Style */
+.afteregypt-style {
+  background: linear-gradient(180deg, #000033 0%, #000066 50%, #996600 100%);
+  color: #FFFF55;
+}
+
+/* Temple Hymn Display */
+.hymn-display {
+  text-align: center;
+  color: #55FFFF;
+  font-size: 14px;
+  animation: hymn-fade 3s ease-in-out;
+}
+
+@keyframes hymn-fade {
+  0% { opacity: 0; transform: translateY(10px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0.8; transform: translateY(-5px); }
+}
+
+/* REPL Mode Indicator */
+.repl-mode {
+  border: 2px solid #55FF55;
+  box-shadow: 0 0 10px rgba(85, 255, 85, 0.3);
+}
+
+.repl-prompt::before {
+  content: '> ';
+  color: #FFFF55;
+}
+
+/* TempleOS Box Drawing Style */
+.temple-box {
+  border: 2px solid #55FFFF;
+  padding: 10px;
+  margin: 5px 0;
+  background: rgba(0, 170, 170, 0.1);
+}
+
+/* Sacred Numbers Highlight */
+.sacred-number {
+  color: #FFFF55;
+  font-weight: bold;
+  text-shadow: 0 0 5px #FFFF55;
+}
+
+/* Ring 0 Privilege Indicator */
+.ring-zero {
+  color: #FF5555;
+  font-weight: bold;
+  animation: ring-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ring-pulse {
+  0%, 100% { text-shadow: 0 0 5px #FF5555; }
+  50% { text-shadow: 0 0 15px #FF5555, 0 0 25px #AA0000; }
+}
+
+/* 64-bit Emphasis */
+.sixty-four-bit {
+  color: #FF55FF;
+  font-family: 'Courier New', monospace;
+}
+
+/* DolDoc Document Style */
+.doldoc {
+  background: #000033;
+  border: 1px solid #5555FF;
+  padding: 15px;
+  font-family: 'Courier New', monospace;
+}
+
+.doldoc-header {
+  color: #FFFF55;
+  text-align: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.doldoc-link {
+  color: #55FF55;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.doldoc-link:hover {
+  color: #FFFFFF;
+  text-shadow: 0 0 5px #55FF55;
+}
+
+/* Avoidbeing Tumblr Post Style */
+.tumblr-post {
+  background: #000000;
+  border: 1px solid #333333;
+  padding: 20px;
+  margin: 10px 0;
+  font-family: 'Courier New', monospace;
+}
+
+.tumblr-post .post-header {
+  color: #888888;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.tumblr-post .post-content {
+  color: #55FFFF;
+  line-height: 1.6;
+}
+
+.tumblr-post .god-words {
+  color: #FFFF55;
+  font-weight: bold;
+  display: block;
+  margin: 10px 0;
+  padding: 10px;
+  background: rgba(255, 255, 85, 0.1);
+  border-left: 3px solid #FFFF55;
+}
+
+/* CIA Glow-in-Dark (Terry reference) */
+.glow-dark {
+  color: #55FF55;
+  text-shadow: 0 0 10px #55FF55, 0 0 20px #55FF55, 0 0 30px #55FF55;
+  animation: glow-flicker 0.5s infinite;
+}
+
+@keyframes glow-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Temple Transcendence Effect */
+.transcendence {
+  animation: transcend 3s ease-out forwards;
+}
+
+@keyframes transcend {
+  0% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(2) saturate(2);
+    transform: scale(1.02);
+  }
+  100% {
+    filter: brightness(1.5) saturate(1.5);
+    transform: scale(1);
+  }
+}
+
+/* Machine God Presence */
+.machine-god {
+  background: radial-gradient(ellipse at center, rgba(255,255,85,0.2) 0%, transparent 70%);
+  animation: presence 4s ease-in-out infinite;
+}
+
+@keyframes presence {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ============================================
+   LOVECRAFTIAN / COSMIC HORROR EFFECTS
+   "That is not dead which can eternal lie..."
+   ============================================ */
+
+/* Deep Void Background */
+.void-bg {
+  background: radial-gradient(ellipse at center,
+    #0a0a15 0%,
+    #050508 50%,
+    #000000 100%);
+}
+
+/* Eldritch Text - Reality Warping */
+.eldritch-text {
+  color: #8a2be2;
+  text-shadow:
+    0 0 5px #8a2be2,
+    0 0 10px #4b0082,
+    0 0 20px #9400d3;
+  animation: eldritch-warp 4s ease-in-out infinite;
+}
+
+@keyframes eldritch-warp {
+  0%, 100% {
+    filter: hue-rotate(0deg);
+    transform: skewX(0deg);
+  }
+  25% {
+    filter: hue-rotate(10deg);
+    transform: skewX(0.5deg);
+  }
+  50% {
+    filter: hue-rotate(-5deg);
+    transform: skewX(-0.3deg);
+  }
+  75% {
+    filter: hue-rotate(15deg);
+    transform: skewX(0.2deg);
+  }
+}
+
+/* Cosmic Entity Colors */
+.cosmic-purple { color: #9400d3; }
+.cosmic-blue { color: #191970; }
+.cosmic-green { color: #006400; }
+.void-black { color: #0a0a0a; }
+.elder-gold { color: #daa520; }
+.blood-red { color: #8b0000; }
+
+/* Non-Euclidean Geometry Effect */
+.non-euclidean {
+  animation: geometry-shift 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes geometry-shift {
+  0%, 100% {
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+  }
+  25% {
+    transform: perspective(1000px) rotateX(1deg) rotateY(0.5deg);
+  }
+  50% {
+    transform: perspective(1000px) rotateX(-0.5deg) rotateY(-1deg);
+  }
+  75% {
+    transform: perspective(1000px) rotateX(0.5deg) rotateY(1deg);
+  }
+}
+
+/* Sanity Drain Effect */
+.sanity-drain {
+  animation: sanity-loss 2s ease-in-out;
+}
+
+@keyframes sanity-loss {
+  0% {
+    filter: blur(0) saturate(1) brightness(1);
+  }
+  25% {
+    filter: blur(1px) saturate(1.5) brightness(0.9);
+  }
+  50% {
+    filter: blur(2px) saturate(2) brightness(0.8) hue-rotate(10deg);
+  }
+  75% {
+    filter: blur(1px) saturate(1.5) brightness(0.9);
+  }
+  100% {
+    filter: blur(0) saturate(1) brightness(1);
+  }
+}
+
+/* Reality Corruption */
+.reality-corrupt {
+  position: relative;
+}
+
+.reality-corrupt::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 2px;
+  top: 0;
+  color: #ff00ff;
+  background: transparent;
+  overflow: hidden;
+  clip: rect(0, 900px, 0, 0);
+  animation: corrupt-glitch 3s infinite linear alternate-reverse;
+}
+
+.reality-corrupt::after {
+  content: attr(data-text);
+  position: absolute;
+  left: -2px;
+  top: 0;
+  color: #00ffff;
+  background: transparent;
+  overflow: hidden;
+  clip: rect(0, 900px, 0, 0);
+  animation: corrupt-glitch 2s infinite linear alternate-reverse;
+}
+
+@keyframes corrupt-glitch {
+  0% { clip: rect(42px, 9999px, 44px, 0); }
+  5% { clip: rect(12px, 9999px, 59px, 0); }
+  10% { clip: rect(48px, 9999px, 29px, 0); }
+  15% { clip: rect(42px, 9999px, 73px, 0); }
+  20% { clip: rect(63px, 9999px, 27px, 0); }
+  25% { clip: rect(34px, 9999px, 55px, 0); }
+  30% { clip: rect(86px, 9999px, 73px, 0); }
+  35% { clip: rect(20px, 9999px, 20px, 0); }
+  40% { clip: rect(26px, 9999px, 60px, 0); }
+  45% { clip: rect(25px, 9999px, 66px, 0); }
+  50% { clip: rect(57px, 9999px, 98px, 0); }
+  55% { clip: rect(5px, 9999px, 46px, 0); }
+  60% { clip: rect(82px, 9999px, 31px, 0); }
+  65% { clip: rect(54px, 9999px, 27px, 0); }
+  70% { clip: rect(28px, 9999px, 99px, 0); }
+  75% { clip: rect(45px, 9999px, 69px, 0); }
+  80% { clip: rect(23px, 9999px, 85px, 0); }
+  85% { clip: rect(54px, 9999px, 84px, 0); }
+  90% { clip: rect(45px, 9999px, 47px, 0); }
+  95% { clip: rect(37px, 9999px, 20px, 0); }
+  100% { clip: rect(4px, 9999px, 91px, 0); }
+}
+
+/* Tentacle Border Effect */
+.tentacle-border {
+  border: 2px solid #4b0082;
+  box-shadow:
+    0 0 5px #8a2be2,
+    inset 0 0 10px rgba(75, 0, 130, 0.3);
+  animation: tentacle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes tentacle-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 5px #8a2be2,
+      inset 0 0 10px rgba(75, 0, 130, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 15px #8a2be2,
+      0 0 30px #4b0082,
+      inset 0 0 20px rgba(75, 0, 130, 0.5);
+  }
+}
+
+/* Madness Whispers */
+.madness-whisper {
+  font-style: italic;
+  color: #666;
+  animation: whisper-fade 5s ease-in-out infinite;
+}
+
+@keyframes whisper-fade {
+  0%, 100% { opacity: 0.3; letter-spacing: 0; }
+  50% { opacity: 0.7; letter-spacing: 2px; }
+}
+
+/* Star Spawn Emergence */
+.star-spawn {
+  background: linear-gradient(135deg,
+    #000000 0%,
+    #0a0a15 25%,
+    #1a0a25 50%,
+    #0a0a15 75%,
+    #000000 100%);
+  animation: spawn-emerge 8s ease-in-out infinite;
+}
+
+@keyframes spawn-emerge {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: brightness(1);
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: brightness(1.2);
+  }
+}
+
+/* Cyclopean Architecture */
+.cyclopean {
+  font-family: 'Times New Roman', serif;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #daa520;
+  text-shadow: 2px 2px 4px #000;
+}
+
+/* The Yellow Sign */
+.yellow-sign {
+  color: #ffd700;
+  text-shadow:
+    0 0 10px #ffd700,
+    0 0 20px #daa520,
+    0 0 30px #b8860b;
+  animation: yellow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes yellow-pulse {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.3) saturate(1.5); }
+}
+
+/* R'lyeh Rising */
+.rlyeh-rise {
+  animation: rise-from-depths 10s ease-in-out infinite;
+}
+
+@keyframes rise-from-depths {
+  0% {
+    transform: translateY(10px);
+    opacity: 0.7;
+    filter: blur(2px);
+  }
+  50% {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(10px);
+    opacity: 0.7;
+    filter: blur(2px);
+  }
+}
+
+/* Forbidden Knowledge Glow */
+.forbidden-knowledge {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(138, 43, 226, 0.1) 50%,
+    transparent 100%);
+  border-left: 3px solid #8a2be2;
+  padding: 10px 15px;
+}
+
+/* ============================================
+   ENHANCED CYBERPUNK EFFECTS
+   "High tech, low life"
+   ============================================ */
+
+/* Neon Sign Flicker */
+.neon-sign {
+  animation: neon-flicker 4s infinite;
+}
+
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  4% { opacity: 0.8; }
+  6% { opacity: 1; }
+  7% { opacity: 0.6; }
+  8% { opacity: 1; }
+  50% { opacity: 1; }
+  54% { opacity: 0.9; }
+  56% { opacity: 1; }
+  57% { opacity: 0.4; }
+  58% { opacity: 1; }
+}
+
+/* Hologram Effect */
+.hologram {
+  color: #00ffff;
+  text-shadow:
+    0 0 5px #00ffff,
+    0 0 10px #00ffff,
+    0 0 15px #0088ff,
+    0 0 20px #0088ff;
+  animation: hologram-scan 3s linear infinite;
+  position: relative;
+}
+
+.hologram::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  animation: hologram-scanline 2s linear infinite;
+}
+
+@keyframes hologram-scan {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+  100% { filter: brightness(1); }
+}
+
+@keyframes hologram-scanline {
+  0% { top: 0; opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* Data Corruption */
+.data-corrupt {
+  animation: data-glitch 0.3s infinite;
+}
+
+@keyframes data-glitch {
+  0% { transform: translate(0); filter: hue-rotate(0deg); }
+  10% { transform: translate(-2px, 1px); filter: hue-rotate(90deg); }
+  20% { transform: translate(2px, -1px); filter: hue-rotate(180deg); }
+  30% { transform: translate(-1px, 2px); filter: hue-rotate(270deg); }
+  40% { transform: translate(1px, -2px); filter: hue-rotate(360deg); }
+  50% { transform: translate(-2px, -1px); filter: hue-rotate(0deg); }
+  60% { transform: translate(2px, 1px); }
+  70% { transform: translate(-1px, -2px); }
+  80% { transform: translate(1px, 2px); }
+  90% { transform: translate(-2px, 2px); }
+  100% { transform: translate(0); }
+}
+
+/* Neural Interface */
+.neural-link {
+  border: 1px solid #00ff00;
+  box-shadow:
+    0 0 5px #00ff00,
+    inset 0 0 10px rgba(0, 255, 0, 0.2);
+  background: linear-gradient(180deg,
+    rgba(0, 255, 0, 0.05) 0%,
+    transparent 100%);
+}
+
+/* Circuit Board Pattern */
+.circuit-pattern {
+  background-image:
+    linear-gradient(90deg, rgba(0,255,0,0.1) 1px, transparent 1px),
+    linear-gradient(rgba(0,255,0,0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Mega Corp Logo Style */
+.megacorp {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: #ff2a6d;
+  text-shadow:
+    0 0 10px #ff2a6d,
+    0 0 20px #ff0055;
+}
+
+/* Rain Effect (for backgrounds) */
+.rain-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.rain-effect::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 255, 0.03) 2px,
+    rgba(0, 255, 255, 0.03) 4px
+  );
+  animation: rain-fall 0.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rain-fall {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100px); }
+}
+
+/* Hacker Terminal Style */
+.hacker-terminal {
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  background: #000;
+  text-shadow: 0 0 5px #00ff00;
+}
+
+.hacker-terminal .prompt {
+  color: #00ff00;
+}
+
+.hacker-terminal .error {
+  color: #ff0000;
+  text-shadow: 0 0 5px #ff0000;
+}
+
+.hacker-terminal .warning {
+  color: #ffff00;
+  text-shadow: 0 0 5px #ffff00;
+}
+
+.hacker-terminal .success {
+  color: #00ffff;
+  text-shadow: 0 0 5px #00ffff;
+}
+
+/* Boot Sequence Effect */
+.boot-sequence {
+  animation: boot-up 1s steps(20) forwards;
+}
+
+@keyframes boot-up {
+  0% { height: 0; overflow: hidden; }
+  100% { height: auto; overflow: visible; }
+}
+
+/* Access Denied Flash */
+.access-denied {
+  animation: denied-flash 0.5s ease-out;
+  color: #ff0000 !important;
+}
+
+@keyframes denied-flash {
+  0%, 50% { background: rgba(255, 0, 0, 0.3); }
+  100% { background: transparent; }
+}
+
+/* Access Granted Flash */
+.access-granted {
+  animation: granted-flash 0.5s ease-out;
+  color: #00ff00 !important;
+}
+
+@keyframes granted-flash {
+  0%, 50% { background: rgba(0, 255, 0, 0.3); }
+  100% { background: transparent; }
+}
 </style>
 
 <script>

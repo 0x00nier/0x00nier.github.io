@@ -2,44 +2,98 @@
 // ============================================
 // SOUND SYSTEM (8-bit beeps)
 // ============================================
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
+// Audio subsystem namespace to avoid global clutter
 let soundEnabled = false;
+const GameAudio = (() => {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
 
-function initAudio() {
-  if (!audioCtx) {
-    audioCtx = new AudioCtx();
+  async function initAudio() {
+    if (!audioCtx && AudioCtx) {
+      try {
+        audioCtx = new AudioCtx();
+        // Resume context if it was created in suspended state (browser policy)
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+      } catch (e) {
+        console.warn('[GameAudio] Failed to initialize audio:', e);
+        audioCtx = null;
+      }
+    } else if (audioCtx && audioCtx.state === 'suspended') {
+      // Resume if context exists but is suspended
+      try {
+        await audioCtx.resume();
+      } catch (e) {
+        console.warn('[GameAudio] Failed to resume audio:', e);
+      }
+    }
   }
-}
 
-function playBeep(freq = 440, duration = 0.1, type = 'square') {
-  if (!soundEnabled || !audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
-}
+  function playBeep(freq = 440, duration = 0.1, type = 'square') {
+    if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
+    try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {
+      // Silently fail - audio is non-critical
+    }
+  }
 
-function playKeyPress() { playBeep(800, 0.02); }
-function playEnter() { playBeep(600, 0.05); }
-function playError() { playBeep(200, 0.15, 'sawtooth'); }
-function playSuccess() {
-  playBeep(523, 0.1);
-  setTimeout(() => playBeep(659, 0.1), 100);
-  setTimeout(() => playBeep(784, 0.15), 200);
-}
-function playAlert() { playBeep(440, 0.1); setTimeout(() => playBeep(440, 0.1), 150); }
-function playBoot() {
-  [200, 300, 400, 500, 600].forEach((f, i) => {
-    setTimeout(() => playBeep(f, 0.08), i * 60);
-  });
-}
+  function playKeyPress() { playBeep(800, 0.02); }
+  function playEnter() { playBeep(600, 0.05); }
+  function playError() { playBeep(200, 0.15, 'sawtooth'); }
+  function playSuccess() {
+    playBeep(523, 0.1);
+    setTimeout(() => playBeep(659, 0.1), 100);
+    setTimeout(() => playBeep(784, 0.15), 200);
+  }
+  function playAlert() { playBeep(440, 0.1); setTimeout(() => playBeep(440, 0.1), 150); }
+  function playBoot() {
+    [200, 300, 400, 500, 600].forEach((f, i) => {
+      setTimeout(() => playBeep(f, 0.08), i * 60);
+    });
+  }
+
+  async function toggleSound() {
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) {
+      await initAudio();
+    }
+    return soundEnabled;
+  }
+
+  return {
+    initAudio,
+    playBeep,
+    playKeyPress,
+    playEnter,
+    playError,
+    playSuccess,
+    playAlert,
+    playBoot,
+    toggleSound,
+    get enabled() { return soundEnabled; }
+  };
+})();
+
+// Backwards-compatible globals used elsewhere in the game
+const initAudio = GameAudio.initAudio;
+const playBeep = GameAudio.playBeep;
+const playKeyPress = GameAudio.playKeyPress;
+const playEnter = GameAudio.playEnter;
+const playError = GameAudio.playError;
+const playSuccess = GameAudio.playSuccess;
+const playAlert = GameAudio.playAlert;
+const playBoot = GameAudio.playBoot;
 
 // ============================================
 // i3 BAR SYSTEM
@@ -58,8 +112,31 @@ function updateI3Bar() {
   }
 }
 
-setInterval(updateI3Bar, 1000);
-updateI3Bar();
+// Pause updates when tab is hidden to save resources
+let i3BarInterval = null;
+
+function startI3Bar() {
+  if (i3BarInterval) return;
+  i3BarInterval = setInterval(updateI3Bar, 1000);
+  updateI3Bar();
+}
+
+function stopI3Bar() {
+  if (i3BarInterval) {
+    clearInterval(i3BarInterval);
+    i3BarInterval = null;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopI3Bar();
+  } else {
+    startI3Bar();
+  }
+});
+
+startI3Bar();
 
 function setI3Mode(mode) {
   document.getElementById('i3-mode').textContent = mode ? `[${mode}]` : '';
@@ -82,7 +159,10 @@ const codeEditor = {
   savedContent: '',
   onSave: null,
   cursorLine: 1,
-  cursorCol: 1
+  cursorCol: 1,
+  // Visual mode state (vim-like)
+  visualMode: 'none', // 'none' | 'char' | 'line'
+  visualAnchor: 0
 };
 
 function openCodeEditor(filename, content, onSave) {
@@ -90,18 +170,20 @@ function openCodeEditor(filename, content, onSave) {
   codeEditor.content = content;
   codeEditor.savedContent = content;
   codeEditor.onSave = onSave;
-  codeEditor.mode = 'normal';
   codeEditor.isOpen = true;
 
   document.getElementById('code-editor-overlay').style.display = 'flex';
   document.getElementById('code-editor-filename').textContent = filename;
   document.getElementById('code-editor-content').value = content;
-  document.getElementById('code-editor-mode').textContent = '-- NORMAL --';
 
   updateEditorLineNumbers();
   setActiveWorkspace(3);
+  setEditorMode('normal');
   document.getElementById('code-editor-content').focus();
-  document.getElementById('code-editor-content').readOnly = true;
+
+  // Brief inline help for non-vim users
+  print('[editor] i = insert, :w = save, :q = quit, :wq = save & quit', 'info');
+  updateEditorStatus();
 }
 
 function closeCodeEditor(save = false) {
@@ -130,10 +212,15 @@ function setEditorMode(mode) {
   const modeDisplay = document.getElementById('code-editor-mode');
   const cmdLine = document.getElementById('code-editor-command');
 
+  // Leaving any visual mode when changing primary mode
+  codeEditor.visualMode = 'none';
+
   switch (mode) {
     case 'normal':
       modeDisplay.textContent = '-- NORMAL --';
-      textarea.readOnly = true;
+      // Keep textarea editable so the browser caret blinks,
+      // but we'll intercept keys in normal mode to prevent text changes.
+      textarea.readOnly = false;
       cmdLine.style.display = 'none';
       break;
     case 'insert':
@@ -148,6 +235,51 @@ function setEditorMode(mode) {
       document.getElementById('code-editor-cmd-input').focus();
       break;
   }
+}
+
+function getEditorCursorPosition() {
+  const textarea = document.getElementById('code-editor-content');
+  const pos = textarea.selectionStart;
+  const before = textarea.value.slice(0, pos).split('\n');
+  const line = before.length;
+  const col = before[before.length - 1].length + 1;
+  return { pos, line, col };
+}
+
+function updateEditorStatus() {
+  const { line, col } = getEditorCursorPosition();
+  document.getElementById('code-editor-status').textContent = `Ln ${line}, Col ${col}`;
+}
+
+function updateVisualSelection() {
+  const textarea = document.getElementById('code-editor-content');
+  if (codeEditor.visualMode === 'none') return;
+
+  const currentPos = textarea.selectionStart;
+  const anchor = codeEditor.visualAnchor;
+  const value = textarea.value;
+
+  if (codeEditor.visualMode === 'char') {
+    const start = Math.min(anchor, currentPos);
+    const end = Math.max(anchor, currentPos);
+    textarea.setSelectionRange(start, end);
+  } else if (codeEditor.visualMode === 'line') {
+    const lineStartFrom = value.lastIndexOf('\n', anchor - 1) + 1;
+    const lineStartTo = value.lastIndexOf('\n', currentPos - 1) + 1;
+    const lineEndFrom = value.indexOf('\n', anchor);
+    const lineEndTo = value.indexOf('\n', currentPos);
+    const start = Math.min(
+      lineStartFrom,
+      lineStartTo === -1 ? 0 : lineStartTo
+    );
+    const end = Math.max(
+      lineEndFrom === -1 ? value.length : lineEndFrom,
+      lineEndTo === -1 ? value.length : lineEndTo
+    );
+    textarea.setSelectionRange(start, end);
+  }
+
+  updateEditorStatus();
 }
 
 function handleEditorCommand(cmd) {
@@ -173,23 +305,171 @@ function handleEditorCommand(cmd) {
 
 document.addEventListener('keydown', (e) => {
   if (!codeEditor.isOpen) return;
+  const textarea = document.getElementById('code-editor-content');
 
   if (codeEditor.mode === 'normal') {
+    // Always keep focus in the editor while it's open
+    if (document.activeElement !== textarea) {
+      textarea.focus();
+    }
+
+    // Vim-like commands
     if (e.key === 'i') {
       e.preventDefault();
       setEditorMode('insert');
+      return;
     } else if (e.key === ':') {
       e.preventDefault();
       setEditorMode('command');
+      return;
+    } else if (e.key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // Toggle visual (character-wise) mode
+      e.preventDefault();
+      if (codeEditor.visualMode === 'char') {
+        codeEditor.visualMode = 'none';
+        // Collapse selection to cursor
+        const pos = textarea.selectionStart;
+        textarea.setSelectionRange(pos, pos);
+      } else {
+        codeEditor.visualMode = 'char';
+        codeEditor.visualAnchor = textarea.selectionStart;
+      }
+      updateVisualSelection();
+      return;
+    } else if (e.key === 'V' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // Toggle visual line mode
+      e.preventDefault();
+      const value = textarea.value;
+      const pos = textarea.selectionStart;
+      if (codeEditor.visualMode === 'line') {
+        codeEditor.visualMode = 'none';
+        const collapsePos = pos;
+        textarea.setSelectionRange(collapsePos, collapsePos);
+      } else {
+        codeEditor.visualMode = 'line';
+        codeEditor.visualAnchor = pos;
+      }
+      updateVisualSelection();
+      return;
     } else if (e.key === 'Escape') {
+      codeEditor.visualMode = 'none';
       setEditorMode('normal');
+      // Collapse any selection
+      const pos = textarea.selectionStart;
+      textarea.setSelectionRange(pos, pos);
+      updateEditorStatus();
+      return;
+    }
+
+    // hjkl navigation (left/down/up/right)
+    const navTextarea = textarea;
+    const value = navTextarea.value;
+    const pos = navTextarea.selectionStart;
+
+    const moveCursor = (offsetFunc) => {
+      const newPos = offsetFunc(pos, value);
+      navTextarea.setSelectionRange(newPos, newPos);
+      updateVisualSelection();
+      updateEditorStatus();
+    };
+
+    if (e.key === 'h') {
+      e.preventDefault();
+      moveCursor((p) => Math.max(0, p - 1));
+      return;
+    }
+
+    if (e.key === 'l') {
+      e.preventDefault();
+      moveCursor((p, v) => Math.min(v.length, p + 1));
+      return;
+    }
+
+    if (e.key === 'k' || e.key === 'j') {
+      e.preventDefault();
+      // Compute current line/col
+      const before = value.slice(0, pos);
+      const lines = before.split('\n');
+      const currentLine = lines.length - 1; // 0-based
+      const col = lines[lines.length - 1].length;
+      const allLines = value.split('\n');
+
+      let targetLine = currentLine + (e.key === 'j' ? 1 : -1);
+      if (targetLine < 0 || targetLine >= allLines.length) {
+        // Stay on same line if moving out of bounds
+        targetLine = currentLine;
+      }
+
+      // Calculate new absolute position
+      let newPos = 0;
+      for (let i = 0; i < targetLine; i++) {
+        newPos += allLines[i].length + 1; // +1 for '\n'
+      }
+      newPos += Math.min(col, allLines[targetLine].length);
+
+      navTextarea.setSelectionRange(newPos, newPos);
+      updateVisualSelection();
+      updateEditorStatus();
+      return;
+    }
+
+    // 0 -> start of line, $ -> end of line
+    if (e.key === '0' || e.key === '$') {
+      e.preventDefault();
+      const before = value.slice(0, pos);
+      const lineStart = before.lastIndexOf('\n') + 1;
+      const lineEnd = value.indexOf('\n', pos) === -1 ? value.length : value.indexOf('\n', pos);
+      const newPos = e.key === '0' ? lineStart : lineEnd;
+      navTextarea.setSelectionRange(newPos, newPos);
+      updateVisualSelection();
+      updateEditorStatus();
+      return;
+    }
+
+    // Prevent text modifications in normal mode (keep it navigation-only)
+    const editingKeys = [
+      'Backspace',
+      'Delete',
+      'Enter',
+      'Tab'
+    ];
+    const isCharKey =
+      e.key.length === 1 &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey;
+
+    if (editingKeys.includes(e.key) || isCharKey) {
+      e.preventDefault();
+      return;
+    }
+
+    // Let navigation keys move the caret, then update status/visual selection
+    const navKeys = [
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'Home',
+      'End',
+      'PageUp',
+      'PageDown'
+    ];
+    if (navKeys.includes(e.key)) {
+      setTimeout(() => {
+        updateVisualSelection();
+        updateEditorStatus();
+      }, 0);
     }
   } else if (codeEditor.mode === 'insert') {
     if (e.key === 'Escape') {
       e.preventDefault();
       setEditorMode('normal');
     }
-    setTimeout(updateEditorLineNumbers, 0);
+    setTimeout(() => {
+      updateEditorLineNumbers();
+      updateEditorStatus();
+    }, 0);
   } else if (codeEditor.mode === 'command') {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -202,11 +482,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.getElementById('code-editor-content')?.addEventListener('click', function() {
-  const pos = this.selectionStart;
-  const lines = this.value.substr(0, pos).split('\n');
-  const line = lines.length;
-  const col = lines[lines.length - 1].length + 1;
-  document.getElementById('code-editor-status').textContent = `Ln ${line}, Col ${col}`;
+  updateEditorStatus();
 });
 
 // ============================================
@@ -232,8 +508,12 @@ const gameState = {
 
 function loadGame() {
   const saved = localStorage.getItem('hackerGame');
-  if (saved) {
+  if (!saved) return;
+
+  try {
     const data = JSON.parse(saved);
+    if (!data || typeof data !== 'object') throw new Error('Invalid save shape');
+
     gameState.levelsCompleted = data.levelsCompleted || [];
     gameState.hackerName = data.hackerName || '';
     gameState.needsName = !gameState.hackerName;
@@ -242,6 +522,9 @@ function loadGame() {
     gameState.attempts = data.attempts || 0;
     gameState.currentLevel = data.currentLevel || 0;
     gameState.levelState = data.levelState || {};
+  } catch (e) {
+    console.warn('[hackerGame] Invalid save data, resetting', e);
+    localStorage.removeItem('hackerGame');
   }
 }
 
@@ -255,7 +538,38 @@ function saveGame() {
     currentLevel: gameState.currentLevel,
     levelState: gameState.levelState
   };
-  localStorage.setItem('hackerGame', JSON.stringify(data));
+  try {
+    localStorage.setItem('hackerGame', JSON.stringify(data));
+  } catch (e) {
+    console.warn('[hackerGame] Failed to save game:', e);
+  }
+}
+
+function resetGame() {
+  // Reset all game state to defaults
+  gameState.currentLevel = 0;
+  gameState.levelsCompleted = [];
+  gameState.inLevel = false;
+  gameState.levelState = {};
+  gameState.commandHistory = [];
+  gameState.historyIndex = -1;
+  gameState.hackerName = '';
+  gameState.attempts = 0;
+  gameState.needsName = true;
+  gameState.score = 0;
+  gameState.easterEggsFound = [];
+  gameState.currentHost = 'localhost';
+  gameState.pivotChain = [];
+  gameState.networkSegment = 'external';
+
+  // Clear localStorage
+  try {
+    localStorage.removeItem('hackerGame');
+  } catch (e) {
+    console.warn('[hackerGame] Failed to clear save data:', e);
+  }
+
+  return true;
 }
 
 function autosave() {
@@ -276,7 +590,7 @@ function addEasterEgg(id, message) {
   if (!gameState.easterEggsFound.includes(id)) {
     gameState.easterEggsFound.push(id);
     print('');
-    print('★ EASTER EGG FOUND! ★', 'warning');
+    print('* EASTER EGG FOUND! *', 'warning');
     print(message, 'success');
     print('+500 points!', 'info');
     print('');
@@ -286,6 +600,17 @@ function addEasterEgg(id, message) {
   }
   return true;
 }
+
+// Lightweight namespace for game state helpers
+const GameState = {
+  state: gameState,
+  loadGame,
+  saveGame,
+  autosave,
+  calculateScore,
+  addEasterEgg,
+  resetGame
+};
 
 // ============================================
 // TERMINAL OUTPUT
@@ -297,11 +622,19 @@ const autocomplete = document.getElementById('autocomplete');
 const levelSelect = document.getElementById('level-select');
 const hud = document.getElementById('hud');
 
+const MAX_TERMINAL_LINES = 500;
+
 function print(text, className = '') {
   const line = document.createElement('div');
   line.className = 'output-line ' + className;
   line.textContent = text;
   output.appendChild(line);
+
+  // Prevent memory leak by limiting terminal history
+  while (output.children.length > MAX_TERMINAL_LINES) {
+    output.removeChild(output.firstChild);
+  }
+
   output.scrollTop = output.scrollHeight;
 }
 
@@ -335,7 +668,7 @@ function sleep(ms) {
 }
 
 async function simulateLoading(text, duration = 2000) {
-  const spinner = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const spinner = ['|', '/', '-', '\\'];
   const line = document.createElement('div');
   line.className = 'output-line system';
   output.appendChild(line);
@@ -343,12 +676,12 @@ async function simulateLoading(text, duration = 2000) {
   const start = Date.now();
   let i = 0;
   while (Date.now() - start < duration) {
-    line.textContent = `${spinner[i % spinner.length]} ${text}...`;
+    line.textContent = `[${spinner[i % spinner.length]}] ${text}...`;
     output.scrollTop = output.scrollHeight;
     i++;
     await sleep(80);
   }
-  line.textContent = `✓ ${text}... done`;
+  line.textContent = `[OK] ${text}... done`;
   line.className = 'output-line success';
 }
 

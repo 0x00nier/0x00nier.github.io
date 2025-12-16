@@ -11,8 +11,8 @@ $accent-green: #b5e853;
 $accent-cyan: #63c0f5;
 $bg-dark: #0a0a0a;
 $bg-darker: #0a0a0a;
-$text-primary: #eaeaea;
-$text-secondary: #aaaaaa;
+$text-primary: #f4f4f4;
+$text-secondary: #c2c2c2;
 $code-purple: #aa759f;
 $transition-fast: 0.2s ease;
 $transition-medium: 0.3s ease;
@@ -41,7 +41,7 @@ body {
 // ============================================
 .container {
   width: 100%;
-  max-width: 70%;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -197,7 +197,19 @@ li {
 }
 
 ul li {
+  list-style-type: square;
   list-style-image: url('../images/bullet.png');
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+    padding: 0 16px;
+  }
+
+  header {
+    position: static;
+  }
 }
 
 // Nested lists
