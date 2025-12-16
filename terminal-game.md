@@ -1,7 +1,7 @@
 ---
 layout: default
-title: ???
-permalink: /game.html
+title: 0x00Pwnathon
+permalink: /0x00pwnathon.html
 ---
 
 <style>
