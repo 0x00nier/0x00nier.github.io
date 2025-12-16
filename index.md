@@ -135,6 +135,7 @@ var e = setTimeout(function() {
 
   // Start animation
   canvas.classList.add('active');
+  document.body.classList.add('matrix-active');
   const matrixInterval = setInterval(draw, 50);
 
   // Show hint after a moment
