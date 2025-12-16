@@ -160,23 +160,23 @@ async function handleLevel3Command(cmd, args) {
     print('║               LEVEL 3 PROGRESS - ELITE AD                        ║', 'info');
     print('╠══════════════════════════════════════════════════════════════════╣', 'info');
     print('║  RECONNAISSANCE:                                                 ║', 'info');
-    print(`║    [${state.enumDomain ? '✓' : ' '}] Domain enumerated                                  ║`, state.enumDomain ? 'success' : 'system');
-    print(`║    [${state.foundCA ? '✓' : ' '}] Certificate Authority discovered                    ║`, state.foundCA ? 'success' : 'system');
-    print(`║    [${state.enumTemplates ? '✓' : ' '}] Certificate templates enumerated                  ║`, state.enumTemplates ? 'success' : 'system');
+    print(`║    [${state.enumDomain ? 'x' : ' '}] Domain enumerated                                  ║`, state.enumDomain ? 'success' : 'system');
+    print(`║    [${state.foundCA ? 'x' : ' '}] Certificate Authority discovered                    ║`, state.foundCA ? 'success' : 'system');
+    print(`║    [${state.enumTemplates ? 'x' : ' '}] Certificate templates enumerated                  ║`, state.enumTemplates ? 'success' : 'system');
     print('║                                                                  ║', 'info');
     print('║  PATH A - ADCS ATTACK:                                           ║', 'warning');
-    print(`║    [${state.foundVulnTemplate ? '✓' : ' '}] Vulnerable template identified (ESC1)            ║`, state.foundVulnTemplate ? 'success' : 'system');
-    print(`║    [${state.gotAdminCert ? '✓' : ' '}] Admin certificate obtained                         ║`, state.gotAdminCert ? 'success' : 'system');
-    print(`║    [${state.extractedNTHash ? '✓' : ' '}] NT hash extracted from certificate                ║`, state.extractedNTHash ? 'success' : 'system');
+    print(`║    [${state.foundVulnTemplate ? 'x' : ' '}] Vulnerable template identified (ESC1)            ║`, state.foundVulnTemplate ? 'success' : 'system');
+    print(`║    [${state.gotAdminCert ? 'x' : ' '}] Admin certificate obtained                         ║`, state.gotAdminCert ? 'success' : 'system');
+    print(`║    [${state.extractedNTHash ? 'x' : ' '}] NT hash extracted from certificate                ║`, state.extractedNTHash ? 'success' : 'system');
     print('║                                                                  ║', 'info');
     print('║  PATH B - CONSTRAINED DELEGATION:                                ║', 'warning');
-    print(`║    [${state.foundConstrainedDeleg ? '✓' : ' '}] Constrained delegation found                     ║`, state.foundConstrainedDeleg ? 'success' : 'system');
-    print(`║    [${state.performedS4U ? '✓' : ' '}] S4U2Self + S4U2Proxy performed                    ║`, state.performedS4U ? 'success' : 'system');
-    print(`║    [${state.gotServiceTicket ? '✓' : ' '}] Service ticket for DC obtained                    ║`, state.gotServiceTicket ? 'success' : 'system');
+    print(`║    [${state.foundConstrainedDeleg ? 'x' : ' '}] Constrained delegation found                     ║`, state.foundConstrainedDeleg ? 'success' : 'system');
+    print(`║    [${state.performedS4U ? 'x' : ' '}] S4U2Self + S4U2Proxy performed                    ║`, state.performedS4U ? 'success' : 'system');
+    print(`║    [${state.gotServiceTicket ? 'x' : ' '}] Service ticket for DC obtained                    ║`, state.gotServiceTicket ? 'success' : 'system');
     print('║                                                                  ║', 'info');
     print('║  FINAL:                                                          ║', 'info');
-    print(`║    [${state.dcsyncPerformed ? '✓' : ' '}] DCSync performed                                   ║`, state.dcsyncPerformed ? 'success' : 'system');
-    print(`║    [${state.gotDomainAdmin ? '✓' : ' '}] DOMAIN ADMIN ACHIEVED                              ║`, state.gotDomainAdmin ? 'success' : 'system');
+    print(`║    [${state.dcsyncPerformed ? 'x' : ' '}] DCSync performed                                   ║`, state.dcsyncPerformed ? 'success' : 'system');
+    print(`║    [${state.gotDomainAdmin ? 'x' : ' '}] DOMAIN ADMIN ACHIEVED                              ║`, state.gotDomainAdmin ? 'success' : 'system');
     print('╠══════════════════════════════════════════════════════════════════╣', 'info');
     print(`║  Progress: ${String(progress).padStart(3)}%                                                ║`, progress === 100 ? 'success' : 'warning');
     print(`║  Current: ${state.currentUser}@${state.currentHost}                               ║`, 'system');
@@ -191,7 +191,7 @@ async function handleLevel3Command(cmd, args) {
   // ═══════════════════════════════════════════════════════════════
   if (cmd === 'hint') {
     print('');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
 
     if (!state.enumDomain) {
       print('Start with domain enumeration. BloodHound is your friend.', 'info');

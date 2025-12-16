@@ -1,16 +1,22 @@
 <script>
 // ============================================
 // ADMIN ACCESS SYSTEM
-// Password: CthulusRevengeOnNeon@1337
-// SHA-256 hash computed at runtime
+// NOTE: Admin password is NOT stored in plaintext anywhere in client code.
+//       Only a pre-computed hash is stored in `ADMIN_CONFIG.passwordHash`.
 // ============================================
+// Build-time flag from Jekyll: true in development, false in production
+const IS_DEV_BUILD = {{ jekyll.environment == "development" | jsonify }};
+
 const ADMIN_CONFIG = {
-  // SHA-256 hash of "CthulusRevengeOnNeon@1337"
-  passwordHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855_placeholder',
+  // SHA-256 hash of the admin password (pre-computed offline).
+  // Replace this value if you ever rotate the admin password; never store the plaintext.
+  passwordHash: 'ab99c890a9cab8c62dc48ebf715c9f1b6d472db01af6b676593fb9f00f632956',
   isAdmin: false,
   showAdminPanel: false,
   debugMode: false,
-  verboseLog: false
+  verboseLog: false,
+  // Development-only features (e.g., admin eval console)
+  devToolsEnabled: IS_DEV_BUILD
 };
 
 // Compute SHA-256 hash
@@ -20,12 +26,6 @@ async function sha256(message) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
-
-// Initialize admin hash on page load
-(async function initAdminHash() {
-  // Pre-computed hash for "CthulusRevengeOnNeon@1337"
-  ADMIN_CONFIG.passwordHash = await sha256('CthulusRevengeOnNeon@1337');
-})();
 
 async function checkAdminPassword(password) {
   const inputHash = await sha256(password);
@@ -193,6 +193,10 @@ function handleAdminCommand(args) {
   }
 
   if (subCmd === 'eval') {
+    if (!ADMIN_CONFIG.devToolsEnabled) {
+      print('[!] Dev tools are disabled in this build', 'warning');
+      return;
+    }
     if (!ADMIN_CONFIG.debugMode) {
       print('[!] Enable debug mode first: admin debug', 'warning');
       return;
@@ -243,6 +247,813 @@ function checkAdminAuth() {
   if (localStorage.getItem('gameAdminAuth') === 'true') {
     ADMIN_CONFIG.isAdmin = true;
   }
+}
+
+// ============================================
+// LINUX FILESYSTEM SIMULATION
+// ============================================
+const LinuxFS = {
+  // Current working directory
+  cwd: '/home/user',
+  // User info
+  user: 'user',
+  uid: 1000,
+  gid: 1000,
+  hostname: 'kali',
+
+  // File system structure
+  fs: {
+    '/': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/bin': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/bin/bash': { type: 'file', perms: '-rwxr-xr-x', owner: 'root', group: 'root', size: 1234567, content: 'ELF executable' },
+    '/bin/ls': { type: 'file', perms: '-rwxr-xr-x', owner: 'root', group: 'root', size: 147176, content: 'ELF executable' },
+    '/bin/cat': { type: 'file', perms: '-rwxr-xr-x', owner: 'root', group: 'root', size: 35064, content: 'ELF executable' },
+    '/boot': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/boot/vmlinuz': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 10485760, content: 'Linux kernel image' },
+    '/dev': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/dev/null': { type: 'file', perms: 'crw-rw-rw-', owner: 'root', group: 'root', size: 0, content: '' },
+    '/dev/random': { type: 'file', perms: 'crw-rw-rw-', owner: 'root', group: 'root', size: 0, content: '' },
+    '/etc': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/etc/passwd': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 2847, content: `root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+user:x:1000:1000:user:/home/user:/bin/bash
+svc_sql:x:1001:1001:SQL Service Account:/home/svc_sql:/bin/bash
+admin:x:1002:1002:Administrator:/home/admin:/bin/bash` },
+    '/etc/shadow': { type: 'file', perms: '-rw-r-----', owner: 'root', group: 'shadow', size: 1523, content: `root:$6$rounds=4096$saltsalt$hashhashhashhash:19000:0:99999:7:::
+user:$6$xyz$somehash:19000:0:99999:7:::
+svc_sql:$6$rounds=4096$MSSQLSvc$2b576acbe6bcfda7294d6bd18041b8fe:19000:0:99999:7:::` },
+    '/etc/hosts': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 221, content: `127.0.0.1\tlocalhost
+127.0.1.1\tkali
+10.10.10.15\ttarget.htb
+10.10.10.15\tdc01.corp.local
+172.16.1.20\tfileserver.corp.local` },
+    '/etc/hostname': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 5, content: 'kali' },
+    '/etc/resolv.conf': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 52, content: 'nameserver 8.8.8.8\nnameserver 8.8.4.4' },
+    '/etc/crontab': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 722, content: `# /etc/crontab: system-wide crontab
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user  command
+17 *    * * *   root    cd / && run-parts --report /etc/cron.hourly
+25 6    * * *   root    test -x /usr/sbin/anacron
+*/5 *   * * *   root    /opt/scripts/backup.sh` },
+    '/etc/ssh': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/etc/ssh/sshd_config': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 3287, content: `# SSH Server Configuration
+Port 22
+PermitRootLogin prohibit-password
+PasswordAuthentication yes
+PubkeyAuthentication yes` },
+    '/home': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/home/user': { type: 'dir', perms: 'drwxr-xr-x', owner: 'user', group: 'user', size: 4096 },
+    '/home/user/.bashrc': { type: 'file', perms: '-rw-r--r--', owner: 'user', group: 'user', size: 3771, content: `# ~/.bashrc: executed by bash(1) for non-login shells.
+export PS1='\\u@\\h:\\w\\$ '
+alias ll='ls -la'
+alias grep='grep --color=auto'
+export PATH="$PATH:/home/user/.local/bin"` },
+    '/home/user/.bash_history': { type: 'file', perms: '-rw-------', owner: 'user', group: 'user', size: 456, content: `ls -la
+cat /etc/passwd
+ssh admin@target.htb
+nmap -sV 10.10.10.15
+gobuster dir -u http://10.10.10.15 -w /usr/share/wordlists/common.txt
+sudo -l` },
+    '/home/user/.ssh': { type: 'dir', perms: 'drwx------', owner: 'user', group: 'user', size: 4096 },
+    '/home/user/.ssh/id_rsa': { type: 'file', perms: '-rw-------', owner: 'user', group: 'user', size: 1679, content: `-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+-----END RSA PRIVATE KEY-----` },
+    '/home/user/.ssh/id_rsa.pub': { type: 'file', perms: '-rw-r--r--', owner: 'user', group: 'user', size: 392, content: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDxxxxxx user@kali' },
+    '/home/user/notes.txt': { type: 'file', perms: '-rw-r--r--', owner: 'user', group: 'user', size: 312, content: `=== Pentest Notes ===
+Target: 10.10.10.15
+
+Credentials found:
+- admin:Summer2024!
+- svc_sql:MSSQLSvc2024!
+
+TODO:
+- Check ADCS
+- Run BloodHound
+- Enumerate shares` },
+    '/home/user/exploit.py': { type: 'file', perms: '-rwxr-xr-x', owner: 'user', group: 'user', size: 2048, content: `#!/usr/bin/env python3
+import socket
+import struct
+
+TARGET = "10.10.10.15"
+PORT = 4444
+
+def exploit():
+    print("[*] Connecting to target...")
+    # Exploit code here
+    pass
+
+if __name__ == "__main__":
+    exploit()` },
+    '/home/user/loot': { type: 'dir', perms: 'drwxr-xr-x', owner: 'user', group: 'user', size: 4096 },
+    '/home/user/loot/hashes.txt': { type: 'file', perms: '-rw-r--r--', owner: 'user', group: 'user', size: 256, content: `Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+svc_sql:1001:aad3b435b51404eeaad3b435b51404ee:2b576acbe6bcfda7294d6bd18041b8fe:::` },
+    '/opt': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/opt/scripts': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/opt/scripts/backup.sh': { type: 'file', perms: '-rwxr-xr-x', owner: 'root', group: 'root', size: 156, content: `#!/bin/bash
+# Backup script - runs as root
+tar -czf /tmp/backup.tar.gz /home/
+chmod 777 /tmp/backup.tar.gz` },
+    '/proc': { type: 'dir', perms: 'dr-xr-xr-x', owner: 'root', group: 'root', size: 0 },
+    '/proc/version': { type: 'file', perms: '-r--r--r--', owner: 'root', group: 'root', size: 0, content: 'Linux version 5.15.0-kali1-amd64 (devel@kali.org) (gcc-12 (Debian 12.2.0-14) 12.2.0, GNU ld (GNU Binutils for Debian) 2.40) #1 SMP Debian 5.15.0-1kali1 (2023-06-15)' },
+    '/proc/self': { type: 'dir', perms: 'dr-xr-xr-x', owner: 'user', group: 'user', size: 0 },
+    '/root': { type: 'dir', perms: 'drwx------', owner: 'root', group: 'root', size: 4096 },
+    '/tmp': { type: 'dir', perms: 'drwxrwxrwt', owner: 'root', group: 'root', size: 4096 },
+    '/tmp/linpeas.sh': { type: 'file', perms: '-rwxr-xr-x', owner: 'user', group: 'user', size: 827392, content: '#!/bin/bash\n# LinPEAS - Linux Privilege Escalation Awesome Script\necho "Starting enumeration..."' },
+    '/usr': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/usr/bin': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/usr/bin/python3': { type: 'file', perms: '-rwxr-xr-x', owner: 'root', group: 'root', size: 5479736, content: 'ELF executable' },
+    '/usr/bin/sudo': { type: 'file', perms: '-rwsr-xr-x', owner: 'root', group: 'root', size: 232416, content: 'ELF executable (SUID)' },
+    '/usr/share': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/usr/share/wordlists': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/usr/share/wordlists/rockyou.txt': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 139921497, content: '[wordlist - 14 million passwords]' },
+    '/usr/share/wordlists/common.txt': { type: 'file', perms: '-rw-r--r--', owner: 'root', group: 'root', size: 35842, content: 'admin\nlogin\nupload\nbackup\nconfig\ntest\ndev\napi\n...' },
+    '/var': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/var/log': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/var/log/auth.log': { type: 'file', perms: '-rw-r-----', owner: 'root', group: 'adm', size: 102400, content: `Dec 15 10:23:15 kali sshd[1234]: Accepted password for user from 10.10.14.5 port 54321 ssh2
+Dec 15 10:25:42 kali sudo[1235]: user : TTY=pts/0 ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow
+Dec 15 11:00:00 kali CRON[1500]: pam_unix(cron:session): session opened for user root` },
+    '/var/log/syslog': { type: 'file', perms: '-rw-r-----', owner: 'root', group: 'adm', size: 524288, content: '[system log entries]' },
+    '/var/www': { type: 'dir', perms: 'drwxr-xr-x', owner: 'root', group: 'root', size: 4096 },
+    '/var/www/html': { type: 'dir', perms: 'drwxr-xr-x', owner: 'www-data', group: 'www-data', size: 4096 },
+    '/var/www/html/index.html': { type: 'file', perms: '-rw-r--r--', owner: 'www-data', group: 'www-data', size: 612, content: '<html><head><title>Welcome</title></head><body><h1>It works!</h1></body></html>' },
+    '/var/www/html/config.php': { type: 'file', perms: '-rw-r--r--', owner: 'www-data', group: 'www-data', size: 256, content: `<?php
+$db_host = 'localhost';
+$db_user = 'admin';
+$db_pass = 'Sup3rS3cr3t!';
+$db_name = 'webapp';
+?>` },
+  },
+
+  // Initialize (load from localStorage if exists)
+  init() {
+    const saved = localStorage.getItem('linuxFS');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.fs = { ...this.fs, ...parsed.fs };
+        this.cwd = parsed.cwd || '/home/user';
+      } catch (e) {
+        console.error('Failed to load filesystem:', e);
+      }
+    }
+  },
+
+  save() {
+    localStorage.setItem('linuxFS', JSON.stringify({ fs: this.fs, cwd: this.cwd }));
+  },
+
+  // Path resolution
+  resolvePath(path) {
+    if (!path) return this.cwd;
+    if (path === '~') return '/home/' + this.user;
+    if (path.startsWith('~/')) return '/home/' + this.user + path.slice(1);
+    if (path.startsWith('/')) {
+      // Absolute path - normalize it
+      return this.normalizePath(path);
+    }
+    // Relative path
+    return this.normalizePath(this.cwd + '/' + path);
+  },
+
+  normalizePath(path) {
+    const parts = path.split('/').filter(p => p && p !== '.');
+    const result = [];
+    for (const part of parts) {
+      if (part === '..') {
+        result.pop();
+      } else {
+        result.push(part);
+      }
+    }
+    return '/' + result.join('/');
+  },
+
+  // Get parent directory
+  dirname(path) {
+    const normalized = this.resolvePath(path);
+    const parts = normalized.split('/').filter(p => p);
+    parts.pop();
+    return '/' + parts.join('/');
+  },
+
+  // Get filename
+  basename(path) {
+    const normalized = this.resolvePath(path);
+    const parts = normalized.split('/').filter(p => p);
+    return parts[parts.length - 1] || '/';
+  },
+
+  // Check if path exists
+  exists(path) {
+    return this.fs[this.resolvePath(path)] !== undefined;
+  },
+
+  // Check if path is directory
+  isDir(path) {
+    const entry = this.fs[this.resolvePath(path)];
+    return entry && entry.type === 'dir';
+  },
+
+  // List directory contents
+  readdir(path) {
+    const resolved = this.resolvePath(path);
+    if (!this.isDir(resolved)) return null;
+
+    const prefix = resolved === '/' ? '/' : resolved + '/';
+    const entries = [];
+
+    for (const p of Object.keys(this.fs)) {
+      if (p.startsWith(prefix) && p !== resolved) {
+        const relative = p.slice(prefix.length);
+        if (!relative.includes('/')) {
+          entries.push(relative);
+        }
+      }
+    }
+    return entries.sort();
+  },
+
+  // Read file content
+  readFile(path) {
+    const entry = this.fs[this.resolvePath(path)];
+    if (!entry || entry.type !== 'file') return null;
+    return entry.content;
+  },
+
+  // Write file
+  writeFile(path, content) {
+    const resolved = this.resolvePath(path);
+    const parent = this.dirname(resolved);
+    if (!this.exists(parent)) return false;
+
+    this.fs[resolved] = {
+      type: 'file',
+      perms: '-rw-r--r--',
+      owner: this.user,
+      group: this.user,
+      size: content.length,
+      content: content
+    };
+    this.save();
+    return true;
+  },
+
+  // Create directory
+  mkdir(path) {
+    const resolved = this.resolvePath(path);
+    if (this.exists(resolved)) return false;
+    const parent = this.dirname(resolved);
+    if (!this.exists(parent)) return false;
+
+    this.fs[resolved] = {
+      type: 'dir',
+      perms: 'drwxr-xr-x',
+      owner: this.user,
+      group: this.user,
+      size: 4096
+    };
+    this.save();
+    return true;
+  },
+
+  // Remove file/directory
+  rm(path, recursive = false) {
+    const resolved = this.resolvePath(path);
+    if (!this.exists(resolved)) return false;
+
+    if (this.isDir(resolved)) {
+      const contents = this.readdir(resolved);
+      if (contents && contents.length > 0 && !recursive) {
+        return false; // Directory not empty
+      }
+      if (recursive) {
+        // Remove all contents
+        for (const p of Object.keys(this.fs)) {
+          if (p.startsWith(resolved + '/') || p === resolved) {
+            delete this.fs[p];
+          }
+        }
+      }
+    }
+    delete this.fs[resolved];
+    this.save();
+    return true;
+  },
+
+  // Copy file
+  cp(src, dst) {
+    const srcResolved = this.resolvePath(src);
+    const srcEntry = this.fs[srcResolved];
+    if (!srcEntry) return false;
+
+    let dstResolved = this.resolvePath(dst);
+    if (this.isDir(dstResolved)) {
+      dstResolved = dstResolved + '/' + this.basename(src);
+    }
+
+    this.fs[dstResolved] = { ...srcEntry };
+    this.save();
+    return true;
+  },
+
+  // Move file
+  mv(src, dst) {
+    if (this.cp(src, dst)) {
+      this.rm(src);
+      return true;
+    }
+    return false;
+  },
+
+  // Change directory
+  cd(path) {
+    const resolved = this.resolvePath(path);
+    if (this.isDir(resolved)) {
+      this.cwd = resolved;
+      this.save();
+      return true;
+    }
+    return false;
+  },
+
+  // Get file/dir info
+  stat(path) {
+    return this.fs[this.resolvePath(path)];
+  },
+
+  // Find files matching pattern
+  find(startPath, pattern, type = null) {
+    const results = [];
+    const resolved = this.resolvePath(startPath);
+    const regex = new RegExp(pattern.replace(/\*/g, '.*').replace(/\?/g, '.'));
+
+    for (const p of Object.keys(this.fs)) {
+      if (p.startsWith(resolved) || resolved === '/') {
+        const name = this.basename(p);
+        if (regex.test(name)) {
+          const entry = this.fs[p];
+          if (!type || (type === 'f' && entry.type === 'file') || (type === 'd' && entry.type === 'dir')) {
+            results.push(p);
+          }
+        }
+      }
+    }
+    return results.sort();
+  },
+
+  // Grep - search file contents
+  grep(pattern, path, options = {}) {
+    const results = [];
+    const regex = new RegExp(pattern, options.ignoreCase ? 'gi' : 'g');
+
+    const searchFile = (filePath) => {
+      const content = this.readFile(filePath);
+      if (content) {
+        const lines = content.split('\n');
+        lines.forEach((line, i) => {
+          if (regex.test(line)) {
+            results.push({
+              file: filePath,
+              line: i + 1,
+              content: line,
+              matches: line.match(regex)
+            });
+          }
+        });
+      }
+    };
+
+    const resolved = this.resolvePath(path);
+    if (this.isDir(resolved)) {
+      // Recursive grep
+      for (const p of Object.keys(this.fs)) {
+        if (p.startsWith(resolved) && this.fs[p].type === 'file') {
+          searchFile(p);
+        }
+      }
+    } else {
+      searchFile(resolved);
+    }
+
+    return results;
+  },
+
+  // Tree - directory structure
+  tree(path, prefix = '', isLast = true) {
+    const resolved = this.resolvePath(path);
+    const name = this.basename(resolved) || '/';
+    const entry = this.fs[resolved];
+    let output = prefix + (prefix ? (isLast ? '└── ' : '├── ') : '') + name + '\n';
+
+    if (entry && entry.type === 'dir') {
+      const contents = this.readdir(resolved) || [];
+      contents.forEach((item, i) => {
+        const isLastItem = i === contents.length - 1;
+        const newPrefix = prefix + (prefix ? (isLast ? '    ' : '│   ') : '');
+        output += this.tree(resolved + '/' + item, newPrefix, isLastItem);
+      });
+    }
+    return output;
+  }
+};
+
+// Initialize filesystem
+document.addEventListener('DOMContentLoaded', () => {
+  LinuxFS.init();
+});
+
+// ============================================
+// LINUX SHELL COMMANDS
+// ============================================
+const ShellCommands = {
+  ls(args, flags) {
+    const path = args[0] || LinuxFS.cwd;
+    const resolved = LinuxFS.resolvePath(path);
+
+    if (!LinuxFS.exists(resolved)) {
+      return { error: `ls: cannot access '${path}': No such file or directory` };
+    }
+
+    if (!LinuxFS.isDir(resolved)) {
+      // Single file
+      const entry = LinuxFS.stat(resolved);
+      if (flags.l) {
+        return { output: `${entry.perms} 1 ${entry.owner} ${entry.group} ${entry.size.toString().padStart(8)} Dec 15 10:00 ${LinuxFS.basename(resolved)}` };
+      }
+      return { output: LinuxFS.basename(resolved) };
+    }
+
+    const contents = LinuxFS.readdir(resolved) || [];
+    if (contents.length === 0) return { output: '' };
+
+    if (flags.l) {
+      let output = `total ${contents.length * 4}\n`;
+      for (const name of contents) {
+        const entry = LinuxFS.stat(resolved + '/' + name);
+        const displayName = entry.type === 'dir' ? `\x1b[34m${name}\x1b[0m` : name;
+        output += `${entry.perms} 1 ${entry.owner.padEnd(8)} ${entry.group.padEnd(8)} ${entry.size.toString().padStart(8)} Dec 15 10:00 ${displayName}\n`;
+      }
+      return { output: output.trim() };
+    }
+
+    if (flags.a) {
+      return { output: '.  ..  ' + contents.join('  ') };
+    }
+
+    return { output: contents.join('  ') };
+  },
+
+  cd(args) {
+    const path = args[0] || '~';
+    if (LinuxFS.cd(path)) {
+      return { output: '' };
+    }
+    return { error: `cd: ${path}: No such file or directory` };
+  },
+
+  pwd() {
+    return { output: LinuxFS.cwd };
+  },
+
+  cat(args) {
+    if (args.length === 0) {
+      return { error: 'cat: missing operand' };
+    }
+    let output = '';
+    for (const path of args) {
+      const content = LinuxFS.readFile(path);
+      if (content === null) {
+        return { error: `cat: ${path}: No such file or directory` };
+      }
+      output += content;
+    }
+    return { output };
+  },
+
+  head(args, flags) {
+    const lines = flags.n || 10;
+    const path = args[0];
+    if (!path) return { error: 'head: missing operand' };
+
+    const content = LinuxFS.readFile(path);
+    if (content === null) {
+      return { error: `head: ${path}: No such file or directory` };
+    }
+    return { output: content.split('\n').slice(0, lines).join('\n') };
+  },
+
+  tail(args, flags) {
+    const lines = flags.n || 10;
+    const path = args[0];
+    if (!path) return { error: 'tail: missing operand' };
+
+    const content = LinuxFS.readFile(path);
+    if (content === null) {
+      return { error: `tail: ${path}: No such file or directory` };
+    }
+    const allLines = content.split('\n');
+    return { output: allLines.slice(-lines).join('\n') };
+  },
+
+  grep(args, flags) {
+    if (args.length < 2) {
+      return { error: 'grep: Usage: grep [pattern] [file]' };
+    }
+    const pattern = args[0];
+    const path = args[1];
+
+    const results = LinuxFS.grep(pattern, path, { ignoreCase: flags.i });
+    if (results.length === 0) {
+      return { output: '' };
+    }
+
+    let output = '';
+    for (const r of results) {
+      if (flags.n) {
+        output += `${r.file}:${r.line}:${r.content}\n`;
+      } else {
+        output += r.content + '\n';
+      }
+    }
+    return { output: output.trim() };
+  },
+
+  find(args, flags) {
+    const path = args[0] || '.';
+    const pattern = flags.name || '*';
+    const type = flags.type;
+
+    const results = LinuxFS.find(path, pattern, type);
+    return { output: results.join('\n') };
+  },
+
+  tree(args) {
+    const path = args[0] || '.';
+    return { output: LinuxFS.tree(path) };
+  },
+
+  mkdir(args, flags) {
+    if (args.length === 0) {
+      return { error: 'mkdir: missing operand' };
+    }
+    for (const path of args) {
+      if (flags.p) {
+        // Create parent directories
+        const parts = LinuxFS.resolvePath(path).split('/').filter(p => p);
+        let current = '';
+        for (const part of parts) {
+          current += '/' + part;
+          if (!LinuxFS.exists(current)) {
+            LinuxFS.mkdir(current);
+          }
+        }
+      } else {
+        if (!LinuxFS.mkdir(path)) {
+          return { error: `mkdir: cannot create directory '${path}': File exists or parent missing` };
+        }
+      }
+    }
+    return { output: '' };
+  },
+
+  touch(args) {
+    if (args.length === 0) {
+      return { error: 'touch: missing operand' };
+    }
+    for (const path of args) {
+      if (!LinuxFS.exists(path)) {
+        LinuxFS.writeFile(path, '');
+      }
+    }
+    return { output: '' };
+  },
+
+  rm(args, flags) {
+    if (args.length === 0) {
+      return { error: 'rm: missing operand' };
+    }
+    for (const path of args) {
+      if (!LinuxFS.rm(path, flags.r || flags.R)) {
+        return { error: `rm: cannot remove '${path}': No such file or directory or not empty` };
+      }
+    }
+    return { output: '' };
+  },
+
+  cp(args, flags) {
+    if (args.length < 2) {
+      return { error: 'cp: missing destination operand' };
+    }
+    const src = args[0];
+    const dst = args[1];
+    if (!LinuxFS.cp(src, dst)) {
+      return { error: `cp: cannot copy '${src}' to '${dst}'` };
+    }
+    return { output: '' };
+  },
+
+  mv(args) {
+    if (args.length < 2) {
+      return { error: 'mv: missing destination operand' };
+    }
+    const src = args[0];
+    const dst = args[1];
+    if (!LinuxFS.mv(src, dst)) {
+      return { error: `mv: cannot move '${src}' to '${dst}'` };
+    }
+    return { output: '' };
+  },
+
+  echo(args, flags) {
+    const output = args.join(' ');
+    if (flags.e) {
+      return { output: output.replace(/\\n/g, '\n').replace(/\\t/g, '\t') };
+    }
+    return { output };
+  },
+
+  wc(args, flags) {
+    if (args.length === 0) {
+      return { error: 'wc: missing operand' };
+    }
+    let output = '';
+    for (const path of args) {
+      const content = LinuxFS.readFile(path);
+      if (content === null) {
+        return { error: `wc: ${path}: No such file or directory` };
+      }
+      const lines = content.split('\n').length;
+      const words = content.split(/\s+/).filter(w => w).length;
+      const chars = content.length;
+      if (flags.l) {
+        output += `${lines} ${path}\n`;
+      } else if (flags.w) {
+        output += `${words} ${path}\n`;
+      } else if (flags.c) {
+        output += `${chars} ${path}\n`;
+      } else {
+        output += `${lines} ${words} ${chars} ${path}\n`;
+      }
+    }
+    return { output: output.trim() };
+  },
+
+  cut(args, flags) {
+    const path = args[0];
+    if (!path) return { error: 'cut: missing operand' };
+
+    const content = LinuxFS.readFile(path);
+    if (content === null) {
+      return { error: `cut: ${path}: No such file or directory` };
+    }
+
+    const delimiter = flags.d || '\t';
+    const field = parseInt(flags.f) || 1;
+
+    const lines = content.split('\n');
+    const output = lines.map(line => {
+      const parts = line.split(delimiter);
+      return parts[field - 1] || '';
+    }).join('\n');
+
+    return { output };
+  },
+
+  whoami() {
+    return { output: LinuxFS.user };
+  },
+
+  id() {
+    return { output: `uid=${LinuxFS.uid}(${LinuxFS.user}) gid=${LinuxFS.gid}(${LinuxFS.user}) groups=${LinuxFS.gid}(${LinuxFS.user}),27(sudo)` };
+  },
+
+  hostname() {
+    return { output: LinuxFS.hostname };
+  },
+
+  uname(args, flags) {
+    if (flags.a) {
+      return { output: 'Linux kali 5.15.0-kali1-amd64 #1 SMP Debian 5.15.0-1kali1 x86_64 GNU/Linux' };
+    }
+    return { output: 'Linux' };
+  },
+
+  env() {
+    return { output: `USER=${LinuxFS.user}
+HOME=/home/${LinuxFS.user}
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PWD=${LinuxFS.cwd}
+LANG=en_US.UTF-8
+TERM=xterm-256color` };
+  },
+
+  which(args) {
+    const cmd = args[0];
+    if (!cmd) return { error: 'which: missing operand' };
+
+    const bins = ['/usr/bin/', '/bin/', '/usr/local/bin/'];
+    for (const bin of bins) {
+      if (LinuxFS.exists(bin + cmd)) {
+        return { output: bin + cmd };
+      }
+    }
+    return { error: `which: no ${cmd} in (/usr/local/bin:/usr/bin:/bin)` };
+  },
+
+  file(args) {
+    const path = args[0];
+    if (!path) return { error: 'file: missing operand' };
+
+    const entry = LinuxFS.stat(path);
+    if (!entry) {
+      return { error: `file: ${path}: No such file or directory` };
+    }
+
+    if (entry.type === 'dir') {
+      return { output: `${path}: directory` };
+    }
+
+    const content = entry.content || '';
+    if (content.startsWith('ELF')) {
+      return { output: `${path}: ELF 64-bit LSB executable, x86-64` };
+    }
+    if (content.startsWith('#!/')) {
+      return { output: `${path}: script, ASCII text executable` };
+    }
+    if (content.startsWith('<?php')) {
+      return { output: `${path}: PHP script, ASCII text` };
+    }
+    if (content.includes('<html') || content.includes('<!DOCTYPE')) {
+      return { output: `${path}: HTML document, ASCII text` };
+    }
+    return { output: `${path}: ASCII text` };
+  },
+
+  chmod(args) {
+    if (args.length < 2) {
+      return { error: 'chmod: missing operand' };
+    }
+    // Just acknowledge - don't actually change permissions in simulation
+    return { output: '' };
+  },
+
+  chown(args) {
+    if (args.length < 2) {
+      return { error: 'chown: missing operand' };
+    }
+    return { output: '' };
+  }
+};
+
+// Parse command flags
+function parseShellFlags(args) {
+  const flags = {};
+  const positional = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg.startsWith('--')) {
+      const [key, value] = arg.slice(2).split('=');
+      flags[key] = value || true;
+    } else if (arg.startsWith('-') && arg.length > 1 && !arg.match(/^-\d/)) {
+      // Short flags
+      for (let j = 1; j < arg.length; j++) {
+        const char = arg[j];
+        // Check if next char is a value for flags that take arguments
+        if ('dnf'.includes(char) && i + 1 < args.length && !args[i + 1].startsWith('-')) {
+          flags[char] = args[++i];
+        } else {
+          flags[char] = true;
+        }
+      }
+    } else {
+      positional.push(arg);
+    }
+  }
+
+  return { flags, args: positional };
+}
+
+// Execute shell command
+function executeShellCommand(cmdStr) {
+  const tokens = cmdStr.trim().split(/\s+/);
+  const cmd = tokens[0];
+  const { flags, args } = parseShellFlags(tokens.slice(1));
+
+  if (ShellCommands[cmd]) {
+    return ShellCommands[cmd](args, flags);
+  }
+
+  return null; // Command not found in shell commands
 }
 
 // ============================================
@@ -360,13 +1171,19 @@ function toggleMusicPanel() {
 function toggleMusic() {
   const btn = document.getElementById('music-toggle-btn');
   const iframe = document.getElementById('youtube-player');
+  const targetOrigin = 'https://www.youtube.com';
+
+  if (!iframe || !iframe.contentWindow) {
+    print('[!] Music player not available (YouTube iframe not loaded)', 'warning');
+    return;
+  }
 
   if (MUSIC_PLAYER.isPlaying) {
-    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', targetOrigin);
     btn.textContent = '▶ Play';
     MUSIC_PLAYER.isPlaying = false;
   } else {
-    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+    iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', targetOrigin);
     btn.textContent = '❚❚ Pause';
     MUSIC_PLAYER.isPlaying = true;
   }
@@ -444,6 +1261,175 @@ window.addEventListener('resize', () => {
 });
 
 // ============================================
+// INTENSIVE OPERATION OVERLAY (Matrix + Progress)
+// ============================================
+const IntensiveOp = {
+  active: false,
+  canvas: null,
+  ctx: null,
+  animFrame: null,
+  drops: [],
+  progress: 0,
+  stages: [],
+  currentStage: 0,
+  onComplete: null,
+
+  init() {
+    if (document.getElementById('intensive-overlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'intensive-overlay';
+    overlay.innerHTML = `
+      <canvas id="intensive-matrix"></canvas>
+      <div id="intensive-content">
+        <pre id="intensive-ascii" style="color: #0f0; font-size: 10px; margin-bottom: 20px; text-shadow: 0 0 10px #0f0;"></pre>
+        <div id="intensive-status" style="color: #0f0; font-size: 14px; margin-bottom: 15px; font-family: monospace;"></div>
+        <div style="width: 400px; background: #111; border: 1px solid #0f0; padding: 2px;">
+          <div id="intensive-progress-bar" style="height: 20px; background: linear-gradient(90deg, #0f0, #0a0); width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <div id="intensive-percent" style="color: #0f0; font-size: 12px; margin-top: 5px; font-family: monospace;">0%</div>
+        <div id="intensive-details" style="color: #080; font-size: 10px; margin-top: 15px; font-family: monospace; max-height: 100px; overflow-y: auto;"></div>
+      </div>
+    `;
+    overlay.style.cssText = `display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;`;
+
+    const style = document.createElement('style');
+    style.textContent = `#intensive-matrix { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.3; } #intensive-content { position: relative; z-index: 10000; text-align: center; } @keyframes glitch-intense { 0% { transform: translate(0); } 20% { transform: translate(-2px, 2px); } 40% { transform: translate(-2px, -2px); } 60% { transform: translate(2px, 2px); } 80% { transform: translate(2px, -2px); } 100% { transform: translate(0); } } .glitch-text { animation: glitch-intense 0.3s infinite; }`;
+    document.head.appendChild(style);
+    document.body.appendChild(overlay);
+  },
+
+  start(config) {
+    this.init();
+    this.active = true;
+    this.progress = 0;
+    this.currentStage = 0;
+    this.stages = config.stages || ['Processing...'];
+    this.onComplete = config.onComplete || null;
+
+    document.getElementById('intensive-overlay').style.display = 'flex';
+    document.getElementById('intensive-ascii').textContent = config.ascii || this.getAscii(config.type);
+
+    this.canvas = document.getElementById('intensive-matrix');
+    this.ctx = this.canvas.getContext('2d');
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+    this.drops = Array(Math.floor(this.canvas.width / 14)).fill(1);
+
+    this.animate();
+    if (config.duration) this.autoProgress(config.duration);
+    return this;
+  },
+
+  getAscii(type) {
+    const art = {
+      hashcrack: `   ██░ ██  ▄▄▄        ██████  ██░ ██\n  ▓██░ ██▒▒████▄    ▒██    ▒ ▓██░ ██▒\n  ▒██▀▀██░▒██  ▀█▄  ░ ▓██▄   ▒██▀▀██░\n  ░▓█ ░██ ░██▄▄▄▄██   ▒   ██▒░▓█ ░██\n     HASH CRACKING`,
+      exploit: `  ███████╗██╗  ██╗██████╗ ██╗      ██████╗ ██╗████████╗\n  ██╔════╝╚██╗██╔╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝\n  █████╗   ╚███╔╝ ██████╔╝██║     ██║   ██║██║   ██║\n     EXPLOITATION`,
+      kernel: `  ██╗  ██╗███████╗██████╗ ███╗   ██╗███████╗██╗\n  █████╔╝ █████╗  ██████╔╝██╔██╗ ██║█████╗  ██║\n     KERNEL EXPLOIT`,
+      scan: `  ███████╗ ██████╗ █████╗ ███╗   ██╗\n  ██╔════╝██╔════╝██╔══██╗████╗  ██║\n  ███████╗██║     ███████║██╔██╗ ██║\n     SCANNING`
+    };
+    return art[type] || art.exploit;
+  },
+
+  animate() {
+    if (!this.active) return;
+    const chars = 'アイウエオカキクケコサシスセソ0123456789ABCDEF!@#$%';
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillStyle = '#0F0';
+    this.ctx.font = '14px monospace';
+
+    for (let i = 0; i < this.drops.length; i++) {
+      const text = chars[Math.floor(Math.random() * chars.length)];
+      this.ctx.fillText(text, i * 14, this.drops[i] * 14);
+      if (this.drops[i] * 14 > this.canvas.height && Math.random() > 0.975) this.drops[i] = 0;
+      this.drops[i]++;
+    }
+    this.animFrame = requestAnimationFrame(() => this.animate());
+  },
+
+  setProgress(percent, status, detail) {
+    this.progress = Math.min(100, percent);
+    document.getElementById('intensive-progress-bar').style.width = this.progress + '%';
+    document.getElementById('intensive-percent').textContent = Math.floor(this.progress) + '%';
+    if (status) document.getElementById('intensive-status').textContent = status;
+    if (detail) {
+      const d = document.getElementById('intensive-details');
+      d.innerHTML += detail + '<br>';
+      d.scrollTop = d.scrollHeight;
+    }
+  },
+
+  autoProgress(duration) {
+    const start = Date.now();
+    const interval = duration / this.stages.length;
+    const update = () => {
+      if (!this.active) return;
+      const elapsed = Date.now() - start;
+      const progress = Math.min(100, (elapsed / duration) * 100);
+      const stage = Math.min(this.stages.length - 1, Math.floor(elapsed / interval));
+      this.setProgress(progress, this.stages[stage]);
+      if (progress < 100) setTimeout(update, 50);
+      else setTimeout(() => this.complete(), 500);
+    };
+    update();
+  },
+
+  addDetails(type) {
+    const lines = {
+      hashcrack: ['Trying: Summer2024!', 'GPU: 45.2 GH/s', 'Rule: best64', 'Mode: NTLM'],
+      exploit: ['Bypassing ASLR...', 'Building ROP chain...', 'Shellcode injected'],
+      scan: ['Found: :22 SSH', 'Found: :80 HTTP', 'Found: :445 SMB']
+    }[type] || ['Processing...'];
+    let i = 0;
+    const add = () => {
+      if (!this.active || i >= lines.length * 2) return;
+      this.setProgress(this.progress, null, lines[i % lines.length]);
+      i++;
+      setTimeout(add, Math.random() * 400 + 200);
+    };
+    add();
+  },
+
+  complete() {
+    this.active = false;
+    if (this.animFrame) cancelAnimationFrame(this.animFrame);
+    document.getElementById('intensive-status').textContent = 'COMPLETE!';
+    document.getElementById('intensive-status').classList.add('glitch-text');
+    setTimeout(() => {
+      document.getElementById('intensive-overlay').style.display = 'none';
+      document.getElementById('intensive-details').innerHTML = '';
+      if (this.onComplete) this.onComplete();
+    }, 1000);
+  },
+
+  close() {
+    this.active = false;
+    if (this.animFrame) cancelAnimationFrame(this.animFrame);
+    document.getElementById('intensive-overlay').style.display = 'none';
+  }
+};
+
+// Convenience functions
+function showHashCrackAnimation(duration, onComplete) {
+  const op = IntensiveOp.start({ type: 'hashcrack', duration, stages: ['Loading wordlist...', 'Cracking hashes...', 'Applying rules...', 'Found!'], onComplete });
+  op.addDetails('hashcrack');
+  return op;
+}
+
+function showExploitAnimation(duration, onComplete) {
+  const op = IntensiveOp.start({ type: 'exploit', duration, stages: ['Connecting...', 'Triggering vuln...', 'Injecting payload...', 'Shell obtained!'], onComplete });
+  op.addDetails('exploit');
+  return op;
+}
+
+function showKernelExploitAnimation(duration, onComplete) {
+  const op = IntensiveOp.start({ type: 'kernel', duration, stages: ['Preparing...', 'Triggering UAF...', 'Spraying heap...', 'Overwriting modprobe_path...', 'Root!'], onComplete });
+  op.addDetails('exploit');
+  return op;
+}
+
+// ============================================
 // WORKSPACE TAB SYSTEM
 // ============================================
 function initWorkspaceTabs() {
@@ -460,25 +1446,73 @@ function initWorkspaceTabs() {
 function switchWorkspace(ws) {
   setActiveWorkspace(ws);
 
+  // Hide all workspaces first
+  const terminalOutput = document.getElementById('terminal-output');
+  const inputLine = document.getElementById('terminal-input-line');
+  const codeEditor = document.getElementById('code-editor-overlay');
+  const webWs = document.getElementById('web-workspace');
+  const monWs = document.getElementById('mon-workspace');
+  const vimWs = document.getElementById('vim-workspace');
+
   switch (ws) {
     case '1': // Terminal
-      document.getElementById('terminal-output').style.display = 'block';
-      document.getElementById('input-line').style.display = 'flex';
-      document.getElementById('code-editor-overlay').style.display = 'none';
-      document.getElementById('web-workspace').style.display = 'none';
-      document.getElementById('mon-workspace').style.display = 'none';
+      terminalOutput.style.display = 'block';
+      if (inputLine) inputLine.style.display = 'flex';
+      if (codeEditor) codeEditor.style.display = 'none';
+      if (webWs) {
+        webWs.style.display = 'none';
+        webWs.classList.remove('active');
+      }
+      if (monWs) {
+        monWs.style.display = 'none';
+        monWs.classList.remove('active');
+      }
+      if (vimWs) {
+        vimWs.style.display = 'none';
+        vimWs.classList.remove('active');
+      }
+      document.getElementById('terminal-input').focus();
       break;
 
     case '2': // Web browser (man pages)
       showWebWorkspace();
+      if (vimWs) {
+        vimWs.style.display = 'none';
+        vimWs.classList.remove('active');
+      }
       break;
 
-    case '3': // Code editor
-      showCodeWorkspace();
+    case '3': // Vim editor
+      if (typeof VimWorkspace !== 'undefined' && VimWorkspace.isOpen) {
+        // Resume existing vim session
+        terminalOutput.style.display = 'none';
+        if (inputLine) inputLine.style.display = 'none';
+        if (codeEditor) codeEditor.style.display = 'none';
+        if (webWs) {
+          webWs.style.display = 'none';
+          webWs.classList.remove('active');
+        }
+        if (monWs) {
+          monWs.style.display = 'none';
+          monWs.classList.remove('active');
+        }
+        if (vimWs) {
+          vimWs.classList.add('active');
+          vimWs.style.display = 'flex';
+        }
+        VimWorkspace.elements.content.focus();
+      } else {
+        // Open vim with scratch file
+        VimWorkspace.open('/home/user/scratch.txt');
+      }
       break;
 
     case '4': // Monitor
       showMonWorkspace();
+      if (vimWs) {
+        vimWs.style.display = 'none';
+        vimWs.classList.remove('active');
+      }
       break;
   }
 }
@@ -544,7 +1578,8 @@ function showWebWorkspace() {
   if (terminalInput) terminalInput.blur();
 
   document.getElementById('terminal-output').style.display = 'none';
-  document.getElementById('input-line').style.display = 'none';
+  const inputLine = document.getElementById('terminal-input-line');
+  if (inputLine) inputLine.style.display = 'none';
   document.getElementById('code-editor-overlay').style.display = 'none';
   document.getElementById('web-workspace').style.display = 'block';
 
@@ -582,7 +1617,8 @@ function showCodeWorkspace() {
   }
 
   document.getElementById('terminal-output').style.display = 'none';
-  document.getElementById('input-line').style.display = 'none';
+  const inputLine = document.getElementById('terminal-input-line');
+  if (inputLine) inputLine.style.display = 'none';
   editorOverlay.style.display = 'flex';
 
   const webWs = document.getElementById('web-workspace');
@@ -641,7 +1677,8 @@ function showMonWorkspace() {
   }
 
   document.getElementById('terminal-output').style.display = 'none';
-  document.getElementById('input-line').style.display = 'none';
+  const inputLine = document.getElementById('terminal-input-line');
+  if (inputLine) inputLine.style.display = 'none';
   document.getElementById('code-editor-overlay').style.display = 'none';
   document.getElementById('mon-workspace').style.display = 'block';
 
@@ -960,22 +1997,904 @@ function searchManPage() {
   const content = document.getElementById('man-content');
   const query = searchInput.value.toLowerCase().trim();
 
+  // Clear previous content
+  content.innerHTML = '';
+
   if (MAN_PAGES[query]) {
     const page = MAN_PAGES[query];
-    content.innerHTML = `
-      <div style="color: var(--accent-yellow); margin-bottom: 10px;">
-        ${page.name.toUpperCase()}(${page.section}) - ${page.description}
-      </div>
-      <div style="white-space: pre-wrap; font-family: monospace; font-size: 11px;">
-        ${page.content}
-      </div>
-    `;
+
+    const header = document.createElement('div');
+    header.style.color = 'var(--accent-yellow)';
+    header.style.marginBottom = '10px';
+    header.textContent = `${page.name.toUpperCase()}(${page.section}) - ${page.description}`;
+
+    const body = document.createElement('div');
+    body.style.whiteSpace = 'pre-wrap';
+    body.style.fontFamily = 'monospace';
+    body.style.fontSize = '11px';
+    // page.content is controlled data, safe to inject as text
+    body.textContent = page.content;
+
+    content.appendChild(header);
+    content.appendChild(body);
   } else {
-    content.innerHTML = `
-      <div style="color: var(--accent-red);">No manual entry for '${query}'</div>
-      <br>
-      <div style="color: var(--text-muted);">Try one of: ${Object.keys(MAN_PAGES).join(', ')}</div>
+    const notFound = document.createElement('div');
+    notFound.style.color = 'var(--accent-red)';
+    notFound.textContent = `No manual entry for '${query}'`;
+
+    const hintSpacer = document.createElement('br');
+
+    const hint = document.createElement('div');
+    hint.style.color = 'var(--text-muted)';
+    hint.textContent = `Try one of: ${Object.keys(MAN_PAGES).join(', ')}`;
+
+    content.appendChild(notFound);
+    content.appendChild(hintSpacer);
+    content.appendChild(hint);
+  }
+}
+
+// ============================================
+// VIM WORKSPACE - Full vim-like editor with LinuxFS
+// ============================================
+const VimWorkspace = {
+  isOpen: false,
+  mode: 'normal', // normal, insert, visual, visualLine, command
+  filename: '',
+  content: '',
+  savedContent: '',
+  cursorPos: 0,
+  visualAnchor: 0,
+  lines: [],
+  scrollTop: 0,
+  cursorBlinkInterval: null,
+  cursorVisible: true,
+  commandBuffer: '',
+  yankBuffer: '',
+  lastSearch: '',
+
+  // DOM elements
+  elements: {
+    workspace: null,
+    content: null,
+    lines: null,
+    filename: null,
+    modeDisplay: null,
+    status: null,
+    message: null,
+    command: null,
+    cmdInput: null,
+    cursor: null
+  },
+
+  init() {
+    this.elements.workspace = document.getElementById('vim-workspace');
+    this.elements.content = document.getElementById('vim-content');
+    this.elements.lines = document.getElementById('vim-lines');
+    this.elements.filename = document.getElementById('vim-filename');
+    this.elements.modeDisplay = document.getElementById('vim-mode');
+    this.elements.status = document.getElementById('vim-status');
+    this.elements.message = document.getElementById('vim-message');
+    this.elements.command = document.getElementById('vim-command');
+    this.elements.cmdInput = document.getElementById('vim-cmd-input');
+
+    if (!this.elements.workspace) return;
+
+    // Create block cursor element
+    this.elements.cursor = document.createElement('div');
+    this.elements.cursor.id = 'vim-block-cursor';
+    this.elements.cursor.style.cssText = `
+      position: absolute;
+      background: var(--accent-green);
+      width: 8px;
+      height: 18px;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.8;
     `;
+    const body = document.getElementById('vim-body');
+    if (body) {
+      body.style.position = 'relative';
+      body.appendChild(this.elements.cursor);
+    }
+
+    this.setupEventListeners();
+  },
+
+  setupEventListeners() {
+    const content = this.elements.content;
+    const cmdInput = this.elements.cmdInput;
+
+    if (!content) return;
+
+    // Main keydown handler for vim
+    content.addEventListener('keydown', (e) => this.handleKeydown(e));
+    content.addEventListener('input', () => this.handleInput());
+    content.addEventListener('click', () => this.updateCursor());
+    content.addEventListener('scroll', () => {
+      this.scrollTop = content.scrollTop;
+      this.updateLineNumbers();
+      this.updateCursor();
+    });
+
+    // Command input handler
+    if (cmdInput) {
+      cmdInput.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.executeCommand(cmdInput.value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          this.setMode('normal');
+        }
+      });
+    }
+  },
+
+  open(filename) {
+    if (!this.elements.workspace) this.init();
+
+    this.filename = filename || '';
+
+    // Try to read file from LinuxFS
+    if (filename && typeof LinuxFS !== 'undefined') {
+      const content = LinuxFS.readFile(filename);
+      if (content !== null) {
+        this.content = content;
+        this.savedContent = content;
+      } else {
+        // New file
+        this.content = '';
+        this.savedContent = '';
+      }
+    } else {
+      this.content = '';
+      this.savedContent = '';
+    }
+
+    this.isOpen = true;
+    this.elements.content.value = this.content;
+    this.elements.filename.textContent = filename || '-- No file --';
+    this.cursorPos = 0;
+
+    // Hide other workspaces
+    document.getElementById('terminal-output').style.display = 'none';
+    const inputLine = document.getElementById('terminal-input-line');
+    if (inputLine) inputLine.style.display = 'none';
+    document.getElementById('code-editor-overlay').style.display = 'none';
+
+    const webWs = document.getElementById('web-workspace');
+    if (webWs) {
+      webWs.style.display = 'none';
+      webWs.classList.remove('active');
+    }
+    const monWs = document.getElementById('mon-workspace');
+    if (monWs) {
+      monWs.style.display = 'none';
+      monWs.classList.remove('active');
+    }
+
+    // Show vim workspace using active class (to override !important CSS rule)
+    this.elements.workspace.classList.add('active');
+    this.elements.workspace.style.display = 'flex';
+
+    setActiveWorkspace(3);
+    this.setMode('normal');
+    this.updateLineNumbers();
+    this.updateCursor();
+    this.startCursorBlink();
+
+    this.elements.content.focus();
+    this.showMessage(filename ? `"${filename}"` : '[New File]');
+  },
+
+  close(save = false) {
+    if (save && this.filename) {
+      this.saveFile();
+    }
+
+    this.isOpen = false;
+    this.stopCursorBlink();
+    this.elements.workspace.classList.remove('active');
+    this.elements.workspace.style.display = 'none';
+
+    // Return to terminal
+    document.getElementById('terminal-output').style.display = 'block';
+    const inputLine = document.getElementById('terminal-input-line');
+    if (inputLine) inputLine.style.display = 'flex';
+    setActiveWorkspace(1);
+    document.getElementById('terminal-input').focus();
+  },
+
+  saveFile() {
+    if (!this.filename) {
+      this.showMessage('E32: No file name', 'error');
+      return false;
+    }
+
+    const content = this.elements.content.value;
+
+    if (typeof LinuxFS !== 'undefined') {
+      if (LinuxFS.writeFile(this.filename, content)) {
+        this.savedContent = content;
+        this.showMessage(`"${this.filename}" written`);
+        return true;
+      } else {
+        this.showMessage('E212: Cannot open file for writing', 'error');
+        return false;
+      }
+    }
+
+    return false;
+  },
+
+  setMode(mode) {
+    this.mode = mode;
+    const content = this.elements.content;
+    const modeDisplay = this.elements.modeDisplay;
+    const cmdDiv = this.elements.command;
+
+    // Exit visual mode - collapse selection
+    if (mode !== 'visual' && mode !== 'visualLine') {
+      const pos = content.selectionStart;
+      content.setSelectionRange(pos, pos);
+    }
+
+    switch (mode) {
+      case 'normal':
+        modeDisplay.textContent = '-- NORMAL --';
+        content.readOnly = true;
+        content.classList.add('normal-mode');
+        cmdDiv.style.display = 'none';
+        this.startCursorBlink();
+        break;
+
+      case 'insert':
+        modeDisplay.textContent = '-- INSERT --';
+        content.readOnly = false;
+        content.classList.remove('normal-mode');
+        cmdDiv.style.display = 'none';
+        this.stopCursorBlink();
+        this.elements.cursor.style.display = 'none';
+        break;
+
+      case 'visual':
+        modeDisplay.textContent = '-- VISUAL --';
+        content.readOnly = true;
+        content.classList.add('normal-mode');
+        cmdDiv.style.display = 'none';
+        this.visualAnchor = content.selectionStart;
+        break;
+
+      case 'visualLine':
+        modeDisplay.textContent = '-- VISUAL LINE --';
+        content.readOnly = true;
+        content.classList.add('normal-mode');
+        cmdDiv.style.display = 'none';
+        this.visualAnchor = content.selectionStart;
+        this.selectCurrentLine();
+        break;
+
+      case 'command':
+        modeDisplay.textContent = '';
+        cmdDiv.style.display = 'block';
+        this.elements.cmdInput.value = ':';
+        this.elements.cmdInput.focus();
+        this.elements.cmdInput.setSelectionRange(1, 1);
+        break;
+    }
+
+    this.updateCursor();
+  },
+
+  handleKeydown(e) {
+    if (this.mode === 'command') return;
+
+    if (this.mode === 'normal' || this.mode === 'visual' || this.mode === 'visualLine') {
+      this.handleNormalModeKey(e);
+    } else if (this.mode === 'insert') {
+      this.handleInsertModeKey(e);
+    }
+  },
+
+  handleNormalModeKey(e) {
+    const content = this.elements.content;
+    const value = content.value;
+    let pos = content.selectionStart;
+
+    // Escape - return to normal mode / cancel visual
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      this.setMode('normal');
+      return;
+    }
+
+    // Mode changes
+    if (e.key === 'i' && this.mode === 'normal') {
+      e.preventDefault();
+      this.setMode('insert');
+      return;
+    }
+
+    if (e.key === 'a' && this.mode === 'normal') {
+      e.preventDefault();
+      // Move cursor one right then enter insert
+      const newPos = Math.min(pos + 1, value.length);
+      content.setSelectionRange(newPos, newPos);
+      this.setMode('insert');
+      return;
+    }
+
+    if (e.key === 'I' && this.mode === 'normal') {
+      e.preventDefault();
+      // Move to start of line, enter insert
+      const lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+      content.setSelectionRange(lineStart, lineStart);
+      this.setMode('insert');
+      return;
+    }
+
+    if (e.key === 'A' && this.mode === 'normal') {
+      e.preventDefault();
+      // Move to end of line, enter insert
+      let lineEnd = value.indexOf('\n', pos);
+      if (lineEnd === -1) lineEnd = value.length;
+      content.setSelectionRange(lineEnd, lineEnd);
+      this.setMode('insert');
+      return;
+    }
+
+    if (e.key === 'o' && this.mode === 'normal') {
+      e.preventDefault();
+      // Open line below
+      let lineEnd = value.indexOf('\n', pos);
+      if (lineEnd === -1) lineEnd = value.length;
+      const newValue = value.slice(0, lineEnd) + '\n' + value.slice(lineEnd);
+      content.value = newValue;
+      content.setSelectionRange(lineEnd + 1, lineEnd + 1);
+      this.setMode('insert');
+      this.updateLineNumbers();
+      return;
+    }
+
+    if (e.key === 'O' && this.mode === 'normal') {
+      e.preventDefault();
+      // Open line above
+      const lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+      const newValue = value.slice(0, lineStart) + '\n' + value.slice(lineStart);
+      content.value = newValue;
+      content.setSelectionRange(lineStart, lineStart);
+      this.setMode('insert');
+      this.updateLineNumbers();
+      return;
+    }
+
+    if (e.key === ':') {
+      e.preventDefault();
+      this.setMode('command');
+      return;
+    }
+
+    // Visual mode toggle
+    if (e.key === 'v' && !e.ctrlKey && (this.mode === 'normal' || this.mode === 'visual')) {
+      e.preventDefault();
+      if (this.mode === 'visual') {
+        this.setMode('normal');
+      } else {
+        this.setMode('visual');
+      }
+      return;
+    }
+
+    if (e.key === 'V' && !e.ctrlKey && (this.mode === 'normal' || this.mode === 'visualLine')) {
+      e.preventDefault();
+      if (this.mode === 'visualLine') {
+        this.setMode('normal');
+      } else {
+        this.setMode('visualLine');
+      }
+      return;
+    }
+
+    // Navigation - hjkl
+    if (e.key === 'h' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      this.moveCursor(Math.max(0, pos - 1));
+      return;
+    }
+
+    if (e.key === 'l' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      this.moveCursor(Math.min(value.length, pos + 1));
+      return;
+    }
+
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      this.moveCursorVertical(1);
+      return;
+    }
+
+    if (e.key === 'k' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      this.moveCursorVertical(-1);
+      return;
+    }
+
+    // Line navigation
+    if (e.key === '0') {
+      e.preventDefault();
+      const lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+      this.moveCursor(lineStart);
+      return;
+    }
+
+    if (e.key === '$') {
+      e.preventDefault();
+      let lineEnd = value.indexOf('\n', pos);
+      if (lineEnd === -1) lineEnd = value.length;
+      this.moveCursor(lineEnd);
+      return;
+    }
+
+    if (e.key === '^') {
+      e.preventDefault();
+      const lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+      // Find first non-whitespace
+      let firstChar = lineStart;
+      while (firstChar < value.length && (value[firstChar] === ' ' || value[firstChar] === '\t')) {
+        firstChar++;
+      }
+      this.moveCursor(firstChar);
+      return;
+    }
+
+    // Word navigation
+    if (e.key === 'w') {
+      e.preventDefault();
+      const nextWord = this.findNextWord(pos);
+      this.moveCursor(nextWord);
+      return;
+    }
+
+    if (e.key === 'b') {
+      e.preventDefault();
+      const prevWord = this.findPrevWord(pos);
+      this.moveCursor(prevWord);
+      return;
+    }
+
+    // Document navigation
+    if (e.key === 'g' && !e.ctrlKey) {
+      e.preventDefault();
+      this.commandBuffer += 'g';
+      if (this.commandBuffer === 'gg') {
+        this.moveCursor(0);
+        this.commandBuffer = '';
+      }
+      return;
+    }
+
+    if (e.key === 'G') {
+      e.preventDefault();
+      this.moveCursor(value.length);
+      return;
+    }
+
+    // Delete operations in normal mode
+    if (e.key === 'x' && this.mode === 'normal') {
+      e.preventDefault();
+      if (pos < value.length && value[pos] !== '\n') {
+        content.value = value.slice(0, pos) + value.slice(pos + 1);
+        this.updateLineNumbers();
+      }
+      return;
+    }
+
+    if (e.key === 'd' && this.mode === 'normal') {
+      e.preventDefault();
+      this.commandBuffer += 'd';
+      if (this.commandBuffer === 'dd') {
+        this.deleteLine();
+        this.commandBuffer = '';
+      }
+      return;
+    }
+
+    // Yank (copy)
+    if (e.key === 'y' && (this.mode === 'visual' || this.mode === 'visualLine')) {
+      e.preventDefault();
+      this.yankBuffer = content.value.slice(
+        Math.min(content.selectionStart, content.selectionEnd),
+        Math.max(content.selectionStart, content.selectionEnd)
+      );
+      this.showMessage(`${this.yankBuffer.split('\n').length} lines yanked`);
+      this.setMode('normal');
+      return;
+    }
+
+    // Paste
+    if (e.key === 'p' && this.mode === 'normal') {
+      e.preventDefault();
+      if (this.yankBuffer) {
+        const newValue = value.slice(0, pos + 1) + this.yankBuffer + value.slice(pos + 1);
+        content.value = newValue;
+        this.updateLineNumbers();
+        this.showMessage('Pasted');
+      }
+      return;
+    }
+
+    // Undo (u) - use browser native
+    if (e.key === 'u' && this.mode === 'normal') {
+      e.preventDefault();
+      document.execCommand('undo');
+      this.updateLineNumbers();
+      return;
+    }
+
+    // Redo (Ctrl+r)
+    if (e.key === 'r' && e.ctrlKey) {
+      e.preventDefault();
+      document.execCommand('redo');
+      this.updateLineNumbers();
+      return;
+    }
+
+    // Clear command buffer on other keys
+    if (!['g', 'd', 'y'].includes(e.key)) {
+      this.commandBuffer = '';
+    }
+
+    // Block other text input in normal mode
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+    }
+  },
+
+  handleInsertModeKey(e) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      // Move cursor one left when exiting insert mode (vim behavior)
+      const content = this.elements.content;
+      const pos = content.selectionStart;
+      if (pos > 0) {
+        content.setSelectionRange(pos - 1, pos - 1);
+      }
+      this.setMode('normal');
+      return;
+    }
+  },
+
+  handleInput() {
+    if (this.mode === 'insert') {
+      this.updateLineNumbers();
+      this.updateStatus();
+    }
+  },
+
+  moveCursor(newPos) {
+    const content = this.elements.content;
+
+    if (this.mode === 'visual') {
+      // Update visual selection
+      const start = Math.min(this.visualAnchor, newPos);
+      const end = Math.max(this.visualAnchor, newPos);
+      content.setSelectionRange(start, end);
+    } else if (this.mode === 'visualLine') {
+      // Update line-wise selection
+      this.updateLineSelection(newPos);
+    } else {
+      content.setSelectionRange(newPos, newPos);
+    }
+
+    this.cursorPos = newPos;
+    this.updateCursor();
+    this.updateStatus();
+  },
+
+  moveCursorVertical(direction) {
+    const content = this.elements.content;
+    const value = content.value;
+    const pos = content.selectionStart;
+
+    // Calculate current line and column
+    const before = value.slice(0, pos);
+    const lines = before.split('\n');
+    const currentLine = lines.length - 1;
+    const currentCol = lines[lines.length - 1].length;
+
+    // Calculate target line
+    const allLines = value.split('\n');
+    const targetLine = Math.max(0, Math.min(allLines.length - 1, currentLine + direction));
+
+    if (targetLine === currentLine) return;
+
+    // Calculate new position
+    let newPos = 0;
+    for (let i = 0; i < targetLine; i++) {
+      newPos += allLines[i].length + 1;
+    }
+    newPos += Math.min(currentCol, allLines[targetLine].length);
+
+    this.moveCursor(newPos);
+  },
+
+  updateLineSelection(cursorPos) {
+    const content = this.elements.content;
+    const value = content.value;
+
+    // Find line boundaries for anchor and cursor
+    const anchorLineStart = value.lastIndexOf('\n', this.visualAnchor - 1) + 1;
+    let anchorLineEnd = value.indexOf('\n', this.visualAnchor);
+    if (anchorLineEnd === -1) anchorLineEnd = value.length;
+
+    const cursorLineStart = value.lastIndexOf('\n', cursorPos - 1) + 1;
+    let cursorLineEnd = value.indexOf('\n', cursorPos);
+    if (cursorLineEnd === -1) cursorLineEnd = value.length;
+
+    const start = Math.min(anchorLineStart, cursorLineStart);
+    const end = Math.max(anchorLineEnd, cursorLineEnd);
+
+    content.setSelectionRange(start, end);
+  },
+
+  selectCurrentLine() {
+    const content = this.elements.content;
+    const value = content.value;
+    const pos = content.selectionStart;
+
+    const lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+    let lineEnd = value.indexOf('\n', pos);
+    if (lineEnd === -1) lineEnd = value.length;
+
+    content.setSelectionRange(lineStart, lineEnd);
+  },
+
+  deleteLine() {
+    const content = this.elements.content;
+    const value = content.value;
+    const pos = content.selectionStart;
+
+    const lineStart = value.lastIndexOf('\n', pos - 1) + 1;
+    let lineEnd = value.indexOf('\n', pos);
+    if (lineEnd === -1) lineEnd = value.length;
+    else lineEnd++; // Include the newline
+
+    // Save to yank buffer
+    this.yankBuffer = value.slice(lineStart, lineEnd);
+
+    content.value = value.slice(0, lineStart) + value.slice(lineEnd);
+    content.setSelectionRange(lineStart, lineStart);
+    this.updateLineNumbers();
+  },
+
+  findNextWord(pos) {
+    const value = this.elements.content.value;
+    let i = pos;
+
+    // Skip current word
+    while (i < value.length && /\w/.test(value[i])) i++;
+    // Skip whitespace
+    while (i < value.length && /\s/.test(value[i])) i++;
+
+    return i;
+  },
+
+  findPrevWord(pos) {
+    const value = this.elements.content.value;
+    let i = pos - 1;
+
+    // Skip whitespace
+    while (i > 0 && /\s/.test(value[i])) i--;
+    // Skip word
+    while (i > 0 && /\w/.test(value[i - 1])) i--;
+
+    return Math.max(0, i);
+  },
+
+  executeCommand(cmd) {
+    cmd = cmd.trim();
+
+    if (cmd === ':w') {
+      this.saveFile();
+      this.setMode('normal');
+    } else if (cmd.startsWith(':w ')) {
+      const filename = cmd.slice(3).trim();
+      this.filename = filename;
+      this.elements.filename.textContent = filename;
+      this.saveFile();
+      this.setMode('normal');
+    } else if (cmd === ':q') {
+      if (this.elements.content.value !== this.savedContent) {
+        this.showMessage('E37: No write since last change (add ! to override)', 'error');
+        this.setMode('normal');
+      } else {
+        this.close(false);
+      }
+    } else if (cmd === ':q!') {
+      this.close(false);
+    } else if (cmd === ':wq' || cmd === ':x') {
+      this.close(true);
+    } else if (cmd.startsWith(':e ')) {
+      const filename = cmd.slice(3).trim();
+      this.open(filename);
+    } else if (cmd === ':ls' || cmd === ':files') {
+      // List files in current directory
+      if (typeof LinuxFS !== 'undefined') {
+        const files = LinuxFS.readdir(LinuxFS.cwd);
+        if (files) {
+          this.showMessage(files.join('  '));
+        }
+      }
+      this.setMode('normal');
+    } else if (cmd.startsWith(':set ')) {
+      const setting = cmd.slice(5).trim();
+      if (setting === 'number' || setting === 'nu') {
+        this.updateLineNumbers(false);
+        this.showMessage('Line numbers enabled');
+      } else if (setting === 'relativenumber' || setting === 'rnu') {
+        this.updateLineNumbers(true);
+        this.showMessage('Relative line numbers enabled');
+      }
+      this.setMode('normal');
+    } else if (cmd.match(/^:\d+$/)) {
+      // Go to line number
+      const lineNum = parseInt(cmd.slice(1));
+      this.goToLine(lineNum);
+      this.setMode('normal');
+    } else {
+      this.showMessage(`E492: Not an editor command: ${cmd}`, 'error');
+      this.setMode('normal');
+    }
+  },
+
+  goToLine(lineNum) {
+    const content = this.elements.content;
+    const lines = content.value.split('\n');
+    const targetLine = Math.max(1, Math.min(lines.length, lineNum)) - 1;
+
+    let pos = 0;
+    for (let i = 0; i < targetLine; i++) {
+      pos += lines[i].length + 1;
+    }
+
+    this.moveCursor(pos);
+  },
+
+  updateLineNumbers(relative = true) {
+    const content = this.elements.content;
+    const linesEl = this.elements.lines;
+    if (!content || !linesEl) return;
+
+    const lines = content.value.split('\n');
+    const lineCount = lines.length;
+
+    // Get current line for relative numbering
+    const pos = content.selectionStart;
+    const before = content.value.slice(0, pos);
+    const currentLine = before.split('\n').length;
+
+    let lineNums = '';
+    for (let i = 1; i <= Math.max(lineCount, 20); i++) {
+      if (relative && i !== currentLine) {
+        // Show relative line number
+        const relNum = Math.abs(i - currentLine);
+        lineNums += String(relNum).padStart(3, ' ') + '\n';
+      } else {
+        // Show absolute line number (current line or non-relative mode)
+        lineNums += String(i).padStart(3, ' ') + '\n';
+      }
+    }
+
+    linesEl.textContent = lineNums;
+  },
+
+  updateCursor() {
+    if (this.mode !== 'normal' && this.mode !== 'visual' && this.mode !== 'visualLine') {
+      if (this.elements.cursor) {
+        this.elements.cursor.style.display = 'none';
+      }
+      return;
+    }
+
+    const content = this.elements.content;
+    const cursor = this.elements.cursor;
+    if (!content || !cursor) return;
+
+    cursor.style.display = 'block';
+
+    const pos = content.selectionStart;
+    const value = content.value;
+
+    // Calculate line and column
+    const before = value.slice(0, pos);
+    const lines = before.split('\n');
+    const lineNum = lines.length - 1;
+    const col = lines[lines.length - 1].length;
+
+    // Position cursor (approximate based on monospace font)
+    const lineHeight = 18; // 12px font * 1.5 line-height
+    const charWidth = 7.2; // Approximate for 12px monospace
+
+    const linesWidth = 50; // Width of line numbers column
+    const padding = 8;
+
+    const x = linesWidth + padding + (col * charWidth);
+    const y = (lineNum * lineHeight) - content.scrollTop + padding;
+
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+    cursor.style.opacity = this.cursorVisible ? '0.8' : '0';
+  },
+
+  updateStatus() {
+    const content = this.elements.content;
+    const status = this.elements.status;
+    if (!content || !status) return;
+
+    const pos = content.selectionStart;
+    const value = content.value;
+    const before = value.slice(0, pos);
+    const lines = before.split('\n');
+    const lineNum = lines.length;
+    const col = lines[lines.length - 1].length + 1;
+
+    status.textContent = `Ln ${lineNum}, Col ${col}`;
+
+    // Update line numbers to reflect current position for relative numbering
+    this.updateLineNumbers(true);
+  },
+
+  showMessage(msg, type = 'info') {
+    const message = this.elements.message;
+    if (!message) return;
+
+    message.textContent = msg;
+    message.style.color = type === 'error' ? 'var(--accent-red)' : 'var(--text-secondary)';
+
+    // Clear message after 3 seconds
+    setTimeout(() => {
+      if (message.textContent === msg) {
+        message.textContent = '';
+      }
+    }, 3000);
+  },
+
+  startCursorBlink() {
+    this.stopCursorBlink();
+    this.cursorVisible = true;
+    this.cursorBlinkInterval = setInterval(() => {
+      this.cursorVisible = !this.cursorVisible;
+      this.updateCursor();
+    }, 530);
+  },
+
+  stopCursorBlink() {
+    if (this.cursorBlinkInterval) {
+      clearInterval(this.cursorBlinkInterval);
+      this.cursorBlinkInterval = null;
+    }
+    this.cursorVisible = true;
+  }
+};
+
+// Override workspace 3 to use VimWorkspace
+function showVimWorkspace(filename) {
+  VimWorkspace.open(filename);
+}
+
+// Add vim command to terminal
+function handleVimCommand(args) {
+  const filename = args[0] || '';
+
+  if (filename) {
+    // Resolve path using LinuxFS
+    const fullPath = LinuxFS.resolvePath(filename);
+    VimWorkspace.open(fullPath);
+  } else {
+    VimWorkspace.open('');
   }
 }
 
@@ -987,6 +2906,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAdminAuth();
     createMusicPlayer();
     initWorkspaceTabs();
+    VimWorkspace.init();
   }, 500);
 });
 </script>

@@ -253,21 +253,21 @@ async function handleLevel5Command(cmd, args) {
     print('║             LEVEL 5 PROGRESS - KERNEL EXPLOITATION                ║', 'info');
     print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
     print('║  RECONNAISSANCE:                                                  ║', 'info');
-    print(`║    [${state.analyzedModule ? '✓' : ' '}] Kernel module analyzed                              ║`, state.analyzedModule ? 'success' : 'system');
-    print(`║    [${state.foundVuln ? '✓' : ' '}] Vulnerability identified                               ║`, state.foundVuln ? 'success' : 'system');
-    print(`║    [${state.reversedIoctl ? '✓' : ' '}] IOCTL interface reversed                              ║`, state.reversedIoctl ? 'success' : 'system');
+    print(`║    [${state.analyzedModule ? 'x' : ' '}] Kernel module analyzed                              ║`, state.analyzedModule ? 'success' : 'system');
+    print(`║    [${state.foundVuln ? 'x' : ' '}] Vulnerability identified                               ║`, state.foundVuln ? 'success' : 'system');
+    print(`║    [${state.reversedIoctl ? 'x' : ' '}] IOCTL interface reversed                              ║`, state.reversedIoctl ? 'success' : 'system');
     print('║                                                                   ║', 'info');
     print('║  EXPLOITATION CHAIN:                                              ║', 'warning');
-    print(`║    [${state.allocatedObject ? '✓' : ' '}] Object allocated                                     ║`, state.allocatedObject ? 'success' : 'system');
-    print(`║    [${state.freedObject ? '✓' : ' '}] Object freed (dangling pointer created)              ║`, state.freedObject ? 'success' : 'system');
-    print(`║    [${state.heapSprayed ? '✓' : ' '}] Heap sprayed with msg_msg                             ║`, state.heapSprayed ? 'success' : 'system');
-    print(`║    [${state.leakedPointer ? '✓' : ' '}] Kernel pointer leaked                                 ║`, state.leakedPointer ? 'success' : 'system');
-    print(`║    [${state.calculatedKaslr ? '✓' : ' '}] KASLR base calculated                                ║`, state.calculatedKaslr ? 'success' : 'system');
+    print(`║    [${state.allocatedObject ? 'x' : ' '}] Object allocated                                     ║`, state.allocatedObject ? 'success' : 'system');
+    print(`║    [${state.freedObject ? 'x' : ' '}] Object freed (dangling pointer created)              ║`, state.freedObject ? 'success' : 'system');
+    print(`║    [${state.heapSprayed ? 'x' : ' '}] Heap sprayed with msg_msg                             ║`, state.heapSprayed ? 'success' : 'system');
+    print(`║    [${state.leakedPointer ? 'x' : ' '}] Kernel pointer leaked                                 ║`, state.leakedPointer ? 'success' : 'system');
+    print(`║    [${state.calculatedKaslr ? 'x' : ' '}] KASLR base calculated                                ║`, state.calculatedKaslr ? 'success' : 'system');
     print('║                                                                   ║', 'info');
     print('║  PRIVILEGE ESCALATION:                                            ║', 'error');
-    print(`║    [${state.overwrotePtr ? '✓' : ' '}] Function pointer overwritten                         ║`, state.overwrotePtr ? 'success' : 'system');
-    print(`║    [${state.triggeredExploit ? '✓' : ' '}] Exploit triggered                                     ║`, state.triggeredExploit ? 'success' : 'system');
-    print(`║    [${state.gotRoot ? '✓' : ' '}] ROOT OBTAINED                                          ║`, state.gotRoot ? 'success' : 'system');
+    print(`║    [${state.overwrotePtr ? 'x' : ' '}] Function pointer overwritten                         ║`, state.overwrotePtr ? 'success' : 'system');
+    print(`║    [${state.triggeredExploit ? 'x' : ' '}] Exploit triggered                                     ║`, state.triggeredExploit ? 'success' : 'system');
+    print(`║    [${state.gotRoot ? 'x' : ' '}] ROOT OBTAINED                                          ║`, state.gotRoot ? 'success' : 'system');
     print('╠═══════════════════════════════════════════════════════════════════╣', 'info');
     print(`║  Progress: ${String(progress).padStart(3)}%                                                  ║`, progress === 100 ? 'success' : 'warning');
     print(`║  Current: ${state.currentUser}@target                                          ║`, state.currentUser === 'root' ? 'success' : 'system');
@@ -285,7 +285,7 @@ async function handleLevel5Command(cmd, args) {
   // ═══════════════════════════════════════════════════════════════
   if (cmd === 'hint') {
     print('');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
 
     if (!state.analyzedModule) {
       print('Start by analyzing the vulnerable kernel module.', 'info');
@@ -459,6 +459,429 @@ async function handleLevel5Command(cmd, args) {
     print('');
     print('[+] Function pointer is at offset 0x50 (80 bytes)', 'success');
     print('[+] We can control this via heap spray!', 'success');
+
+    state.reversedIoctl = true;
+    autosave();
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GDB - Kernel debugger simulation
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'gdb') {
+    if (!state.analyzedModule) {
+      print('[!] Analyze the module first to understand what to debug', 'warning');
+      return;
+    }
+
+    print('');
+    print('GNU gdb (GDB) 13.2', 'system');
+    print('Copyright (C) 2023 Free Software Foundation, Inc.', 'muted');
+    print('License GPLv3+: GNU GPL version 3 or later', 'muted');
+    print('');
+    print('Reading symbols from /lib/modules/5.15.0-generic/kernel/drivers/misc/vuln_driver.ko...', 'system');
+    print('(No debugging symbols found in vuln_driver.ko)', 'warning');
+    print('');
+    print('[*] Attaching to kernel...', 'warning');
+    await sleep(800);
+    print('[+] Successfully attached to vmlinux', 'success');
+    print('[+] KASLR detected - addresses randomized', 'warning');
+    print('');
+
+    state.debugMode = true;
+
+    print('╔═════════════════════════════════════════════════════════════════════════════════╗', 'info');
+    print('║                            GDB KERNEL DEBUG MODE                                ║', 'info');
+    print('╠═════════════════════════════════════════════════════════════════════════════════╣', 'info');
+    print('║  GDB Commands Available:                                                        ║', 'info');
+    print('║    disas <func>        Disassemble function (vuln_ioctl, alloc_obj, free_obj)   ║', 'system');
+    print('║    x/<n><fmt> <addr>   Examine memory (x/10gx, x/20i, x/s)                     ║', 'system');
+    print('║    info registers      Show CPU registers                                       ║', 'system');
+    print('║    info proc mappings  Show kernel memory mappings                              ║', 'system');
+    print('║    p <symbol>          Print symbol address (commit_creds, prepare_kernel_cred) ║', 'system');
+    print('║    bt                  Show kernel backtrace                                    ║', 'system');
+    print('║    break <addr>        Set breakpoint                                           ║', 'system');
+    print('║    vmmap               Show virtual memory map                                  ║', 'system');
+    print('║    quit / q            Exit GDB mode                                            ║', 'system');
+    print('╚═════════════════════════════════════════════════════════════════════════════════╝', 'info');
+    print('');
+    print('(gdb) ', 'warning');
+
+    // Set up GDB mode - next command will be interpreted as GDB command
+    gameState.gdbMode = true;
+    autosave();
+    return;
+  }
+
+  // GDB sub-commands when in debug mode
+  if (gameState.gdbMode) {
+    const gdbCmd = cmd.toLowerCase();
+
+    // Exit GDB
+    if (gdbCmd === 'quit' || gdbCmd === 'q') {
+      print('[*] Detaching from kernel...', 'system');
+      gameState.gdbMode = false;
+      print('', 'system');
+      return;
+    }
+
+    // Disassemble function
+    if (gdbCmd === 'disas' || gdbCmd === 'disassemble') {
+      const func = args[0] || 'vuln_ioctl';
+
+      if (func === 'vuln_ioctl' || func === 'vuln_driver_ioctl') {
+        print('Dump of assembler code for function vuln_driver_ioctl:', 'info');
+        print('   0xffffffffc0001000 <+0>:     endbr64', 'system');
+        print('   0xffffffffc0001004 <+4>:     push   rbp', 'system');
+        print('   0xffffffffc0001005 <+5>:     mov    rbp,rsp', 'system');
+        print('   0xffffffffc0001008 <+8>:     push   rbx', 'system');
+        print('   0xffffffffc0001009 <+9>:     sub    rsp,0x18', 'system');
+        print('   0xffffffffc000100d <+13>:    mov    QWORD PTR [rbp-0x18],rdi', 'system');
+        print('   0xffffffffc0001011 <+17>:    mov    DWORD PTR [rbp-0x1c],esi', 'system');
+        print('   0xffffffffc0001014 <+20>:    mov    QWORD PTR [rbp-0x28],rdx', 'system');
+        print('   0xffffffffc0001018 <+24>:    cmp    DWORD PTR [rbp-0x1c],0x1337  ; ALLOC_OBJ', 'success');
+        print('   0xffffffffc000101f <+31>:    je     0xffffffffc0001050 <alloc_handler>', 'system');
+        print('   0xffffffffc0001021 <+33>:    cmp    DWORD PTR [rbp-0x1c],0x1338  ; FREE_OBJ', 'warning');
+        print('   0xffffffffc0001028 <+40>:    je     0xffffffffc0001080 <free_handler>', 'system');
+        print('   0xffffffffc000102a <+42>:    cmp    DWORD PTR [rbp-0x1c],0x1339  ; USE_OBJ', 'error');
+        print('   0xffffffffc0001031 <+49>:    je     0xffffffffc00010b0 <use_handler>', 'system');
+        print('   0xffffffffc0001033 <+51>:    cmp    DWORD PTR [rbp-0x1c],0x133a  ; READ_OBJ', 'system');
+        print('   0xffffffffc000103a <+58>:    je     0xffffffffc00010e0 <read_handler>', 'system');
+        print('   0xffffffffc000103c <+60>:    mov    eax,0xffffffea              ; -EINVAL', 'system');
+        print('   0xffffffffc0001041 <+65>:    jmp    0xffffffffc0001100 <vuln_driver_ioctl+256>', 'system');
+        print('End of assembler dump.', 'info');
+      } else if (func === 'alloc_obj' || func === 'alloc_handler') {
+        print('Dump of assembler code for function alloc_handler:', 'info');
+        print('   0xffffffffc0001050 <+0>:     push   rbp', 'system');
+        print('   0xffffffffc0001051 <+1>:     mov    rbp,rsp', 'system');
+        print('   0xffffffffc0001054 <+4>:     mov    edi,0x60                   ; size = 96', 'success');
+        print('   0xffffffffc0001059 <+9>:     mov    esi,0xcc0                  ; GFP_KERNEL', 'system');
+        print('   0xffffffffc000105e <+14>:    call   0xffffffff81200000 <kmalloc>', 'system');
+        print('   0xffffffffc0001063 <+19>:    mov    QWORD PTR [rip+0x2000],rax ; global_obj = result', 'warning');
+        print('   0xffffffffc000106a <+26>:    xor    eax,eax', 'system');
+        print('   0xffffffffc000106c <+28>:    pop    rbp', 'system');
+        print('   0xffffffffc000106d <+29>:    ret', 'system');
+        print('End of assembler dump.', 'info');
+      } else if (func === 'free_obj' || func === 'free_handler') {
+        print('Dump of assembler code for function free_handler:', 'info');
+        print('   0xffffffffc0001080 <+0>:     push   rbp', 'system');
+        print('   0xffffffffc0001081 <+1>:     mov    rbp,rsp', 'system');
+        print('   0xffffffffc0001084 <+4>:     mov    rdi,QWORD PTR [rip+0x2000] ; rdi = global_obj', 'system');
+        print('   0xffffffffc000108b <+11>:    call   0xffffffff81200100 <kfree>', 'warning');
+        print('   0xffffffffc0001090 <+16>:    xor    eax,eax', 'system');
+        print('   0xffffffffc0001092 <+18>:    pop    rbp', 'system');
+        print('   0xffffffffc0001093 <+19>:    ret', 'system');
+        print('   ; ┌──────────────────────────────────────────────────────────────────┐', 'error');
+        print('   ; │ BUG: global_obj is NOT set to NULL after kfree!                  │', 'error');
+        print('   ; │ This creates a Use-After-Free vulnerability                      │', 'error');
+        print('   ; └──────────────────────────────────────────────────────────────────┘', 'error');
+        print('End of assembler dump.', 'info');
+      } else if (func === 'use_obj' || func === 'use_handler') {
+        print('Dump of assembler code for function use_handler:', 'info');
+        print('   0xffffffffc00010b0 <+0>:     push   rbp', 'system');
+        print('   0xffffffffc00010b1 <+1>:     mov    rbp,rsp', 'system');
+        print('   0xffffffffc00010b4 <+4>:     mov    rax,QWORD PTR [rip+0x2000] ; rax = global_obj', 'warning');
+        print('   0xffffffffc00010bb <+11>:    test   rax,rax', 'system');
+        print('   0xffffffffc00010be <+14>:    je     0xffffffffc00010d0', 'system');
+        print('   0xffffffffc00010c0 <+16>:    mov    rdi,rax                    ; arg0 = global_obj', 'system');
+        print('   0xffffffffc00010c3 <+19>:    call   QWORD PTR [rax+0x50]       ; CALL func_ptr!!!', 'error');
+        print('   ; ┌──────────────────────────────────────────────────────────────────┐', 'error');
+        print('   ; │ VULNERABILITY: Calls function pointer from potentially freed     │', 'error');
+        print('   ; │ memory at offset 0x50 (80 bytes). If we spray the heap after    │', 'error');
+        print('   ; │ free, we control this function pointer!                          │', 'error');
+        print('   ; └──────────────────────────────────────────────────────────────────┘', 'error');
+        print('   0xffffffffc00010c6 <+22>:    xor    eax,eax', 'system');
+        print('   0xffffffffc00010c8 <+24>:    pop    rbp', 'system');
+        print('   0xffffffffc00010c9 <+25>:    ret', 'system');
+        print('End of assembler dump.', 'info');
+      } else if (func === 'commit_creds') {
+        print('Dump of assembler code for function commit_creds:', 'info');
+        print('   0xffffffff810a9c70 <+0>:     endbr64', 'system');
+        print('   0xffffffff810a9c74 <+4>:     push   rbp', 'system');
+        print('   0xffffffff810a9c75 <+5>:     mov    rbp,rsp', 'system');
+        print('   0xffffffff810a9c78 <+8>:     push   r15', 'system');
+        print('   0xffffffff810a9c7a <+10>:    push   r14', 'system');
+        print('   0xffffffff810a9c7c <+12>:    push   r13', 'system');
+        print('   0xffffffff810a9c7e <+14>:    push   r12', 'system');
+        print('   0xffffffff810a9c80 <+16>:    mov    r12,rdi                    ; new credentials', 'success');
+        print('   0xffffffff810a9c83 <+19>:    push   rbx', 'system');
+        print('   0xffffffff810a9c84 <+20>:    sub    rsp,0x28', 'system');
+        print('   ... (function continues, modifies current->cred)', 'muted');
+        print('End of assembler dump.', 'info');
+      } else if (func === 'prepare_kernel_cred') {
+        print('Dump of assembler code for function prepare_kernel_cred:', 'info');
+        print('   0xffffffff810a9f50 <+0>:     endbr64', 'system');
+        print('   0xffffffff810a9f54 <+4>:     push   rbp', 'system');
+        print('   0xffffffff810a9f55 <+5>:     mov    rbp,rsp', 'system');
+        print('   0xffffffff810a9f58 <+8>:     push   r14', 'system');
+        print('   0xffffffff810a9f5a <+10>:    push   r13', 'system');
+        print('   0xffffffff810a9f5c <+12>:    push   r12', 'system');
+        print('   0xffffffff810a9f5e <+14>:    mov    r12,rdi                    ; daemon (NULL for init)', 'success');
+        print('   0xffffffff810a9f61 <+17>:    push   rbx', 'system');
+        print('   0xffffffff810a9f62 <+18>:    test   rdi,rdi                    ; if NULL, use init_cred', 'warning');
+        print('   0xffffffff810a9f65 <+21>:    je     0xffffffff810a9fa0         ; -> returns root creds!', 'error');
+        print('   ... (allocates new cred struct)', 'muted');
+        print('End of assembler dump.', 'info');
+      } else {
+        print(`No symbol "${func}" in current context.`, 'error');
+      }
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Examine memory
+    if (gdbCmd === 'x' || gdbCmd.startsWith('x/')) {
+      const format = gdbCmd.includes('/') ? gdbCmd.split('/')[1] : '8gx';
+      const addr = args[0] || '0xffffffff81000000';
+
+      if (addr.includes('global_obj') || addr === '0xffffffffc0003000') {
+        print(`0xffffffffc0003000 <global_obj>:  ${state.freedObject ? '0xffff888012345000 (DANGLING!)' : '0x0000000000000000'}`, state.freedObject ? 'error' : 'system');
+      } else if (format.includes('i')) {
+        // Instructions
+        print(`Examining ${format.match(/\\d+/) || 4} instructions at ${addr}:`, 'info');
+        print('   0xffffffff81000000:    leaq   0x600f11(%rip),%rdi', 'system');
+        print('   0xffffffff81000007:    pushq  %rsi', 'system');
+        print('   0xffffffff81000008:    call   0xffffffff81001000 <early_printk>', 'system');
+        print('   0xffffffff8100000d:    popq   %rsi', 'system');
+      } else if (format.includes('s')) {
+        // String
+        print(`${addr}:    "Linux version 5.15.0-generic"`, 'system');
+      } else {
+        // Hex dump
+        print(`${addr}:     0xffffffff81234567  0x0000000000000000`, 'system');
+        print(`${addr}+0x10: 0xffff888000000000  0xffffffff82000000`, 'system');
+      }
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Print symbol
+    if (gdbCmd === 'p' || gdbCmd === 'print') {
+      const sym = args[0];
+      const symbols = {
+        'commit_creds': '0xffffffff810a9c70',
+        'prepare_kernel_cred': '0xffffffff810a9f50',
+        'modprobe_path': '0xffffffff82563d80',
+        'core_pattern': '0xffffffff82563e80',
+        'init_cred': '0xffffffff82a40460',
+        'init_task': '0xffffffff82a10940',
+        'current_task': '0xffffffff82c14d00',
+        '_text': '0xffffffff81000000',
+        'kmalloc': '0xffffffff81200000',
+        'kfree': '0xffffffff81200100',
+        'global_obj': state.allocatedObject ? '0xffff888012345000' : '0x0'
+      };
+
+      if (symbols[sym]) {
+        print(`$1 = (void *) ${symbols[sym]} <${sym}>`, 'success');
+        if (sym === 'modprobe_path') {
+          print('  → "/sbin/modprobe"  ; TARGET for overwrite!', 'warning');
+        }
+      } else {
+        print(`No symbol "${sym}" in current context.`, 'error');
+      }
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Info registers
+    if (gdbCmd === 'info' && args[0] === 'registers') {
+      print('rax            0xffffffff81234567  -2128392825', 'system');
+      print('rbx            0xffff888012345000  -131941258141696', 'system');
+      print('rcx            0x0                 0', 'system');
+      print('rdx            0x0                 0', 'system');
+      print('rsi            0x1337              4919', 'success');
+      print('rdi            0xffff888011111000  -131941271527424', 'system');
+      print('rbp            0xffffc90000003f50  0xffffc90000003f50', 'system');
+      print('rsp            0xffffc90000003f30  0xffffc90000003f30', 'system');
+      print('r8             0x0                 0', 'system');
+      print('r9             0x0                 0', 'system');
+      print('rip            0xffffffffc0001018  0xffffffffc0001018 <vuln_driver_ioctl+24>', 'warning');
+      print('eflags         0x246               [ PF ZF IF ]', 'system');
+      print('cs             0x10                16', 'system');
+      print('ss             0x18                24', 'system');
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Info proc mappings
+    if (gdbCmd === 'info' && args[0] === 'proc') {
+      print('Mapped kernel memory regions:', 'info');
+      print('          Start Addr           End Addr       Size     Offset  Perms', 'system');
+      print('      0xffffffff81000000  0xffffffff82800000  0x1800000        0x0  r-xp   ; kernel text', 'success');
+      print('      0xffffffff82800000  0xffffffff82a00000  0x200000   0x1800000  r--p   ; kernel rodata', 'system');
+      print('      0xffffffff82a00000  0xffffffff82c00000  0x200000   0x1a00000  rw-p   ; kernel data', 'warning');
+      print('      0xffffffffc0000000  0xffffffffc0010000  0x10000          0x0  r-xp   ; vuln_driver.ko', 'error');
+      print('      0xffff888000000000  0xffffc88000000000               direct map', 'system');
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Backtrace
+    if (gdbCmd === 'bt' || gdbCmd === 'backtrace') {
+      print('#0  vuln_driver_ioctl (file=0xffff888011111000, cmd=0x1337, arg=0x0)', 'warning');
+      print('    at /home/build/vuln_driver/vuln_driver.c:42', 'system');
+      print('#1  0xffffffff8130a2b5 in do_vfs_ioctl (filp=0xffff888011111000, fd=3,', 'system');
+      print('    cmd=4919, arg=0) at fs/ioctl.c:877', 'system');
+      print('#2  0xffffffff8130a538 in __x64_sys_ioctl (regs=0xffffc90000003f58)', 'system');
+      print('    at fs/ioctl.c:926', 'system');
+      print('#3  0xffffffff81c00089 in do_syscall_64 (nr=16, regs=0xffffc90000003f58)', 'system');
+      print('    at arch/x86/entry/common.c:50', 'system');
+      print('#4  0xffffffff81e00082 in entry_SYSCALL_64 () at arch/x86/entry/entry_64.S:120', 'system');
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Set breakpoint
+    if (gdbCmd === 'break' || gdbCmd === 'b') {
+      const loc = args[0] || 'vuln_driver_ioctl';
+      print(`Breakpoint 1 at ${loc}`, 'success');
+      print('[*] Note: Breakpoints are simulated in this environment', 'muted');
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // vmmap
+    if (gdbCmd === 'vmmap') {
+      print('Virtual Memory Map:', 'info');
+      print('    LEGEND: STACK | HEAP | CODE | DATA | RWX | RODATA', 'muted');
+      print('', 'system');
+      print('    0xffffffff81000000 0xffffffff82800000 r-xp  24M   [kernel]', 'success');
+      print('    0xffffffff82800000 0xffffffff82a00000 r--p   2M   [kernel rodata]', 'system');
+      print('    0xffffffff82a00000 0xffffffff82c00000 rw-p   2M   [kernel data]', 'warning');
+      print('    0xffffffffc0000000 0xffffffffc0010000 r-xp  64K   vuln_driver.ko', 'error');
+      print('', 'system');
+      print('(gdb) ', 'warning');
+      return;
+    }
+
+    // Unknown GDB command
+    print(`Undefined command: "${cmd}". Try "help".`, 'error');
+    print('(gdb) ', 'warning');
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // KADDR - Look up kernel symbol address
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'kaddr') {
+    const symbol = args[0];
+    if (!symbol) {
+      print('Usage: kaddr <symbol>', 'error');
+      print('Example: kaddr commit_creds', 'info');
+      return;
+    }
+
+    const symbols = {
+      'commit_creds': { addr: '0xffffffff810a9c70', desc: 'Apply new credentials to current task' },
+      'prepare_kernel_cred': { addr: '0xffffffff810a9f50', desc: 'Prepare kernel credentials (NULL=root)' },
+      'modprobe_path': { addr: '0xffffffff82563d80', desc: 'Path to modprobe binary - OVERWRITE TARGET!' },
+      'core_pattern': { addr: '0xffffffff82563e80', desc: 'Core dump pattern - alternative overwrite target' },
+      'init_cred': { addr: '0xffffffff82a40460', desc: 'Initial credentials (uid=0, gid=0)' },
+      'init_task': { addr: '0xffffffff82a10940', desc: 'Initial/idle task struct' },
+      '_text': { addr: '0xffffffff81000000', desc: 'Kernel text start (KASLR base)' },
+      'kmalloc': { addr: '0xffffffff81200000', desc: 'Kernel memory allocator' },
+      'kfree': { addr: '0xffffffff81200100', desc: 'Kernel memory free' },
+      'msleep': { addr: '0xffffffff810e5fd0', desc: 'Kernel sleep function' },
+      'printk': { addr: '0xffffffff81100000', desc: 'Kernel print function' },
+      '__x64_sys_ioctl': { addr: '0xffffffff8130a538', desc: 'System call handler for ioctl' },
+      'copy_to_user': { addr: '0xffffffff81300000', desc: 'Copy data to userspace' },
+      'copy_from_user': { addr: '0xffffffff81300100', desc: 'Copy data from userspace' }
+    };
+
+    if (symbols[symbol]) {
+      const { addr, desc } = symbols[symbol];
+      print('', 'system');
+      if (!state.calculatedKaslr && symbol !== '_text') {
+        print(`[!] Warning: KASLR is enabled, addresses may be randomized`, 'warning');
+        print(`[!] Leak kernel base first to calculate actual addresses`, 'warning');
+        print('', 'system');
+      }
+      print(`Symbol: ${symbol}`, 'info');
+      print(`Address: ${addr}`, 'success');
+      print(`Description: ${desc}`, 'muted');
+      if (symbol === 'modprobe_path') {
+        print('', 'system');
+        print('[!] This is the prime target for kernel exploitation!', 'error');
+        print('[!] Overwrite with "/tmp/pwn" then trigger unknown binary format', 'error');
+      }
+      if (symbol === 'commit_creds' || symbol === 'prepare_kernel_cred') {
+        print('', 'system');
+        print('[*] Classic privesc: commit_creds(prepare_kernel_cred(0))', 'warning');
+      }
+      print('', 'system');
+    } else {
+      print(`[!] Symbol "${symbol}" not found`, 'error');
+      print('[*] Try: commit_creds, prepare_kernel_cred, modprobe_path, init_cred', 'info');
+    }
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // OBJDUMP - Objdump-style driver disassembly
+  // ═══════════════════════════════════════════════════════════════
+  if (cmd === 'objdump') {
+    if (!state.analyzedModule) {
+      print('[!] Analyze the module first', 'warning');
+      return;
+    }
+
+    await simulateLoading('Disassembling vuln_driver.ko', 2000);
+    print('');
+    print('vuln_driver.ko:     file format elf64-x86-64', 'muted');
+    print('', 'system');
+    print('Disassembly of section .text:', 'info');
+    print('', 'system');
+    print('0000000000000000 <vuln_driver_init>:', 'info');
+    print('   0:   e8 00 00 00 00          call   5 <vuln_driver_init+0x5>', 'system');
+    print('   5:   55                      push   %rbp', 'system');
+    print('   6:   48 89 e5                mov    %rsp,%rbp', 'system');
+    print('   9:   bf 00 00 00 00          mov    $0x0,%edi', 'system');
+    print('   e:   e8 00 00 00 00          call   13 <__fentry__>', 'system');
+    print('  ...', 'muted');
+    print('', 'system');
+    print('0000000000000050 <vuln_driver_ioctl>:', 'warning');
+    print('  50:   e8 00 00 00 00          call   55 <vuln_driver_ioctl+0x5>', 'system');
+    print('  55:   55                      push   %rbp', 'system');
+    print('  56:   48 89 e5                mov    %rsp,%rbp', 'system');
+    print('  59:   41 54                   push   %r12', 'system');
+    print('  5b:   53                      push   %rbx', 'system');
+    print('  5c:   81 fe 37 13 00 00       cmp    $0x1337,%esi          ; ALLOC_OBJ', 'success');
+    print('  62:   74 30                   je     94 <alloc_handler>', 'system');
+    print('  64:   81 fe 38 13 00 00       cmp    $0x1338,%esi          ; FREE_OBJ', 'warning');
+    print('  6a:   74 40                   je     ac <free_handler>', 'system');
+    print('  6c:   81 fe 39 13 00 00       cmp    $0x1339,%esi          ; USE_OBJ', 'error');
+    print('  72:   74 50                   je     c4 <use_handler>', 'system');
+    print('  74:   81 fe 3a 13 00 00       cmp    $0x133a,%esi          ; READ_OBJ', 'system');
+    print('  7a:   74 60                   je     dc <read_handler>', 'system');
+    print('  ...', 'muted');
+    print('', 'system');
+    print('0000000000000094 <alloc_handler>:', 'info');
+    print('  94:   bf 60 00 00 00          mov    $0x60,%edi            ; size = 96', 'success');
+    print('  99:   be c0 0c 00 00          mov    $0xcc0,%esi           ; GFP_KERNEL', 'system');
+    print('  9e:   e8 00 00 00 00          call   kmalloc', 'system');
+    print('  a3:   48 89 05 00 00 00 00    mov    %rax,global_obj(%rip)', 'system');
+    print('  aa:   eb 50                   jmp    fc <vuln_driver_ioctl+0xac>', 'system');
+    print('', 'system');
+    print('00000000000000ac <free_handler>:', 'warning');
+    print('  ac:   48 8b 3d 00 00 00 00    mov    global_obj(%rip),%rdi', 'system');
+    print('  b3:   e8 00 00 00 00          call   kfree', 'warning');
+    print('  b8:   eb 42                   jmp    fc <vuln_driver_ioctl+0xac>', 'system');
+    print('  ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', 'error');
+    print('  ; BUG: No "movq $0, global_obj(%rip)" after kfree!', 'error');
+    print('  ; Dangling pointer allows Use-After-Free', 'error');
+    print('', 'system');
+    print('00000000000000c4 <use_handler>:', 'error');
+    print('  c4:   48 8b 05 00 00 00 00    mov    global_obj(%rip),%rax', 'warning');
+    print('  cb:   48 85 c0                test   %rax,%rax', 'system');
+    print('  ce:   74 2c                   je     fc <vuln_driver_ioctl+0xac>', 'system');
+    print('  d0:   48 89 c7                mov    %rax,%rdi', 'system');
+    print('  d3:   ff 50 50                call   *0x50(%rax)           ; FUNC PTR CALL!', 'error');
+    print('  ; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', 'error');
+    print('  ; VULNERABILITY: Calls function pointer at offset 0x50', 'error');
+    print('  ; If object was freed and memory reclaimed, we control this!', 'error');
+    print('  d6:   eb 24                   jmp    fc <vuln_driver_ioctl+0xac>', 'system');
+    print('', 'system');
 
     state.reversedIoctl = true;
     autosave();

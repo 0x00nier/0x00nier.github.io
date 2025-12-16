@@ -40,5 +40,9 @@ mkmf.log
 .claude
 
 # Images
-*.png
-*.jpg
+Screenshot*.png
+Screenshot*.jpg
+images_for_oscp_blog/
+
+# PDFs
+*.pdf

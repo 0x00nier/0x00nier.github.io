@@ -298,23 +298,23 @@ async function handleLevel4Command(cmd, args) {
     print('║               LEVEL 4 PROGRESS - EDR EVASION                     ║', 'info');
     print('╠══════════════════════════════════════════════════════════════════╣', 'info');
     print('║  RECONNAISSANCE:                                                 ║', 'info');
-    print(`║    [${state.analyzedEDR ? '✓' : ' '}] EDR analyzed                                      ║`, state.analyzedEDR ? 'success' : 'system');
-    print(`║    [${state.foundHooks ? '✓' : ' '}] API hooks identified                               ║`, state.foundHooks ? 'success' : 'system');
-    print(`║    [${state.identifiedBypass ? '✓' : ' '}] Bypass technique identified                      ║`, state.identifiedBypass ? 'success' : 'system');
+    print(`║    [${state.analyzedEDR ? 'x' : ' '}] EDR analyzed                                      ║`, state.analyzedEDR ? 'success' : 'system');
+    print(`║    [${state.foundHooks ? 'x' : ' '}] API hooks identified                               ║`, state.foundHooks ? 'success' : 'system');
+    print(`║    [${state.identifiedBypass ? 'x' : ' '}] Bypass technique identified                      ║`, state.identifiedBypass ? 'success' : 'system');
     print('║                                                                  ║', 'info');
     print('║  CODE MODIFICATION:                                              ║', 'info');
-    print(`║    [${state.openedEditor ? '✓' : ' '}] Payload editor opened                             ║`, state.openedEditor ? 'success' : 'system');
-    print(`║    [${state.modifiedCode ? '✓' : ' '}] Code modified for evasion                         ║`, state.modifiedCode ? 'success' : 'system');
-    print(`║    [${state.compiledPayload ? '✓' : ' '}] Payload compiled                                  ║`, state.compiledPayload ? 'success' : 'system');
+    print(`║    [${state.openedEditor ? 'x' : ' '}] Payload editor opened                             ║`, state.openedEditor ? 'success' : 'system');
+    print(`║    [${state.modifiedCode ? 'x' : ' '}] Code modified for evasion                         ║`, state.modifiedCode ? 'success' : 'system');
+    print(`║    [${state.compiledPayload ? 'x' : ' '}] Payload compiled                                  ║`, state.compiledPayload ? 'success' : 'system');
     print('║                                                                  ║', 'info');
     print('║  EVASION TECHNIQUES USED:                                        ║', 'info');
-    print(`║    [${state.unhookedNtdll ? '✓' : ' '}] NTDLL Unhooking                                   ║`, state.unhookedNtdll ? 'success' : 'system');
-    print(`║    [${state.usedSyscalls ? '✓' : ' '}] Direct Syscalls                                   ║`, state.usedSyscalls ? 'success' : 'system');
-    print(`║    [${state.usedHollowing ? '✓' : ' '}] Process Hollowing                                 ║`, state.usedHollowing ? 'success' : 'system');
+    print(`║    [${state.unhookedNtdll ? 'x' : ' '}] NTDLL Unhooking                                   ║`, state.unhookedNtdll ? 'success' : 'system');
+    print(`║    [${state.usedSyscalls ? 'x' : ' '}] Direct Syscalls                                   ║`, state.usedSyscalls ? 'success' : 'system');
+    print(`║    [${state.usedHollowing ? 'x' : ' '}] Process Hollowing                                 ║`, state.usedHollowing ? 'success' : 'system');
     print('║                                                                  ║', 'info');
     print('║  EXECUTION:                                                      ║', 'info');
-    print(`║    [${state.edrBypassed ? '✓' : ' '}] EDR Bypassed                                       ║`, state.edrBypassed ? 'success' : 'system');
-    print(`║    [${state.shellObtained ? '✓' : ' '}] Shell obtained                                    ║`, state.shellObtained ? 'success' : 'system');
+    print(`║    [${state.edrBypassed ? 'x' : ' '}] EDR Bypassed                                       ║`, state.edrBypassed ? 'success' : 'system');
+    print(`║    [${state.shellObtained ? 'x' : ' '}] Shell obtained                                    ║`, state.shellObtained ? 'success' : 'system');
     print('╠══════════════════════════════════════════════════════════════════╣', 'info');
     print(`║  Progress: ${String(progress).padStart(3)}%          EDR Alerts: ${state.alerts}                       ║`, state.alerts > 0 ? 'error' : 'success');
     print('╚══════════════════════════════════════════════════════════════════╝', 'info');
@@ -328,7 +328,7 @@ async function handleLevel4Command(cmd, args) {
   // ═══════════════════════════════════════════════════════════════
   if (cmd === 'hint') {
     print('');
-    print('💡 HINT:', 'warning');
+    print('[*] HINT:', 'warning');
 
     if (!state.analyzedEDR) {
       print('Start by analyzing the EDR to understand what it monitors.', 'info');
