@@ -426,6 +426,30 @@ permalink: /game.html
         </div>
       </div>
 
+      <!-- 0x00Runner -->
+      <div class="project-card" onclick="window.location.href='/runner.html'">
+        <div class="project-header">
+          <span class="project-id">PRJ-004</span>
+          <span class="project-status active">ACTIVE</span>
+        </div>
+        <div class="project-title">
+          <span class="icon">🏃</span>
+          0x00Runner
+        </div>
+        <div class="project-description">
+          2D side-scrolling platformer with terminal aesthetics. Collect data packets, avoid malware, find the secret backdoor. Can you reach the flag?
+        </div>
+        <div class="project-tags">
+          <span class="project-tag">platformer</span>
+          <span class="project-tag">arcade</span>
+          <span class="project-tag">mario-style</span>
+          <span class="project-tag">canvas</span>
+        </div>
+        <div class="project-action">
+          RUN EXPLOIT
+        </div>
+      </div>
+
       <!-- Placeholder for future projects -->
       <div class="project-card locked">
         <div class="project-header">
@@ -453,7 +477,7 @@ permalink: /game.html
 
   <div id="terminal-footer">
     <div class="footer-stat">
-      PROJECTS: <span class="value">3</span>/4 AVAILABLE
+      PROJECTS: <span class="value">4</span>/5 AVAILABLE
     </div>
     <div class="footer-stat">
       STATUS: <span class="value">ONLINE</span>
