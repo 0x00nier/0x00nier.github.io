@@ -466,16 +466,8 @@ Currently, I am able to complete medium machines with relative ease. In my opini
 
 ## What should be my methodology for hacking stuff (for OSCP at least)?
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 ![](./img/methodology.webp)
 
->>>>>>> 4216c2b2f364bea00c8d931cdd2cffc882654bee
-=======
-![](./img/methodology.webp)
-
->>>>>>> 4216c2b2f364bea00c8d931cdd2cffc882654bee
 Here are the steps to a methodology of hacking stuff (at least on the level of OSCP) ->
 
 > **Note** — I shall also be mentioning tools I generally use and what you should not use for the exam as well. This part will be especially instrumental to your journey.
@@ -766,15 +758,13 @@ Multiple Domains can be linked together and they can share resources. Multiple D
 
 I recommend just going through the TryHackMe course "Compromising Active Directory". In case you don't wanna spend any money, there's also [this YouTube playlist](https://www.youtube.com/playlist?list=PLDrNMcTNhhYrBNZ_FdtMq-gLFQeUZFzWV) that covers AD pretty well. Be sure to go through TryHackMe AD labs and the AD course provided by Offsec to get an understanding of what goes where and why.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 <iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLDrNMcTNhhYrBNZ_FdtMq-gLFQeUZFzWV" title="Active Directory Hacking Playlist" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-=======
->>>>>>> 4216c2b2f364bea00c8d931cdd2cffc882654bee
-=======
->>>>>>> 4216c2b2f364bea00c8d931cdd2cffc882654bee
-**TryHackMe | Hacking Windows Active Directory** — This path will teach you how to create, manage, and compromise AD environments. [tryhackme.com](https://tryhackme.com/paths)
+> **TryHackMe | Hacking Windows Active Directory**
+>
+> This path will teach you how to create, manage, and compromise AD environments.
+>
+> [tryhackme.com](https://tryhackme.com/paths)
 
 The OSCP material does a pretty good job in covering the basics of Active Directory. In fact, you could do the lab/exam machines purely going off the material Offsec provides you (This generally does NOT apply to other stuff except Buffer Overflows). Check the resources section where I link a TryHackMe Module covering a bunch of rooms on AD from scratch. Those will help you a lot for sure.
 
@@ -782,9 +772,17 @@ AD will most likely be the most important thing on the exam and I feel like that
 
 Be sure to do the following rooms on THM for AD practice -
 
-**TryHackMe | VulnNet: Roasted** — VulnNet Entertainment quickly deployed another management instance on their very broad network... [tryhackme.com](https://tryhackme.com/room/introtoad)
+> **TryHackMe | VulnNet: Roasted**
+>
+> VulnNet Entertainment quickly deployed another management instance on their very broad network...
+>
+> [tryhackme.com](https://tryhackme.com/room/vulnnetroasted)
 
-**TryHackMe | VulnNet: Active** — VulnNet Entertainment just moved its entire infrastructure... Check this out... [tryhackme.com](https://tryhackme.com/room/introtoad)
+> **TryHackMe | VulnNet: Active**
+>
+> VulnNet Entertainment just moved its entire infrastructure... Check this out...
+>
+> [tryhackme.com](https://tryhackme.com/room/vulnnetactive)
 
 ---
 
