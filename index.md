@@ -12,18 +12,25 @@ layout: default
   z-index: -1;
   opacity: 0;
   transition: opacity 1.5s ease-in;
-  cursor: pointer;
 }
 
 #matrix-bg.active {
   opacity: 1;
 }
 
-/* When matrix is active, let clicks pass through content to canvas */
-body.matrix-active #main_content,
-body.matrix-active header,
-body.matrix-active footer {
-  pointer-events: none;
+#matrix-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  cursor: pointer;
+  display: none;
+}
+
+#matrix-overlay.active {
+  display: block;
 }
 
 #matrix-hint {
@@ -55,12 +62,13 @@ body.matrix-active footer {
 </style>
 
 <canvas id="matrix-bg"></canvas>
+<div id="matrix-overlay"></div>
 
 <video id="vid" controls autoplay loop muted>
   <source src="./assets/images/53N1oR_3Ng1N33R.mp4" type="video/mp4">
 </video>
 
-<div id="matrix-hint">click the background to enter the void</div>
+<div id="matrix-hint">click anywhere to enter the void</div>
 
 <h1 id="unmute" align="center" style="font-size:18px;margin-top:20px"> Sorry it doesn't automatically unmute.</h1>
 
@@ -85,6 +93,7 @@ var e = setTimeout(function() {
   const canvas = document.getElementById('matrix-bg');
   const ctx = canvas.getContext('2d');
   const hint = document.getElementById('matrix-hint');
+  const overlay = document.getElementById('matrix-overlay');
 
   // Size canvas to full window
   function resizeCanvas() {
@@ -135,7 +144,7 @@ var e = setTimeout(function() {
 
   // Start animation
   canvas.classList.add('active');
-  document.body.classList.add('matrix-active');
+  overlay.classList.add('active');
   const matrixInterval = setInterval(draw, 50);
 
   // Show hint after a moment
@@ -143,8 +152,8 @@ var e = setTimeout(function() {
     hint.classList.add('visible');
   }, 2000);
 
-  // Click background to navigate
-  canvas.addEventListener('click', function() {
+  // Click overlay to navigate
+  overlay.addEventListener('click', function() {
     clearInterval(matrixInterval);
     window.location.href = './dealloc.html';
   });
@@ -161,4 +170,3 @@ var e = setTimeout(function() {
 
 }, 14000);
 </script>
-
